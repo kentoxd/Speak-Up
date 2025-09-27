@@ -1,0 +1,176 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Profile</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="editProfileInfo()" *ngIf="!isEditing">
+        <ion-icon name="create" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Profile</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="profile-container" *ngIf="userProfile">
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+      <div class="avatar-section" (click)="changeAvatar()">
+        <div class="avatar-container">
+          <img 
+            *ngIf="userProfile.avatar" 
+            [src]="userProfile.avatar" 
+            [alt]="userProfile.name"
+            class="avatar-image">
+          <ion-icon 
+            *ngIf="!userProfile.avatar" 
+            name="person-circle" 
+            class="avatar-icon">
+          </ion-icon>
+          <div class="avatar-overlay">
+            <ion-icon name="camera"></ion-icon>
+          </div>
+        </div>
+      </div>
+      
+      <div class="profile-info" *ngIf="!isEditing">
+        <h2>{{ userProfile.name }}</h2>
+        <p *ngIf="userProfile.email">{{ userProfile.email }}</p>
+        <p *ngIf="userProfile.bio" class="bio">{{ userProfile.bio }}</p>
+        <p class="join-date">Member for {{ getJoinedDaysAgo() }} days</p>
+      </div>
+
+      <!-- Edit Form -->
+      <div class="edit-form" *ngIf="isEditing">
+        <ion-item>
+          <ion-label position="stacked">Name</ion-label>
+          <ion-input [(ngModel)]="editProfile.name" placeholder="Enter your name"></ion-input>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked">Email</ion-label>
+          <ion-input [(ngModel)]="editProfile.email" type="email" placeholder="Enter your email"></ion-input>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked">Bio</ion-label>
+          <ion-textarea [(ngModel)]="editProfile.bio" placeholder="Tell us about yourself" rows="3"></ion-textarea>
+        </ion-item>
+        
+        <div class="edit-buttons">
+          <ion-button fill="outline" color="medium" (click)="cancelEdit()">
+            Cancel
+          </ion-button>
+          <ion-button fill="solid" color="primary" (click)="saveProfile()">
+            Save
+          </ion-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-section">
+      <h3>Your Stats</h3>
+      
+      <div class="stats-grid">
+        <ion-card class="stat-card">
+          <ion-card-content>
+            <div class="stat-content">
+              <ion-icon name="flame" color="danger"></ion-icon>
+              <div class="stat-info">
+                <span class="stat-number">{{ currentStreak }}</span>
+                <span class="stat-label">Day Streak</span>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="stat-card">
+          <ion-card-content>
+            <div class="stat-content">
+              <ion-icon name="book" color="primary"></ion-icon>
+              <div class="stat-info">
+                <span class="stat-number">{{ userProfile.totalLessons }}</span>
+                <span class="stat-label">Lessons</span>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="stat-card">
+          <ion-card-content>
+            <div class="stat-content">
+              <ion-icon name="trophy" color="warning"></ion-icon>
+              <div class="stat-info">
+                <span class="stat-number">{{ getEarnedAchievements().length }}</span>
+                <span class="stat-label">Achievements</span>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </div>
+
+    <!-- Achievements -->
+    <div class="achievements-section">
+      <div class="section-header">
+        <h3>Achievements</h3>
+        <div class="achievement-progress">
+          <span>{{ getAchievementProgress() }}% Complete</span>
+          <ion-progress-bar [value]="getAchievementProgress() / 100" color="warning"></ion-progress-bar>
+        </div>
+      </div>
+      
+      <div class="achievements-grid">
+        <div 
+          *ngFor="let achievement of achievements" 
+          class="achievement-item"
+          [class.earned]="achievement.earned">
+          <div class="achievement-icon">
+            <ion-icon [name]="achievement.icon" [color]="achievement.earned ? 'warning' : 'medium'"></ion-icon>
+          </div>
+          <div class="achievement-info">
+            <h4>{{ achievement.title }}</h4>
+            <p>{{ achievement.description }}</p>
+          </div>
+          <div class="achievement-status">
+            <ion-icon 
+              *ngIf="achievement.earned" 
+              name="checkmark-circle" 
+              color="success">
+            </ion-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings-section">
+      <h3>Settings</h3>
+      
+      <ion-card>
+        <ion-card-content>
+          <ion-item lines="none">
+            <ion-icon name="moon" slot="start" color="medium"></ion-icon>
+            <ion-label>
+              <h3>Dark Mode</h3>
+              <p>Toggle dark theme</p>
+            </ion-label>
+            <ion-toggle 
+              [checked]="darkModeEnabled" 
+              (ionChange)="toggleDarkMode()"
+              slot="end">
+            </ion-toggle>
+          </ion-item>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+  </div>
+
+</ion-content>

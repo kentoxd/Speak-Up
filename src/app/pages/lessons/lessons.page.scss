@@ -1,0 +1,144 @@
+.lessons-container {
+  padding: 1rem;
+  padding-bottom: 2rem;
+}
+
+.progress-summary {
+  margin-bottom: 1rem;
+  
+  .summary-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    
+    .summary-text {
+      h3 {
+        margin: 0 0 0.25rem 0;
+        color: var(--ion-color-dark);
+        font-weight: 600;
+      }
+      
+      p {
+        margin: 0;
+        color: var(--ion-color-medium);
+        font-size: 0.9rem;
+      }
+    }
+    
+    .summary-icon {
+      ion-icon {
+        font-size: 2.5rem;
+      }
+    }
+  }
+  
+  ion-progress-bar {
+    height: 6px;
+    --progress-background: var(--ion-color-light);
+  }
+}
+
+.search-filter {
+  margin-bottom: 1rem;
+  
+  ion-searchbar {
+    padding: 0;
+    --border-radius: 12px;
+  }
+  
+  ion-item {
+    --border-radius: 12px;
+    --background: var(--ion-color-light);
+    margin-top: 0.5rem;
+  }
+}
+
+.lessons-list {
+  .lesson-card {
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+    }
+    
+    .lesson-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      
+      .lesson-info {
+        flex: 1;
+        
+        h3 {
+          margin: 0 0 0.5rem 0;
+          color: var(--ion-color-dark);
+          font-weight: 600;
+          font-size: 1.2rem;
+        }
+        
+        p {
+          margin: 0;
+          color: var(--ion-color-medium);
+          font-size: 0.9rem;
+          line-height: 1.4;
+        }
+      }
+      
+      .lesson-status {
+        ion-icon {
+          font-size: 1.5rem;
+        }
+      }
+    }
+    
+    .lesson-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      
+      .lesson-duration {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: var(--ion-color-medium);
+        font-size: 0.9rem;
+        
+        ion-icon {
+          font-size: 1rem;
+        }
+      }
+    }
+    
+    ion-progress-bar {
+      height: 4px;
+      --progress-background: var(--ion-color-light);
+      margin-top: 0.5rem;
+    }
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--ion-color-medium);
+  
+  ion-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--ion-color-medium);
+  }
+  
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}

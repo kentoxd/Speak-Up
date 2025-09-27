@@ -1,0 +1,44 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Page Not Found</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="not-found-container">
+    
+    <div class="error-content">
+      <div class="error-icon">
+        <ion-icon name="alert-circle" color="warning"></ion-icon>
+      </div>
+      
+      <h2>Oops! Page Not Found</h2>
+      <p>The page you're looking for doesn't exist or has been moved.</p>
+      
+      <div class="error-actions">
+        <ion-button 
+          expand="block" 
+          fill="solid" 
+          color="primary"
+          (click)="goHome()">
+          <ion-icon name="home" slot="start"></ion-icon>
+          Go to Home
+        </ion-button>
+        
+        <ion-button 
+          expand="block" 
+          fill="outline" 
+          color="medium"
+          (click)="goBack()">
+          <ion-icon name="arrow-back" slot="start"></ion-icon>
+          Go Back
+        </ion-button>
+      </div>
+    </div>
+    
+    <div class="error-illustration">
+      <ion-icon name="document-text" color="light"></ion-icon>
+    </div>
+
+  </div>
+</ion-content>

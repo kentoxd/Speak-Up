@@ -1,0 +1,90 @@
+<ion-content fullscreen>
+  <div class="welcome-container">
+    
+    <!-- Slide 1: Welcome -->
+    <div class="slide" *ngIf="currentSlide === 0">
+      <div class="slide-content">
+        <ion-icon name="mic-circle" class="slide-icon primary"></ion-icon>
+        <h2>Welcome to SpeakUp</h2>
+        <p>Your journey to mastering public speaking starts here. Build confidence, improve your delivery, and captivate any audience.</p>
+        <ion-button expand="block" fill="solid" (click)="nextSlide()">
+          Get Started
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- Slide 2: Features -->
+    <div class="slide" *ngIf="currentSlide === 1">
+      <div class="slide-content">
+        <ion-icon name="book" class="slide-icon secondary"></ion-icon>
+        <h2>Learn & Practice</h2>
+        <p>Access structured lessons, practice with guided exercises, and track your progress with detailed analytics.</p>
+        <div class="feature-list">
+          <div class="feature-item">
+            <ion-icon name="checkmark-circle" color="success"></ion-icon>
+            <span>Interactive Lessons</span>
+          </div>
+          <div class="feature-item">
+            <ion-icon name="checkmark-circle" color="success"></ion-icon>
+            <span>Practice Exercises</span>
+          </div>
+          <div class="feature-item">
+            <ion-icon name="checkmark-circle" color="success"></ion-icon>
+            <span>Progress Tracking</span>
+          </div>
+        </div>
+        <ion-button expand="block" fill="solid" (click)="nextSlide()">
+          Continue
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- Slide 3: Personalization -->
+    <div class="slide" *ngIf="currentSlide === 2">
+      <div class="slide-content">
+        <ion-icon name="person-circle" class="slide-icon tertiary"></ion-icon>
+        <h2>Let's Get Personal</h2>
+        <p>Tell us a bit about yourself to personalize your experience.</p>
+        
+        <div class="input-container">
+          <ion-item>
+            <ion-label position="stacked">Your Name *</ion-label>
+            <ion-input 
+              [(ngModel)]="userName" 
+              placeholder="Enter your name"
+              type="text">
+            </ion-input>
+          </ion-item>
+          
+          <ion-item>
+            <ion-label position="stacked">Email (Optional)</ion-label>
+            <ion-input 
+              [(ngModel)]="userEmail" 
+              placeholder="Enter your email"
+              type="email">
+            </ion-input>
+          </ion-item>
+        </div>
+        
+        <ion-button expand="block" fill="solid" (click)="finishOnboarding()">
+          Start Learning
+        </ion-button>
+        
+        <ion-button 
+          expand="block" 
+          fill="clear" 
+          color="medium" 
+          (click)="prevSlide()">
+          Back
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- Progress Indicators -->
+    <div class="progress-indicators">
+      <div class="indicator" [class.active]="currentSlide === 0"></div>
+      <div class="indicator" [class.active]="currentSlide === 1"></div>
+      <div class="indicator" [class.active]="currentSlide === 2"></div>
+    </div>
+  </div>
+</ion-content>

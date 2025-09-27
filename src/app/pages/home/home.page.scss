@@ -1,0 +1,118 @@
+.home-container {
+  padding: 1rem;
+  padding-bottom: 2rem;
+}
+
+.greeting-card {
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+  color: white;
+  
+  ion-card-content {
+    h2 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.5rem;
+      font-weight: bold;
+      font-family: 'Playfair Display', serif;
+    }
+    
+    p {
+      margin: 0;
+      opacity: 0.9;
+    }
+  }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-card {
+  margin: 0;
+  
+  .stat-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    
+    ion-icon {
+      font-size: 2rem;
+    }
+    
+    .stat-info {
+      h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--ion-color-dark);
+      }
+      
+      p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--ion-color-medium);
+      }
+    }
+  }
+}
+
+.progress-card {
+  margin-bottom: 1rem;
+  
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--ion-color-medium);
+  }
+  
+  ion-progress-bar {
+    height: 8px;
+    --progress-background: var(--ion-color-light);
+  }
+}
+
+.quote-card {
+  margin-bottom: 1.5rem;
+  
+  .quote-content {
+    text-align: center;
+    
+    ion-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    
+    blockquote {
+      margin: 0 0 1rem 0;
+      font-style: italic;
+      font-size: 1.1rem;
+      line-height: 1.4;
+      color: var(--ion-color-dark);
+      font-family: 'Cormorant Garamond', serif;
+    }
+    
+    cite {
+      font-size: 0.9rem;
+      color: var(--ion-color-medium);
+      font-style: normal;
+    }
+  }
+}
+
+.quick-actions {
+  h3 {
+    margin: 0 0 1rem 0;
+    color: var(--ion-color-dark);
+    font-weight: 600;
+  }
+  
+  ion-button {
+    margin-bottom: 0.5rem;
+    --border-radius: 12px;
+  }
+}

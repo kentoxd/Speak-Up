@@ -1,0 +1,131 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button (click)="goBack()"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ lesson?.title }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  
+  <div class="lesson-container" *ngIf="lesson">
+    
+    <!-- Progress Bar -->
+    <div class="progress-header">
+      <div class="progress-info">
+        <span>{{ getProgressPercentage() }}% Complete</span>
+        <ion-chip [color]="lesson.difficulty === 'beginner' ? 'success' : lesson.difficulty === 'intermediate' ? 'warning' : 'danger'" outline>
+          {{ lesson.difficulty | titlecase }}
+        </ion-chip>
+      </div>
+      <ion-progress-bar 
+        [value]="getProgressPercentage() / 100" 
+        color="secondary">
+      </ion-progress-bar>
+    </div>
+
+    <!-- Lesson Content -->
+    <div class="content-area" *ngIf="!showQuiz">
+      <div class="content-item" *ngIf="lesson.content[currentContentIndex]">
+        <h2>{{ lesson.content[currentContentIndex].title }}</h2>
+        
+        <div class="content-body">
+          <div *ngIf="lesson.content[currentContentIndex].type === 'text'" 
+               class="text-content">
+            <p>{{ lesson.content[currentContentIndex].content }}</p>
+          </div>
+          
+          <div *ngIf="lesson.content[currentContentIndex].type === 'video'" 
+               class="video-content">
+            <p>{{ lesson.content[currentContentIndex].content }}</p>
+            <div class="video-placeholder">
+              <ion-icon name="play-circle" color="primary"></ion-icon>
+              <p>Video content would be displayed here</p>
+            </div>
+          </div>
+          
+          <div *ngIf="lesson.content[currentContentIndex].type === 'audio'" 
+               class="audio-content">
+            <p>{{ lesson.content[currentContentIndex].content }}</p>
+            <div class="audio-placeholder">
+              <ion-icon name="volume-high" color="secondary"></ion-icon>
+              <p>Audio content would be played here</p>
+            </div>
+          </div>
+          
+          <div *ngIf="lesson.content[currentContentIndex].type === 'exercise'" 
+               class="exercise-content">
+            <div class="exercise-card">
+              <ion-icon name="fitness" color="tertiary"></ion-icon>
+              <h3>Practice Exercise</h3>
+              <p>{{ lesson.content[currentContentIndex].content }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quiz Section -->
+    <div class="quiz-area" *ngIf="showQuiz && lesson.quiz">
+      <div class="quiz-header">
+        <h2>Knowledge Check</h2>
+        <p>Test your understanding of this lesson</p>
+      </div>
+      
+      <div class="quiz-questions">
+        <div *ngFor="let question of lesson.quiz.questions; let i = index" 
+             class="question-card">
+          <h3>Question {{ i + 1 }}</h3>
+          <p class="question-text">{{ question.question }}</p>
+          
+          <ion-radio-group 
+            [value]="selectedAnswers[i]" 
+            (ionChange)="selectAnswer(i, $event.detail.value)">
+            <ion-item *ngFor="let option of question.options; let j = index">
+              <ion-label>{{ option }}</ion-label>
+              <ion-radio slot="start" [value]="j"></ion-radio>
+            </ion-item>
+          </ion-radio-group>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Controls -->
+    <div class="navigation-controls">
+      <ion-button 
+        [disabled]="!canGoPrev()" 
+        fill="outline" 
+        (click)="prevContent()">
+        <ion-icon name="chevron-back" slot="start"></ion-icon>
+        Previous
+      </ion-button>
+      
+      <ion-button 
+        *ngIf="!showQuiz || !canGoNext()"
+        [disabled]="!canGoNext()" 
+        fill="solid" 
+        (click)="nextContent()">
+        Next
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-button>
+      
+      <ion-button 
+        *ngIf="showQuiz && canGoNext()"
+        fill="solid" 
+        color="success"
+        (click)="submitQuiz()">
+        Submit Quiz
+        <ion-icon name="checkmark" slot="end"></ion-icon>
+      </ion-button>
+    </div>
+
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="!lesson">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading lesson...</p>
+  </div>
+
+</ion-content>

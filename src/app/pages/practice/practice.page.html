@@ -1,0 +1,203 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Practice</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="viewHistory()">
+        <ion-icon name="time" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Practice</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="practice-container">
+
+    <!-- Practice Selection -->
+    <div *ngIf="!isPracticing" class="exercise-selection">
+      <div class="intro-section">
+        <h2>Choose Your Practice</h2>
+        <p>Select an exercise type to improve your speaking skills with guided practice sessions.</p>
+      </div>
+
+      <div class="exercises-grid">
+        <ion-card 
+          *ngFor="let exercise of exercises" 
+          class="exercise-card"
+          (click)="startExercise(exercise)">
+          
+          <ion-card-content>
+            <div class="exercise-header">
+              <ion-icon 
+                [name]="getExerciseIcon(exercise.type)" 
+                [color]="getExerciseColor(exercise.type)">
+              </ion-icon>
+              <div class="exercise-info">
+                <h3>{{ exercise.title }}</h3>
+                <p>{{ exercise.description }}</p>
+              </div>
+            </div>
+            
+            <div class="exercise-meta">
+              <ion-chip [color]="getExerciseColor(exercise.type)" outline>
+                {{ exercise.type | titlecase }}
+              </ion-chip>
+              <span class="duration">{{ exercise.timeLimit }} min</span>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- Practice History Summary -->
+      <ion-card class="history-summary" *ngIf="practiceHistory.length > 0">
+        <ion-card-header>
+          <ion-card-title>Recent Activity</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="history-stats">
+            <div class="stat">
+              <span class="stat-number">{{ practiceHistory.length }}</span>
+              <span class="stat-label">Sessions</span>
+            </div>
+            <div class="stat">
+              <span class="stat-number">{{ getTotalPracticeTime() }}</span>
+              <span class="stat-label">Minutes</span>
+            </div>
+          </div>
+          <ion-button fill="clear" size="small" (click)="viewHistory()">
+            View All History
+            <ion-icon name="chevron-forward" slot="end"></ion-icon>
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Active Practice Session -->
+    <div *ngIf="isPracticing" class="practice-session">
+      
+      <!-- Session Header -->
+      <div class="session-header">
+        <h2>{{ selectedExercise?.title }}</h2>
+        <div class="timer">
+          <ion-icon name="timer" color="primary"></ion-icon>
+          <span [class.warning]="timeRemaining < 60">{{ formatTime(timeRemaining) }}</span>
+        </div>
+      </div>
+
+      <!-- Current Prompt -->
+      <ion-card class="prompt-card">
+        <ion-card-content>
+          <h3>Your Prompt</h3>
+          <p class="prompt-text">{{ currentPrompt }}</p>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Tips -->
+      <ion-card class="tips-card" *ngIf="selectedExercise?.tips">
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="bulb" color="warning"></ion-icon>
+            Tips
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <ul>
+            <li *ngFor="let tip of selectedExercise?.tips">{{ tip }}</li>
+          </ul>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Recording Controls -->
+      <div class="recording-controls">
+        <ion-button 
+          *ngIf="!isRecording"
+          expand="block" 
+          fill="solid" 
+          color="danger"
+          size="large"
+          (click)="startRecording()">
+          <ion-icon name="mic" slot="start"></ion-icon>
+          Start Recording
+        </ion-button>
+        
+        <ion-button 
+          *ngIf="isRecording"
+          expand="block" 
+          fill="solid" 
+          color="medium"
+          size="large"
+          (click)="stopRecording()">
+          <ion-icon name="stop" slot="start"></ion-icon>
+          Stop Recording
+        </ion-button>
+      </div>
+
+      <!-- Session Results -->
+      <ion-card *ngIf="sessionResults" class="results-card">
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="analytics" color="success"></ion-icon>
+            Session Results
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="result-stats">
+            <div class="stat">
+              <span class="stat-label">Words per minute</span>
+              <span class="stat-value">{{ sessionResults.analysis.wordsPerMinute }}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Total words</span>
+              <span class="stat-value">{{ sessionResults.analysis.totalWords }}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Duration</span>
+              <span class="stat-value">{{ sessionResults.analysis.duration }}s</span>
+            </div>
+          </div>
+          
+          <div class="feedback">
+            <h4>Feedback</h4>
+            <ul>
+              <li *ngFor="let suggestion of sessionResults.analysis.suggestions">
+                {{ suggestion }}
+              </li>
+            </ul>
+          </div>
+          
+          <div class="transcript" *ngIf="sessionResults.transcript">
+            <h4>Transcript</h4>
+            <p class="transcript-text">{{ sessionResults.transcript }}</p>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Practice Controls -->
+      <div class="practice-controls">
+        <ion-button 
+          fill="outline" 
+          color="medium"
+          (click)="stopPractice()">
+          <ion-icon name="close" slot="start"></ion-icon>
+          End Session
+        </ion-button>
+        
+        <ion-button 
+          *ngIf="sessionResults"
+          fill="solid" 
+          color="primary"
+          (click)="startExercise(selectedExercise!)">
+          <ion-icon name="refresh" slot="start"></ion-icon>
+          Try Again
+        </ion-button>
+      </div>
+
+    </div>
+
+  </div>
+</ion-content>

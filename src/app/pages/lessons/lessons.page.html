@@ -1,0 +1,113 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Lessons</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Lessons</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="lessons-container">
+    
+    <!-- Progress Summary -->
+    <ion-card class="progress-summary">
+      <ion-card-content>
+        <div class="summary-content">
+          <div class="summary-text">
+            <h3>Your Progress</h3>
+            <p>{{ getCompletedCount() }} of {{ getTotalLessons() }} lessons completed</p>
+          </div>
+          <div class="summary-icon">
+            <ion-icon name="trophy" color="warning"></ion-icon>
+          </div>
+        </div>
+        <ion-progress-bar 
+          [value]="getCompletedCount() / getTotalLessons()" 
+          color="secondary">
+        </ion-progress-bar>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Search and Filter -->
+    <div class="search-filter">
+      <ion-searchbar 
+        placeholder="Search lessons..."
+        (ionInput)="onSearchChange($event)"
+        debounce="300">
+      </ion-searchbar>
+      
+      <ion-item>
+        <ion-label>Category</ion-label>
+        <ion-select 
+          [value]="selectedCategory" 
+          (ionChange)="onCategoryChange($event)"
+          interface="popover">
+          <ion-select-option *ngFor="let category of categories" [value]="category">
+            {{ category | titlecase }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+    </div>
+
+    <!-- Lessons List -->
+    <div class="lessons-list">
+      <ion-card 
+        *ngFor="let lesson of filteredLessons" 
+        class="lesson-card"
+        (click)="openLesson(lesson)">
+        
+        <ion-card-content>
+          <div class="lesson-header">
+            <div class="lesson-info">
+              <h3>{{ lesson.title }}</h3>
+              <p>{{ lesson.description }}</p>
+            </div>
+            <div class="lesson-status">
+              <ion-icon 
+                *ngIf="isLessonCompleted(lesson.id)"
+                name="checkmark-circle" 
+                color="success">
+              </ion-icon>
+              <ion-icon 
+                *ngIf="!isLessonCompleted(lesson.id) && getLessonProgress(lesson.id) > 0"
+                name="play-circle" 
+                color="primary">
+              </ion-icon>
+            </div>
+          </div>
+          
+          <div class="lesson-meta">
+            <ion-chip 
+              [color]="getDifficultyColor(lesson.difficulty)" 
+              outline>
+              {{ lesson.difficulty | titlecase }}
+            </ion-chip>
+            
+            <div class="lesson-duration">
+              <ion-icon name="time-outline"></ion-icon>
+              <span>{{ lesson.duration }}</span>
+            </div>
+          </div>
+          
+          <ion-progress-bar 
+            *ngIf="getLessonProgress(lesson.id) > 0"
+            [value]="getLessonProgress(lesson.id) / 100"
+            color="secondary">
+          </ion-progress-bar>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredLessons.length === 0" class="empty-state">
+      <ion-icon name="search-outline" color="medium"></ion-icon>
+      <h3>No lessons found</h3>
+      <p>Try adjusting your search or filter criteria.</p>
+    </div>
+
+  </div>
+</ion-content>

@@ -1,0 +1,56 @@
+.splash-content {
+  --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+}
+
+.splash-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  text-align: center;
+  color: white;
+}
+
+.logo-container {
+  margin-bottom: 4rem;
+}
+
+.logo-icon {
+  font-size: 6rem;
+  color: white;
+  margin-bottom: 1rem;
+  animation: pulse 2s infinite;
+}
+
+.app-title {
+  font-size: 3rem;
+  font-weight: bold;
+  margin: 1rem 0 0.5rem 0;
+  font-family: 'Playfair Display', serif;
+}
+
+.app-subtitle {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  font-family: 'Source Sans 3', sans-serif;
+}
+
+.loading-container {
+  ion-spinner {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "speakup-app",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular",
+  "id": "speakup"
+}
