@@ -45,6 +45,16 @@ export interface MotivationalQuote {
   author: string;
 }
 
+export interface StructuredPractice {
+  type: 'monologue' | 'public-speaking' | 'debate-speech';
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  title: string;
+  description: string;
+  practiceText: string;
+  timeLimit: number; // in minutes
+  tips: string[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -253,6 +263,149 @@ export class DataService {
   getRandomQuote(): MotivationalQuote {
     const quotes = this.getMotivationalQuotes();
     return quotes[Math.floor(Math.random() * quotes.length)];
+  }
+
+  // Structured Practice Content
+  getStructuredPracticeContent(): StructuredPractice[] {
+    return [
+      // MONOLOGUE PRACTICES
+      {
+        type: 'monologue',
+        difficulty: 'beginner',
+        title: 'Personal Story Monologue',
+        description: 'Share a meaningful personal experience',
+        practiceText: 'Tell a story about a time when you overcame a challenge. Focus on the emotions you felt, the obstacles you faced, and what you learned from the experience. Remember to speak clearly and at a comfortable pace.',
+        timeLimit: 3,
+        tips: [
+          'Start with a clear setting',
+          'Include emotional details',
+          'End with a lesson learned',
+          'Use pauses for emphasis'
+        ]
+      },
+      {
+        type: 'monologue',
+        difficulty: 'intermediate',
+        title: 'Character Monologue',
+        description: 'Deliver a monologue from a character\'s perspective',
+        practiceText: 'Imagine you are a successful entrepreneur giving advice to your younger self. Speak about the mistakes you made, the lessons you learned, and the wisdom you would share. Embody the confidence and experience of this character.',
+        timeLimit: 4,
+        tips: [
+          'Adopt the character\'s mannerisms',
+          'Change your vocal tone appropriately',
+          'Maintain character consistency',
+          'Use appropriate gestures'
+        ]
+      },
+      {
+        type: 'monologue',
+        difficulty: 'advanced',
+        title: 'Dramatic Monologue',
+        description: 'Perform an emotionally complex monologue',
+        practiceText: 'Deliver a monologue about standing up for something you believe in, even when it was difficult. Show the internal conflict, the moment of decision, and the aftermath. Use dynamic vocal range and powerful gestures to convey deep emotion.',
+        timeLimit: 5,
+        tips: [
+          'Build emotional intensity gradually',
+          'Use full vocal range',
+          'Incorporate powerful pauses',
+          'Connect with personal truth'
+        ]
+      },
+
+      // PUBLIC SPEAKING PRACTICES
+      {
+        type: 'public-speaking',
+        difficulty: 'beginner',
+        title: 'Introduction Speech',
+        description: 'Introduce yourself to an audience',
+        practiceText: 'Introduce yourself to a group of new colleagues. Share your background, your role, one interesting fact about yourself, and what you hope to contribute to the team. Keep it professional yet personable.',
+        timeLimit: 2,
+        tips: [
+          'Start with a friendly greeting',
+          'Speak loudly enough for everyone to hear',
+          'Make eye contact with different sections',
+          'End with enthusiasm'
+        ]
+      },
+      {
+        type: 'public-speaking',
+        difficulty: 'intermediate',
+        title: 'Informative Presentation',
+        description: 'Teach the audience something new',
+        practiceText: 'Explain the importance of time management to a group of students. Cover why it matters, provide 3 practical strategies, and conclude with an inspiring call to action. Structure your speech with clear introduction, body, and conclusion.',
+        timeLimit: 5,
+        tips: [
+          'Use the rule of three',
+          'Provide concrete examples',
+          'Engage with rhetorical questions',
+          'Summarize key points'
+        ]
+      },
+      {
+        type: 'public-speaking',
+        difficulty: 'advanced',
+        title: 'Persuasive Speech',
+        description: 'Convince the audience to take action',
+        practiceText: 'Persuade a city council to invest in renewable energy infrastructure. Present the environmental benefits, economic advantages, and long-term sustainability. Address potential concerns and end with a compelling call for immediate action.',
+        timeLimit: 7,
+        tips: [
+          'Use ethos, pathos, and logos',
+          'Address counterarguments',
+          'Build to a powerful conclusion',
+          'Use statistics and emotional appeals'
+        ]
+      },
+
+      // DEBATE SPEECH PRACTICES
+      {
+        type: 'debate-speech',
+        difficulty: 'beginner',
+        title: 'Simple Position Statement',
+        description: 'State and defend a clear position',
+        practiceText: 'Argue that "Social media has more positive than negative effects on society." Present three clear reasons supporting this position with simple examples. Acknowledge one counterargument and refute it briefly.',
+        timeLimit: 3,
+        tips: [
+          'State your position clearly',
+          'Provide three strong reasons',
+          'Use simple, clear language',
+          'Address obvious counterarguments'
+        ]
+      },
+      {
+        type: 'debate-speech',
+        difficulty: 'intermediate',
+        title: 'Structured Argument',
+        description: 'Present a well-organized debate argument',
+        practiceText: 'Defend the position that "Remote work should be the default for knowledge workers." Structure your argument with clear points about productivity, work-life balance, and environmental impact. Refute common objections about collaboration and company culture.',
+        timeLimit: 5,
+        tips: [
+          'Use clear signposting',
+          'Provide evidence for claims',
+          'Anticipate opponent arguments',
+          'Maintain confident delivery'
+        ]
+      },
+      {
+        type: 'debate-speech',
+        difficulty: 'advanced',
+        title: 'Complex Policy Debate',
+        description: 'Argue a nuanced policy position',
+        practiceText: 'Argue for implementing universal basic income as economic policy. Address economic theory, social benefits, implementation challenges, and funding mechanisms. Counter arguments about work incentives, inflation, and political feasibility with sophisticated reasoning.',
+        timeLimit: 8,
+        tips: [
+          'Use sophisticated argumentation',
+          'Cite credible sources',
+          'Handle complex rebuttals',
+          'Demonstrate deep understanding'
+        ]
+      }
+    ];
+  }
+
+  getStructuredPractice(type: string, difficulty: string): StructuredPractice | undefined {
+    return this.getStructuredPracticeContent().find(
+      practice => practice.type === type && practice.difficulty === difficulty
+    );
   }
 
   // FAQ Data

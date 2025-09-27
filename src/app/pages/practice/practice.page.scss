@@ -3,6 +3,204 @@
   padding-bottom: 2rem;
 }
 
+/* Structured Practice Selection Styles */
+.structured-practice-selection {
+  .intro-section {
+    text-align: center;
+    margin-bottom: 2rem;
+    
+    h2 {
+      color: var(--ion-color-primary);
+      margin-bottom: 0.5rem;
+      font-family: 'Playfair Display', serif;
+    }
+    
+    p {
+      color: var(--ion-color-medium);
+      margin: 0;
+    }
+  }
+  
+  .selector-section {
+    margin-bottom: 2rem;
+    
+    ion-item {
+      --border-radius: 12px;
+      --background: var(--ion-color-light);
+      margin-bottom: 1rem;
+    }
+  }
+  
+  .practice-preview {
+    margin-bottom: 2rem;
+    
+    .practice-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      
+      .duration {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--ion-color-medium);
+        font-size: 0.9rem;
+      }
+    }
+    
+    ion-button {
+      --border-radius: 12px;
+      font-weight: 600;
+    }
+  }
+}
+
+/* Structured Practice Session Styles */
+.structured-practice-session {
+  .session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    
+    h2 {
+      color: var(--ion-color-primary);
+      margin: 0;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+    }
+    
+    .timer {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      
+      span {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--ion-color-dark);
+        
+        &.warning {
+          color: var(--ion-color-danger);
+        }
+      }
+    }
+  }
+  
+  .practice-text-card {
+    margin-bottom: 1rem;
+    
+    ion-card-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.1rem;
+    }
+    
+    .practice-text {
+      background: var(--ion-color-light);
+      padding: 1.5rem;
+      border-radius: 12px;
+      line-height: 1.6;
+      font-size: 1.1rem;
+      color: var(--ion-color-dark);
+      margin-bottom: 1.5rem;
+      border-left: 4px solid var(--ion-color-primary);
+    }
+    
+    .listen-controls {
+      display: flex;
+      justify-content: center;
+      
+      ion-button {
+        --border-radius: 25px;
+        --padding-start: 2rem;
+        --padding-end: 2rem;
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .speech-input-card {
+    margin-bottom: 1rem;
+    
+    ion-card-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.1rem;
+    }
+    
+    .speech-display {
+      background: var(--ion-color-light);
+      border: 2px dashed var(--ion-color-medium);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      .placeholder-text {
+        color: var(--ion-color-medium);
+        font-style: italic;
+        margin: 0;
+      }
+      
+      .recording-text {
+        color: var(--ion-color-danger);
+        font-weight: 600;
+        margin: 0;
+        animation: pulse 1.5s infinite;
+      }
+      
+      .user-speech {
+        color: var(--ion-color-dark);
+        line-height: 1.6;
+        margin: 0;
+        text-align: left;
+        width: 100%;
+      }
+    }
+    
+    .recording-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      
+      ion-button {
+        --border-radius: 25px;
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .feedback-section {
+    margin: 2rem 0;
+    
+    ion-button {
+      --border-radius: 25px;
+      --padding-start: 2rem;
+      --padding-end: 2rem;
+      font-weight: 600;
+    }
+  }
+  
+  .practice-controls {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    
+    ion-button {
+      flex: 1;
+      --border-radius: 12px;
+    }
+  }
+}
+
 .exercise-selection {
   .intro-section {
     text-align: center;
@@ -98,6 +296,42 @@
           color: var(--ion-color-medium);
         }
       }
+    }
+  }
+}
+
+/* Animation for recording indicator */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Additional Structured Practice Styles */
+.structured-practice-session .tips-card {
+  margin-bottom: 1.5rem;
+  
+  ion-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+  }
+  
+  ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    
+    li {
+      margin-bottom: 0.5rem;
+      color: var(--ion-color-dark);
+      line-height: 1.4;
     }
   }
 }

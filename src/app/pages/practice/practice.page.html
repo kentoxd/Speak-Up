@@ -18,40 +18,75 @@
 
   <div class="practice-container">
 
-    <!-- Practice Selection -->
-    <div *ngIf="!isPracticing" class="exercise-selection">
+    <!-- New Structured Practice Selection -->
+    <div *ngIf="!isPracticing" class="structured-practice-selection">
+      
+      <!-- Header -->
       <div class="intro-section">
-        <h2>Choose Your Practice</h2>
-        <p>Select an exercise type to improve your speaking skills with guided practice sessions.</p>
+        <h2>Structured Practice</h2>
+        <p>Select practice type and difficulty to get targeted speaking exercises with personalized feedback.</p>
       </div>
 
-      <div class="exercises-grid">
-        <ion-card 
-          *ngFor="let exercise of exercises" 
-          class="exercise-card"
-          (click)="startExercise(exercise)">
-          
-          <ion-card-content>
-            <div class="exercise-header">
-              <ion-icon 
-                [name]="getExerciseIcon(exercise.type)" 
-                [color]="getExerciseColor(exercise.type)">
-              </ion-icon>
-              <div class="exercise-info">
-                <h3>{{ exercise.title }}</h3>
-                <p>{{ exercise.description }}</p>
-              </div>
-            </div>
-            
-            <div class="exercise-meta">
-              <ion-chip [color]="getExerciseColor(exercise.type)" outline>
-                {{ exercise.type | titlecase }}
-              </ion-chip>
-              <span class="duration">{{ exercise.timeLimit }} min</span>
-            </div>
-          </ion-card-content>
-        </ion-card>
+      <!-- Practice Type Selector -->
+      <div class="selector-section">
+        <ion-item>
+          <ion-label>Select Practice Type</ion-label>
+          <ion-select 
+            [value]="selectedPracticeType" 
+            (ionChange)="onPracticeTypeChange($event)"
+            interface="popover">
+            <ion-select-option 
+              *ngFor="let type of practiceTypes" 
+              [value]="type.value">
+              {{ type.label }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <!-- Difficulty Selector -->
+        <ion-item>
+          <ion-label>Select Difficulty</ion-label>
+          <ion-select 
+            [value]="selectedDifficulty" 
+            (ionChange)="onDifficultyChange($event)"
+            interface="popover">
+            <ion-select-option 
+              *ngFor="let level of difficultyLevels" 
+              [value]="level.value">
+              {{ level.label }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
       </div>
+
+      <!-- Current Practice Preview -->
+      <ion-card class="practice-preview" *ngIf="currentStructuredPractice">
+        <ion-card-header>
+          <ion-card-title>{{ currentStructuredPractice.title }}</ion-card-title>
+          <ion-card-subtitle>{{ currentStructuredPractice.description }}</ion-card-subtitle>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="practice-meta">
+            <ion-chip [color]="selectedDifficulty === 'beginner' ? 'success' : selectedDifficulty === 'intermediate' ? 'warning' : 'danger'" outline>
+              {{ selectedDifficulty | titlecase }}
+            </ion-chip>
+            <span class="duration">
+              <ion-icon name="timer-outline"></ion-icon>
+              {{ currentStructuredPractice.timeLimit }} min
+            </span>
+          </div>
+          
+          <ion-button 
+            expand="block" 
+            fill="solid" 
+            color="primary"
+            size="large"
+            (click)="startStructuredPractice()">
+            <ion-icon name="play" slot="start"></ion-icon>
+            START PRACTICE
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
 
       <!-- Practice History Summary -->
       <ion-card class="history-summary" *ngIf="practiceHistory.length > 0">
@@ -77,121 +112,150 @@
       </ion-card>
     </div>
 
-    <!-- Active Practice Session -->
-    <div *ngIf="isPracticing" class="practice-session">
+    <!-- New Structured Practice Session -->
+    <div *ngIf="isPracticing" class="structured-practice-session">
       
       <!-- Session Header -->
       <div class="session-header">
-        <h2>{{ selectedExercise?.title }}</h2>
+        <h2>{{ currentStructuredPractice?.title }}</h2>
         <div class="timer">
           <ion-icon name="timer" color="primary"></ion-icon>
           <span [class.warning]="timeRemaining < 60">{{ formatTime(timeRemaining) }}</span>
         </div>
       </div>
 
-      <!-- Current Prompt -->
-      <ion-card class="prompt-card">
+      <!-- Practice Text Container -->
+      <ion-card class="practice-text-card">
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="document-text" color="primary"></ion-icon>
+            Practice Text
+          </ion-card-title>
+        </ion-card-header>
         <ion-card-content>
-          <h3>Your Prompt</h3>
-          <p class="prompt-text">{{ currentPrompt }}</p>
+          <p class="practice-text">{{ currentStructuredPractice?.practiceText }}</p>
+          
+          <div class="listen-controls">
+            <ion-button 
+              *ngIf="!isListeningToText"
+              fill="outline" 
+              color="secondary"
+              (click)="listenToPracticeText()">
+              <ion-icon name="volume-high" slot="start"></ion-icon>
+              LISTEN
+            </ion-button>
+            
+            <ion-button 
+              *ngIf="isListeningToText"
+              fill="solid" 
+              color="medium"
+              (click)="stopListening()">
+              <ion-icon name="stop" slot="start"></ion-icon>
+              Stop Listening
+            </ion-button>
+          </div>
         </ion-card-content>
       </ion-card>
 
-      <!-- Tips -->
-      <ion-card class="tips-card" *ngIf="selectedExercise?.tips">
+      <!-- Your Speech Container -->
+      <ion-card class="speech-input-card">
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="mic" color="danger"></ion-icon>
+            Your Speech
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="speech-display">
+            <p *ngIf="!userSpeechText && !isRecording" class="placeholder-text">
+              Your speech will appear here when you start recording...
+            </p>
+            <p *ngIf="isRecording" class="recording-text">
+              🎤 Listening... Speak now!
+            </p>
+            <p *ngIf="userSpeechText && !isRecording" class="user-speech">
+              {{ userSpeechText }}
+            </p>
+          </div>
+          
+          <div class="recording-controls">
+            <ion-button 
+              *ngIf="!isRecording"
+              expand="block" 
+              fill="solid" 
+              color="danger"
+              size="large"
+              (click)="startStructuredRecording()">
+              <ion-icon name="mic" slot="start"></ion-icon>
+              START RECORDING
+            </ion-button>
+            
+            <ion-button 
+              *ngIf="isRecording"
+              expand="block" 
+              fill="solid" 
+              color="medium"
+              size="large"
+              (click)="stopStructuredRecording()">
+              <ion-icon name="stop" slot="start"></ion-icon>
+              STOP RECORDING
+            </ion-button>
+            
+            <ion-button 
+              *ngIf="userSpeechText && !isRecording"
+              fill="outline" 
+              color="medium"
+              (click)="clearSpeech()">
+              <ion-icon name="refresh" slot="start"></ion-icon>
+              Clear & Retry
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Tips Card -->
+      <ion-card class="tips-card" *ngIf="currentStructuredPractice?.tips">
         <ion-card-header>
           <ion-card-title>
             <ion-icon name="bulb" color="warning"></ion-icon>
-            Tips
+            Tips for {{ currentStructuredPractice.title }}
           </ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <ul>
-            <li *ngFor="let tip of selectedExercise?.tips">{{ tip }}</li>
+            <li *ngFor="let tip of currentStructuredPractice.tips">{{ tip }}</li>
           </ul>
         </ion-card-content>
       </ion-card>
 
-      <!-- Recording Controls -->
-      <div class="recording-controls">
+      <!-- Feedback Button -->
+      <div class="feedback-section" *ngIf="userSpeechText && !isRecording">
         <ion-button 
-          *ngIf="!isRecording"
           expand="block" 
           fill="solid" 
-          color="danger"
+          color="success"
           size="large"
-          (click)="startRecording()">
-          <ion-icon name="mic" slot="start"></ion-icon>
-          Start Recording
-        </ion-button>
-        
-        <ion-button 
-          *ngIf="isRecording"
-          expand="block" 
-          fill="solid" 
-          color="medium"
-          size="large"
-          (click)="stopRecording()">
-          <ion-icon name="stop" slot="start"></ion-icon>
-          Stop Recording
+          (click)="showDetailedFeedback()">
+          <ion-icon name="analytics" slot="start"></ion-icon>
+          GET FEEDBACK
         </ion-button>
       </div>
-
-      <!-- Session Results -->
-      <ion-card *ngIf="sessionResults" class="results-card">
-        <ion-card-header>
-          <ion-card-title>
-            <ion-icon name="analytics" color="success"></ion-icon>
-            Session Results
-          </ion-card-title>
-        </ion-card-header>
-        <ion-card-content>
-          <div class="result-stats">
-            <div class="stat">
-              <span class="stat-label">Words per minute</span>
-              <span class="stat-value">{{ sessionResults.analysis.wordsPerMinute }}</span>
-            </div>
-            <div class="stat">
-              <span class="stat-label">Total words</span>
-              <span class="stat-value">{{ sessionResults.analysis.totalWords }}</span>
-            </div>
-            <div class="stat">
-              <span class="stat-label">Duration</span>
-              <span class="stat-value">{{ sessionResults.analysis.duration }}s</span>
-            </div>
-          </div>
-          
-          <div class="feedback">
-            <h4>Feedback</h4>
-            <ul>
-              <li *ngFor="let suggestion of sessionResults.analysis.suggestions">
-                {{ suggestion }}
-              </li>
-            </ul>
-          </div>
-          
-          <div class="transcript" *ngIf="sessionResults.transcript">
-            <h4>Transcript</h4>
-            <p class="transcript-text">{{ sessionResults.transcript }}</p>
-          </div>
-        </ion-card-content>
-      </ion-card>
 
       <!-- Practice Controls -->
       <div class="practice-controls">
         <ion-button 
           fill="outline" 
           color="medium"
-          (click)="stopPractice()">
+          (click)="stopStructuredPractice()">
           <ion-icon name="close" slot="start"></ion-icon>
           End Session
         </ion-button>
         
         <ion-button 
-          *ngIf="sessionResults"
+          *ngIf="showFeedback"
           fill="solid" 
           color="primary"
-          (click)="startExercise(selectedExercise!)">
+          (click)="startStructuredPractice()">
           <ion-icon name="refresh" slot="start"></ion-icon>
           Try Again
         </ion-button>
