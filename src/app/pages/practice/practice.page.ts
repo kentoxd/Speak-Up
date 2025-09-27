@@ -1,15 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { AlertController, ToastController, ModalController } from '@ionic/angular';
 import { DataService, PracticeExercise, StructuredPractice } from '../../services/data.service';
 import { SpeechService, SpeechRecognitionResult } from '../../services/speech.service';
 import { StorageService } from '../../services/storage.service';
+import { FeedbackModalComponent } from '../../components/feedback-modal/feedback-modal.component';
 
 @Component({
   selector: 'app-practice',
   templateUrl: './practice.page.html',
   styleUrls: ['./practice.page.scss'],
 })
-export class PracticePage implements OnInit {
+export class PracticePage implements OnInit, OnDestroy {
   exercises: PracticeExercise[] = [];
   selectedExercise?: PracticeExercise;
   
@@ -45,7 +46,9 @@ export class PracticePage implements OnInit {
     private speechService: SpeechService,
     private storageService: StorageService,
     private alertController: AlertController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private modalController: ModalController,
+    private cdr: ChangeDetectorRef
   ) { }
 
   async ngOnInit() {
@@ -120,8 +123,20 @@ export class PracticePage implements OnInit {
 
     try {
       this.isRecording = true;
-      const result = await this.speechService.startRecording();
-      this.handleRecordingResult(result);
+      this.speechService.startRecording();
+      
+      // Start real-time transcript updates
+      const transcriptInterval = setInterval(() => {
+        if (this.isRecording) {
+          const currentTranscript = this.speechService.getCurrentTranscript();
+          if (currentTranscript) {
+            this.userSpeechText = currentTranscript;
+          }
+        } else {
+          clearInterval(transcriptInterval);
+        }
+      }, 100);
+      
     } catch (error) {
       console.error('Recording error:', error);
       this.isRecording = false;
@@ -138,6 +153,11 @@ export class PracticePage implements OnInit {
   stopRecording() {
     this.speechService.stopRecording();
     this.isRecording = false;
+    
+    // Get the final result
+    const result = this.speechService.getRecordingResult();
+    this.userSpeechText = result.transcript;
+    this.handleRecordingResult(result);
   }
 
   private handleRecordingResult(result: SpeechRecognitionResult) {
@@ -288,6 +308,7 @@ export class PracticePage implements OnInit {
   }
 
   async startStructuredRecording() {
+    
     if (!this.speechService.isSpeechRecognitionSupported()) {
       const toast = await this.toastController.create({
         message: 'Speech recognition not supported. Using simulation mode.',
@@ -298,12 +319,42 @@ export class PracticePage implements OnInit {
     }
 
     try {
-      this.isRecording = true;
       this.userSpeechText = 'Listening...';
       
-      const result = await this.speechService.startRecording();
-      this.userSpeechText = result.transcript;
-      this.handleStructuredRecordingResult(result);
+      // Only clear transcript if not using mock mode
+      if (this.speechService.isSpeechRecognitionSupported()) {
+        this.speechService.clearTranscript();
+      }
+      
+      // Start recording (non-blocking)
+      this.speechService.startRecording();
+      
+      // Set recording flag AFTER starting the speech service
+      this.isRecording = true;
+      
+      // Set target text for intelligent punctuation handling
+      if (this.currentStructuredPractice?.targetText) {
+        (this.speechService as any).targetText = this.currentStructuredPractice.targetText;
+      }
+      
+      // Start real-time transcript updates with more frequent polling
+      const transcriptInterval = setInterval(() => {
+        if (this.isRecording) {
+          const currentTranscript = this.speechService.getCurrentTranscript();
+          // Always update the display, even if transcript is empty
+          if (currentTranscript && currentTranscript.trim() !== '') {
+            this.userSpeechText = currentTranscript;
+            // Trigger change detection to ensure UI updates
+            this.cdr.detectChanges();
+          }
+        } else {
+          clearInterval(transcriptInterval);
+        }
+      }, 50); // Increased frequency for more responsive updates
+      
+      // Store interval ID for cleanup
+      (this as any).transcriptInterval = transcriptInterval;
+      
     } catch (error) {
       console.error('Recording error:', error);
       this.isRecording = false;
@@ -321,6 +372,29 @@ export class PracticePage implements OnInit {
   stopStructuredRecording() {
     this.speechService.stopRecording();
     this.isRecording = false;
+    
+    // Clear the transcript update interval
+    if ((this as any).transcriptInterval) {
+      clearInterval((this as any).transcriptInterval);
+      (this as any).transcriptInterval = null;
+    }
+    
+    // Get the current transcript (what was being displayed in real-time)
+    const currentTranscript = this.speechService.getCurrentTranscript();
+    
+    // Get the final result for analysis
+    const result = this.speechService.getRecordingResult();
+    
+    // Use the current transcript for display, not just the final result
+    this.userSpeechText = currentTranscript || result.transcript;
+    
+    this.handleStructuredRecordingResult({
+      ...result,
+      transcript: this.userSpeechText
+    });
+    
+    // Trigger change detection to ensure feedback button appears
+    this.cdr.detectChanges();
   }
 
   private handleStructuredRecordingResult(result: SpeechRecognitionResult) {
@@ -365,6 +439,14 @@ export class PracticePage implements OnInit {
     this.sessionResults = null;
   }
 
+
+  ngOnDestroy() {
+    // Clean up any running intervals
+    if ((this as any).transcriptInterval) {
+      clearInterval((this as any).transcriptInterval);
+    }
+  }
+
   async showDetailedFeedback() {
     if (!this.sessionResults || !this.currentStructuredPractice) return;
 
@@ -382,37 +464,30 @@ export class PracticePage implements OnInit {
     const wordAccuracy = this.calculateWordAccuracy(this.sessionResults.transcript, this.currentStructuredPractice.targetText);
     const punctuationAccuracy = this.calculatePunctuationAccuracy(this.sessionResults.transcript, this.currentStructuredPractice.targetText);
 
-    const alert = await this.alertController.create({
-      header: 'Practice Feedback',
-      message: `
-        <div style="text-align: left; font-family: Arial, sans-serif;">
-          <h3 style="color: #3880ff; margin-bottom: 15px;">📊 PRACTICE FEEDBACK</h3>
-          
-          <p style="margin: 8px 0;"><strong>🎯 Overall Accuracy:</strong> ${overallAccuracy}%</p>
-          
-          <p style="margin: 8px 0;"><strong>📝 Word Accuracy:</strong> ${wordAccuracy.toFixed(1)}% (70% weight)</p>
-          <p style="margin: 8px 0;"><strong>📊 Punctuation Accuracy:</strong> ${punctuationAccuracy.toFixed(1)}% (30% weight)</p>
-          <p style="margin: 8px 0;"><strong>📈 Word Count:</strong> You spoke ${wordDifference > 0 ? wordDifference + ' more' : Math.abs(wordDifference) + ' fewer'} words than the target.</p>
-          
-          <h4 style="color: #ff9500; margin: 15px 0 8px 0;">💡 Tips for Improvement:</h4>
-          <ul style="margin: 8px 0; padding-left: 20px;">
-            <li style="margin: 4px 0;">Practice speaking more slowly and clearly</li>
-            <li style="margin: 4px 0;">Focus on pronunciation of difficult words</li>
-            <li style="margin: 4px 0;">Consider using the Listen feature to hear proper pronunciation</li>
-            <li style="margin: 4px 0;">Break down the text into smaller sections for practice</li>
-          </ul>
-          
-          <h4 style="color: #34c759; margin: 15px 0 8px 0;">📚 Target Text:</h4>
-          <p style="margin: 8px 0; font-style: italic; background: #f4f4f4; padding: 8px; border-radius: 4px;">"${this.currentStructuredPractice.targetText}"</p>
-          
-          <h4 style="color: #ff3b30; margin: 15px 0 8px 0;">🗣️ Your Speech:</h4>
-          <p style="margin: 8px 0; background: #f4f4f4; padding: 8px; border-radius: 4px;">"${this.sessionResults.transcript}"</p>
-        </div>
-      `,
-      buttons: ['Close']
+    // Determine color based on accuracy (red < 50%, green >= 50%)
+    const getAccuracyColor = (accuracy: number) => accuracy < 50 ? 'red' : 'green';
+    const overallColor = getAccuracyColor(overallAccuracy);
+    const wordColor = getAccuracyColor(wordAccuracy);
+    const punctuationColor = getAccuracyColor(punctuationAccuracy);
+
+    // Create custom modal for better formatting and color control
+    const modal = await this.modalController.create({
+      component: FeedbackModalComponent,
+      componentProps: {
+        overallAccuracy,
+        wordAccuracy,
+        punctuationAccuracy,
+        wordDifference,
+        overallColor,
+        wordColor,
+        punctuationColor,
+        targetText: this.currentStructuredPractice.targetText,
+        userSpeech: this.sessionResults.transcript
+      },
+      cssClass: 'feedback-modal'
     });
 
-    await alert.present();
+    await modal.present();
     this.showFeedback = true;
   }
 
@@ -472,8 +547,17 @@ export class PracticePage implements OnInit {
   private calculateWordAccuracy(userText: string, targetText: string): number {
     if (!userText || !targetText) return 0;
     
-    const userWords = userText.toLowerCase().split(/\s+/).filter(word => word.length > 0);
-    const targetWords = targetText.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+    // Normalize text: remove extra spaces but preserve punctuation
+    const normalizeText = (text: string) => {
+      return text.toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(/\s+/)
+        .filter(word => word.length > 0);
+    };
+    
+    const userWords = normalizeText(userText);
+    const targetWords = normalizeText(targetText);
     
     if (targetWords.length === 0) return 0;
     
@@ -481,27 +565,41 @@ export class PracticePage implements OnInit {
     const minLength = Math.min(userWords.length, targetWords.length);
     
     for (let i = 0; i < minLength; i++) {
+      // Compare words exactly, including punctuation marks
       if (userWords[i] === targetWords[i]) {
         correctWords++;
       }
     }
     
+    // Calculate accuracy based on the target text length
     return (correctWords / targetWords.length) * 100;
   }
 
   private calculatePunctuationAccuracy(userText: string, targetText: string): number {
     if (!userText || !targetText) return 0;
     
-    const userPunctuation = userText.match(/[.,!?;:]/g) || [];
-    const targetPunctuation = targetText.match(/[.,!?;:]/g) || [];
+    // Extract punctuation marks with their positions
+    const getPunctuationWithPositions = (text: string) => {
+      const punctuation: { char: string; pos: number }[] = [];
+      for (let i = 0; i < text.length; i++) {
+        if (/[.,!?;:]/.test(text[i])) {
+          punctuation.push({ char: text[i], pos: i });
+        }
+      }
+      return punctuation;
+    };
+    
+    const userPunctuation = getPunctuationWithPositions(userText);
+    const targetPunctuation = getPunctuationWithPositions(targetText);
     
     if (targetPunctuation.length === 0) return 100;
     
     let correctPunctuation = 0;
-    const minLength = Math.min(userPunctuation.length, targetPunctuation.length);
     
+    // Check if punctuation marks match in sequence
+    const minLength = Math.min(userPunctuation.length, targetPunctuation.length);
     for (let i = 0; i < minLength; i++) {
-      if (userPunctuation[i] === targetPunctuation[i]) {
+      if (userPunctuation[i].char === targetPunctuation[i].char) {
         correctPunctuation++;
       }
     }

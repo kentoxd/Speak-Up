@@ -1,4 +1,4 @@
-# 📚 SpeakUp Content Expansion Guide
+wor# 📚 SpeakUp Content Expansion Guide
 
 Use this guide to easily add new lessons, quizzes, practice exercises, and other content to your SpeakUp app.
 

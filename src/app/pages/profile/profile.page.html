@@ -157,14 +157,14 @@
         <ion-card-content>
           <ion-item lines="none">
             <ion-icon name="moon" slot="start" color="medium"></ion-icon>
-            <ion-label>
-              <h3>Dark Mode</h3>
-              <p>Toggle dark theme</p>
-            </ion-label>
             <ion-toggle 
               [checked]="darkModeEnabled" 
               (ionChange)="toggleDarkMode()"
               slot="end">
+              <div slot="label">
+                <h3>Dark Mode</h3>
+                <p>Toggle dark theme</p>
+              </div>
             </ion-toggle>
           </ion-item>
         </ion-card-content>

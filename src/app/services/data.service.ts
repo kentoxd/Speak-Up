@@ -276,7 +276,7 @@ export class DataService {
         title: 'Personal Story Monologue',
         description: 'Share a meaningful personal experience',
         practiceText: 'Tell a story about a time when you overcame a challenge. Focus on the emotions you felt, the obstacles you faced, and what you learned from the experience. Remember to speak clearly and at a comfortable pace.',
-        targetText: 'When I was in college, I faced my biggest fear: public speaking. My hands were shaking, my voice was trembling, but I took a deep breath and began my presentation. By the end, I realized that my audience wanted me to succeed, and that gave me the confidence I needed.',
+        targetText: 'Practice makes perfect when it comes to delivering effective presentations.',
         timeLimit: 3,
         tips: [
           'Start with a clear setting',

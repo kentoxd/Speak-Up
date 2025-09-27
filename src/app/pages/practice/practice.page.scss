@@ -1,6 +1,36 @@
 .practice-container {
   padding: 1rem;
   padding-bottom: 2rem;
+  background: var(--ion-background);
+  min-height: 100vh;
+}
+
+/* Global Card Improvements */
+ion-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin: 0 0 1rem 0;
+  overflow: hidden;
+  
+  ion-card-header {
+    padding: 1.25rem 1.25rem 0.75rem 1.25rem;
+    
+    ion-card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--ion-color-dark);
+    }
+    
+    ion-card-subtitle {
+      font-size: 0.9rem;
+      color: var(--ion-color-medium);
+      margin-top: 0.25rem;
+    }
+  }
+  
+  ion-card-content {
+    padding: 0.75rem 1.25rem 1.25rem 1.25rem;
+  }
 }
 
 /* Structured Practice Selection Styles */
@@ -62,54 +92,74 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--ion-color-primary-tint), var(--ion-color-primary));
+    border-radius: 16px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     
     h2 {
-      color: var(--ion-color-primary);
+      color: white;
       margin: 0;
       font-family: 'Playfair Display', serif;
-      font-size: 1.2rem;
+      font-size: 1.3rem;
+      font-weight: 600;
     }
     
     .timer {
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      background: rgba(255,255,255,0.2);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      
+      ion-icon {
+        color: white;
+        font-size: 1.2rem;
+      }
       
       span {
-        font-size: 1rem;
+        font-size: 1.1rem;
         font-weight: bold;
-        color: var(--ion-color-dark);
+        color: white;
         
         &.warning {
-          color: var(--ion-color-danger);
+          color: #ffeb3b;
+          animation: pulse 1s infinite;
         }
       }
     }
   }
   
   .target-text-card {
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     
     ion-card-title {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      font-size: 1rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--ion-color-primary);
     }
     
     .target-text {
-      background: var(--ion-color-light);
-      padding: 1rem;
-      border-radius: 8px;
-      line-height: 1.4;
-      font-size: 0.95rem;
+      background: linear-gradient(135deg, var(--ion-color-light), var(--ion-color-light-tint));
+      padding: 1.25rem;
+      border-radius: 12px;
+      line-height: 1.6;
+      font-size: 1rem;
       color: var(--ion-color-dark);
       margin-bottom: 1rem;
-      border-left: 3px solid var(--ion-color-primary);
+      border-left: 4px solid var(--ion-color-primary);
       font-style: italic;
-      max-height: 120px;
+      max-height: 140px;
       overflow-y: auto;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
     }
     
     .listen-controls {
@@ -117,44 +167,55 @@
       justify-content: center;
       
       ion-button {
-        --border-radius: 20px;
-        --padding-start: 1.5rem;
-        --padding-end: 1.5rem;
+        --border-radius: 25px;
+        --padding-start: 2rem;
+        --padding-end: 2rem;
+        --padding-top: 0.75rem;
+        --padding-bottom: 0.75rem;
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       }
     }
   }
   
   .speech-input-card {
     margin-bottom: 1rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     
     ion-card-title {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      font-size: 1rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--ion-color-danger);
     }
     
     .speech-display {
-      background: var(--ion-color-light);
+      background: linear-gradient(135deg, var(--ion-color-light), var(--ion-color-light-tint));
       border: 2px dashed var(--ion-color-medium);
-      border-radius: 8px;
-      padding: 1rem;
+      border-radius: 12px;
+      padding: 1.25rem;
       text-align: center;
       margin-bottom: 1rem;
-      min-height: 80px;
-      max-height: 100px;
+      min-height: 100px;
+      max-height: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow-y: auto;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
       
       .placeholder-text {
         color: var(--ion-color-medium);
         font-style: italic;
         margin: 0;
-        font-size: 0.9rem;
+        font-size: 1rem;
+        line-height: 1.5;
       }
       
       .recording-text {
@@ -162,53 +223,95 @@
         font-weight: 600;
         margin: 0;
         animation: pulse 1.5s infinite;
-        font-size: 0.9rem;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        
+        &::before {
+          content: "🎤";
+          font-size: 1.2rem;
+        }
       }
       
       .user-speech {
         color: var(--ion-color-dark);
-        line-height: 1.4;
+        line-height: 1.6;
         margin: 0;
         text-align: left;
         width: 100%;
-        font-size: 0.9rem;
+        font-size: 1rem;
+        font-weight: 500;
       }
     }
     
     .recording-controls {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.75rem;
       
       ion-button {
-        --border-radius: 20px;
+        --border-radius: 25px;
+        --padding-top: 0.75rem;
+        --padding-bottom: 0.75rem;
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        
+        &[color="danger"] {
+          --background: linear-gradient(135deg, var(--ion-color-danger), var(--ion-color-danger-shade));
+        }
+        
+        &[color="medium"] {
+          --background: linear-gradient(135deg, var(--ion-color-medium), var(--ion-color-medium-shade));
+        }
       }
     }
   }
   
   .feedback-section {
-    margin: 1rem 0;
+    margin: 1.5rem 0;
     
     ion-button {
-      --border-radius: 20px;
-      --padding-start: 1.5rem;
-      --padding-end: 1.5rem;
+      --border-radius: 25px;
+      --padding-start: 2rem;
+      --padding-end: 2rem;
+      --padding-top: 0.75rem;
+      --padding-bottom: 0.75rem;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      --background: linear-gradient(135deg, var(--ion-color-success), var(--ion-color-success-shade));
     }
   }
   
   .practice-controls {
     display: flex;
-    gap: 0.75rem;
-    margin-top: 1rem;
+    gap: 1rem;
+    margin-top: 1.5rem;
     
     ion-button {
       flex: 1;
-      --border-radius: 10px;
-      font-size: 0.9rem;
+      --border-radius: 15px;
+      --padding-top: 0.75rem;
+      --padding-bottom: 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      
+      &[color="medium"] {
+        --background: linear-gradient(135deg, var(--ion-color-medium), var(--ion-color-medium-shade));
+      }
+      
+      &[color="primary"] {
+        --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-primary-shade));
+      }
     }
   }
 }
@@ -325,15 +428,58 @@
   }
 }
 
+/* Feedback Modal Styling */
+.feedback-modal {
+  --width: 95%;
+  --max-width: 700px;
+  --height: 90vh;
+  
+  ion-modal {
+    --border-radius: 16px;
+    --box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  
+  ion-header {
+    ion-toolbar {
+      --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+      --color: white;
+      
+      ion-title {
+        font-weight: 600;
+        font-size: 1.2rem;
+      }
+      
+      ion-button {
+        --color: white;
+      }
+    }
+  }
+  
+  ion-content {
+    --background: var(--ion-background);
+  }
+  
+  ion-footer {
+    ion-toolbar {
+      --background: var(--ion-color-light);
+      padding: 1rem;
+    }
+  }
+}
+
 /* Additional Structured Practice Styles */
 .structured-practice-session .tips-card {
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, var(--ion-color-warning-tint), var(--ion-color-warning));
+  color: white;
   
   ion-card-title {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
   }
   
   ul {
@@ -341,10 +487,15 @@
     padding-left: 1.2rem;
     
     li {
-      margin-bottom: 0.25rem;
-      color: var(--ion-color-dark);
-      line-height: 1.3;
-      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      color: white;
+      line-height: 1.5;
+      font-size: 0.95rem;
+      font-weight: 500;
+      
+      &::marker {
+        color: white;
+      }
     }
   }
 }

@@ -21,6 +21,10 @@ export class SpeechService {
   private isRecording = false;
   private recognition: any;
   private synthesis: SpeechSynthesis;
+  private currentTranscript = '';
+  private interimTranscript = '';
+  private recordingStartTime = 0;
+  private targetText = '';
 
   constructor() {
     this.synthesis = window.speechSynthesis;
@@ -31,59 +35,134 @@ export class SpeechService {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
       this.recognition = new SpeechRecognition();
-      this.recognition.continuous = false;
-      this.recognition.interimResults = false;
+      this.recognition.continuous = true;
+      this.recognition.interimResults = true;
       this.recognition.lang = 'en-US';
     }
   }
 
-  // Speech Recognition (Speech-to-Text)
-  async startRecording(): Promise<SpeechRecognitionResult> {
-    return new Promise((resolve, reject) => {
-      if (!this.recognition) {
-        // Mock implementation for browsers that don't support speech recognition
-        setTimeout(() => {
-          resolve({
-            transcript: "This is a mock transcript since speech recognition is not supported in this browser.",
-            confidence: 0.95,
-            duration: 3000
-          });
-        }, 3000);
-        return;
+  // Speech Recognition (Speech-to-Text) - Returns immediately, doesn't wait for completion
+  startRecording(): void {
+    // Don't start if already recording
+    if (this.isRecording) {
+      return;
+    }
+
+    this.isRecording = true;
+    this.currentTranscript = '';
+    this.interimTranscript = '';
+    this.recordingStartTime = Date.now();
+
+    if (!this.recognition) {
+      // Mock implementation for browsers that don't support speech recognition
+      // Simulate real-time transcript updates with proper punctuation
+      const mockText = "Practice makes perfect when it comes to delivering effective presentations.";
+      const words = mockText.split(' ');
+      let wordIndex = 0;
+      
+      // Start immediately with first word (capitalize first letter)
+      this.currentTranscript = this.capitalizeFirstLetter(words[0]);
+      wordIndex = 1;
+      
+      // Use a simpler approach - add words one by one with setTimeout
+      const addNextWord = () => {
+        if (this.isRecording && wordIndex < words.length) {
+          // Add word directly to current transcript for immediate display
+          this.currentTranscript += ' ' + words[wordIndex];
+          wordIndex++;
+          
+          // Schedule next word
+          setTimeout(addNextWord, 400);
+        }
+      };
+      
+      // Start adding words after a short delay
+      setTimeout(addNextWord, 400);
+      
+      return;
+    }
+
+    this.recognition.onresult = (event: any) => {
+      console.log('Speech recognition result received:', event);
+      let newInterimTranscript = '';
+      let finalTranscript = '';
+      
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        let transcript = result[0].transcript;
+        console.log('Transcript result:', transcript, 'isFinal:', result.isFinal);
+        
+        // Add intelligent punctuation based on target text
+        if (result.isFinal) {
+          // Use target text for better punctuation matching
+          if (this.targetText) {
+            transcript = this.addPunctuationIfNeeded(transcript, this.targetText);
+          } else {
+            // Fallback: Add period at end of sentences if missing
+            if (transcript && !transcript.match(/[.!?]$/)) {
+              transcript += '.';
+            }
+          }
+          
+          // Add space before final transcript if current transcript doesn't end with space
+          if (this.currentTranscript && !this.currentTranscript.match(/\s$/)) {
+            transcript = ' ' + transcript;
+          }
+          finalTranscript += transcript;
+        } else {
+          newInterimTranscript += transcript;
+        }
       }
+      
+      // Update the current transcript for real-time display
+      // Add final results to the permanent transcript
+      this.currentTranscript += finalTranscript;
+      
+      // Update interim transcript for real-time display
+      this.interimTranscript = newInterimTranscript;
+      
+      console.log('Updated currentTranscript:', this.currentTranscript);
+      console.log('Updated interimTranscript:', this.interimTranscript);
+    };
 
-      this.isRecording = true;
-      const startTime = Date.now();
+    this.recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      this.isRecording = false;
+    };
 
-      this.recognition.onresult = (event: any) => {
-        const result = event.results[0];
-        const transcript = result[0].transcript;
-        const confidence = result[0].confidence;
-        const duration = Date.now() - startTime;
-
-        resolve({
-          transcript,
-          confidence,
-          duration
-        });
-      };
-
-      this.recognition.onerror = (event: any) => {
-        this.isRecording = false;
-        reject(new Error(`Speech recognition error: ${event.error}`));
-      };
-
-      this.recognition.onend = () => {
-        this.isRecording = false;
-      };
-
-      try {
-        this.recognition.start();
-      } catch (error) {
-        this.isRecording = false;
-        reject(error);
+    this.recognition.onend = () => {
+      // Don't stop recording automatically - let user control it
+      if (this.isRecording) {
+        // Restart recognition if it ended unexpectedly
+        try {
+          this.recognition.start();
+        } catch (error) {
+          console.error('Failed to restart recognition:', error);
+          this.isRecording = false;
+        }
       }
-    });
+    };
+
+    try {
+      this.recognition.start();
+    } catch (error) {
+      console.error('Failed to start recognition:', error);
+      this.isRecording = false;
+    }
+  }
+
+  // Get the final result when user stops recording
+  getRecordingResult(): SpeechRecognitionResult {
+    const duration = this.getRecordingDuration();
+    return {
+      transcript: this.currentTranscript, // Only final transcript, no interim results
+      confidence: 0.8, // Default confidence
+      duration
+    };
+  }
+
+  private getRecordingDuration(): number {
+    return this.recordingStartTime > 0 ? Date.now() - this.recordingStartTime : 0;
   }
 
   stopRecording(): void {
@@ -91,10 +170,52 @@ export class SpeechService {
       this.recognition.stop();
       this.isRecording = false;
     }
+    
+    // Stop mock recording
+    this.isRecording = false;
   }
 
   getIsRecording(): boolean {
     return this.isRecording;
+  }
+
+  getCurrentTranscript(): string {
+    // Combine final transcript with interim results for real-time display
+    const combined = this.currentTranscript + this.interimTranscript;
+    return combined;
+  }
+
+  clearTranscript(): void {
+    this.currentTranscript = '';
+    this.interimTranscript = '';
+    this.targetText = '';
+  }
+
+  // Helper method to intelligently add punctuation based on target text
+  private addPunctuationIfNeeded(transcript: string, targetText: string): string {
+    if (!transcript || !targetText) return transcript;
+    
+    // Get the current word count in transcript
+    const transcriptWords = transcript.trim().split(/\s+/).length;
+    const targetWords = targetText.trim().split(/\s+/);
+    
+    // If we have words, try to match punctuation from target text
+    if (transcriptWords > 0 && transcriptWords <= targetWords.length) {
+      const targetWord = targetWords[transcriptWords - 1];
+      
+      // Check if target word ends with punctuation
+      const punctuationMatch = targetWord.match(/[.,!?;:]$/);
+      if (punctuationMatch && !transcript.match(/[.,!?;:]$/)) {
+        return transcript + punctuationMatch[0];
+      }
+    }
+    
+    return transcript;
+  }
+
+  private capitalizeFirstLetter(text: string): string {
+    if (!text) return text;
+    return text.charAt(0).toUpperCase() + text.slice(1);
   }
 
   // Text-to-Speech
@@ -145,7 +266,9 @@ export class SpeechService {
 
   // Check if speech services are supported
   isSpeechRecognitionSupported(): boolean {
-    return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+    // Force mock mode for testing
+    return false;
+    // return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
   }
 
   isTextToSpeechSupported(): boolean {

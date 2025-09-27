@@ -30,8 +30,8 @@
       <!-- Practice Type Selector -->
       <div class="selector-section">
         <ion-item>
-          <ion-label>Select Practice Type</ion-label>
           <ion-select 
+            label="Select Practice Type"
             [value]="selectedPracticeType" 
             (ionChange)="onPracticeTypeChange($event)"
             interface="popover">
@@ -45,8 +45,8 @@
 
         <!-- Difficulty Selector -->
         <ion-item>
-          <ion-label>Select Difficulty</ion-label>
           <ion-select 
+            label="Select Difficulty"
             [value]="selectedDifficulty" 
             (ionChange)="onDifficultyChange($event)"
             interface="popover">
@@ -170,10 +170,10 @@
             <p *ngIf="!userSpeechText && !isRecording" class="placeholder-text">
               Your speech will appear here when you start recording...
             </p>
-            <p *ngIf="isRecording" class="recording-text">
+            <p *ngIf="isRecording && !userSpeechText" class="recording-text">
               🎤 Listening... Speak now!
             </p>
-            <p *ngIf="userSpeechText && !isRecording" class="user-speech">
+            <p *ngIf="userSpeechText" class="user-speech">
               {{ userSpeechText }}
             </p>
           </div>
@@ -209,6 +209,7 @@
               <ion-icon name="refresh" slot="start"></ion-icon>
               Clear & Retry
             </ion-button>
+            
           </div>
         </ion-card-content>
       </ion-card>
@@ -229,7 +230,7 @@
       </ion-card>
 
       <!-- Feedback Button -->
-      <div class="feedback-section" *ngIf="userSpeechText && !isRecording">
+      <div class="feedback-section" *ngIf="userSpeechText && userSpeechText.trim() !== '' && !isRecording">
         <ion-button 
           expand="block" 
           fill="solid" 
@@ -237,7 +238,7 @@
           size="large"
           (click)="showDetailedFeedback()">
           <ion-icon name="analytics" slot="start"></ion-icon>
-          GET FEEDBACK
+          FEEDBACK
         </ion-button>
       </div>
 
