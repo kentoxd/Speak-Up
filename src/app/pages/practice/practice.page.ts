@@ -385,28 +385,28 @@ export class PracticePage implements OnInit {
     const alert = await this.alertController.create({
       header: 'Practice Feedback',
       message: `
-        <div class="feedback-content">
-          <h3>📊 PRACTICE FEEDBACK</h3>
+        <div style="text-align: left; font-family: Arial, sans-serif;">
+          <h3 style="color: #3880ff; margin-bottom: 15px;">📊 PRACTICE FEEDBACK</h3>
           
-          <p><strong>🎯 Overall Accuracy:</strong> ${overallAccuracy}%</p>
+          <p style="margin: 8px 0;"><strong>🎯 Overall Accuracy:</strong> ${overallAccuracy}%</p>
           
-          <p><strong>📝 Word Accuracy:</strong> ${wordAccuracy.toFixed(1)}% (70% weight)</p>
-          <p><strong>📊 Punctuation Accuracy:</strong> ${punctuationAccuracy.toFixed(1)}% (30% weight)</p>
-          <p><strong>📈 Word Count:</strong> You spoke ${wordDifference > 0 ? wordDifference + ' more' : Math.abs(wordDifference) + ' fewer'} words than the target.</p>
+          <p style="margin: 8px 0;"><strong>📝 Word Accuracy:</strong> ${wordAccuracy.toFixed(1)}% (70% weight)</p>
+          <p style="margin: 8px 0;"><strong>📊 Punctuation Accuracy:</strong> ${punctuationAccuracy.toFixed(1)}% (30% weight)</p>
+          <p style="margin: 8px 0;"><strong>📈 Word Count:</strong> You spoke ${wordDifference > 0 ? wordDifference + ' more' : Math.abs(wordDifference) + ' fewer'} words than the target.</p>
           
-          <h4>💡 Tips for Improvement:</h4>
-          <ul>
-            <li>Practice speaking more slowly and clearly</li>
-            <li>Focus on pronunciation of difficult words</li>
-            <li>Consider using the Listen feature to hear proper pronunciation</li>
-            <li>Break down the text into smaller sections for practice</li>
+          <h4 style="color: #ff9500; margin: 15px 0 8px 0;">💡 Tips for Improvement:</h4>
+          <ul style="margin: 8px 0; padding-left: 20px;">
+            <li style="margin: 4px 0;">Practice speaking more slowly and clearly</li>
+            <li style="margin: 4px 0;">Focus on pronunciation of difficult words</li>
+            <li style="margin: 4px 0;">Consider using the Listen feature to hear proper pronunciation</li>
+            <li style="margin: 4px 0;">Break down the text into smaller sections for practice</li>
           </ul>
           
-          <h4>📚 Target Text:</h4>
-          <p>"${this.currentStructuredPractice.targetText}"</p>
+          <h4 style="color: #34c759; margin: 15px 0 8px 0;">📚 Target Text:</h4>
+          <p style="margin: 8px 0; font-style: italic; background: #f4f4f4; padding: 8px; border-radius: 4px;">"${this.currentStructuredPractice.targetText}"</p>
           
-          <h4>🗣️ Your Speech:</h4>
-          <p>"${this.sessionResults.transcript}"</p>
+          <h4 style="color: #ff3b30; margin: 15px 0 8px 0;">🗣️ Your Speech:</h4>
+          <p style="margin: 8px 0; background: #f4f4f4; padding: 8px; border-radius: 4px;">"${this.sessionResults.transcript}"</p>
         </div>
       `,
       buttons: ['Close']
