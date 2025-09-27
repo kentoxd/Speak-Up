@@ -239,14 +239,14 @@ export class PracticePage implements OnInit {
     this.loadStructuredPractice();
   }
 
-  async listenToPracticeText() {
+  async listenToTargetText() {
     if (!this.currentStructuredPractice) return;
     
     this.isListeningToText = true;
     
     try {
       await this.speechService.speak({
-        text: this.currentStructuredPractice.practiceText,
+        text: this.currentStructuredPractice.targetText,
         rate: 0.9,
         pitch: 1,
         volume: 1
@@ -373,31 +373,40 @@ export class PracticePage implements OnInit {
       this.sessionResults.duration
     );
 
-    // Enhanced feedback based on practice type and difficulty
-    const contextualFeedback = this.generateContextualFeedback(
-      this.selectedPracticeType,
-      this.selectedDifficulty,
-      analysis,
-      this.sessionResults.transcript
-    );
+    // Calculate detailed accuracy metrics
+    const targetWords = this.currentStructuredPractice.targetText.split(' ').length;
+    const userWords = this.sessionResults.transcript.split(' ').length;
+    const wordDifference = userWords - targetWords;
+    
+    const overallAccuracy = this.calculateOverallAccuracy(analysis);
+    const wordAccuracy = this.calculateWordAccuracy(this.sessionResults.transcript, this.currentStructuredPractice.targetText);
+    const punctuationAccuracy = this.calculatePunctuationAccuracy(this.sessionResults.transcript, this.currentStructuredPractice.targetText);
 
     const alert = await this.alertController.create({
       header: 'Practice Feedback',
       message: `
         <div class="feedback-content">
-          <h4>📊 Performance Metrics</h4>
-          <p><strong>Overall Accuracy:</strong> ${this.calculateOverallAccuracy(analysis)}%</p>
-          <p><strong>Word Accuracy:</strong> ${analysis.totalWords > 0 ? '85' : '0'}% (${analysis.totalWords} words)</p>
-          <p><strong>Pace:</strong> ${analysis.wordsPerMinute} WPM</p>
+          <h3>📊 PRACTICE FEEDBACK</h3>
           
-          <h4>💡 Tips for Improvement</h4>
+          <p><strong>🎯 Overall Accuracy:</strong> ${overallAccuracy}%</p>
+          
+          <p><strong>📝 Word Accuracy:</strong> ${wordAccuracy.toFixed(1)}% (70% weight)</p>
+          <p><strong>📊 Punctuation Accuracy:</strong> ${punctuationAccuracy.toFixed(1)}% (30% weight)</p>
+          <p><strong>📈 Word Count:</strong> You spoke ${wordDifference > 0 ? wordDifference + ' more' : Math.abs(wordDifference) + ' fewer'} words than the target.</p>
+          
+          <h4>💡 Tips for Improvement:</h4>
           <ul>
-            ${contextualFeedback.map(tip => `<li>${tip}</li>`).join('')}
+            <li>Practice speaking more slowly and clearly</li>
+            <li>Focus on pronunciation of difficult words</li>
+            <li>Consider using the Listen feature to hear proper pronunciation</li>
+            <li>Break down the text into smaller sections for practice</li>
           </ul>
           
-          <h4>🎯 Target vs Your Speech</h4>
-          <p><strong>Expected:</strong> ${this.currentStructuredPractice?.practiceText.substring(0, 100)}...</p>
-          <p><strong>Your Speech:</strong> "${this.sessionResults.transcript}"</p>
+          <h4>📚 Target Text:</h4>
+          <p>"${this.currentStructuredPractice.targetText}"</p>
+          
+          <h4>🗣️ Your Speech:</h4>
+          <p>"${this.sessionResults.transcript}"</p>
         </div>
       `,
       buttons: ['Close']
@@ -453,18 +462,51 @@ export class PracticePage implements OnInit {
   }
 
   private calculateOverallAccuracy(analysis: any): number {
-    // Mock calculation based on various factors
-    let accuracy = 70; // Base accuracy
+    // Calculate based on word accuracy (70%) and punctuation accuracy (30%)
+    const wordAccuracy = this.calculateWordAccuracy(this.sessionResults?.transcript || '', this.currentStructuredPractice?.targetText || '');
+    const punctuationAccuracy = this.calculatePunctuationAccuracy(this.sessionResults?.transcript || '', this.currentStructuredPractice?.targetText || '');
     
-    if (analysis.wordsPerMinute >= 120 && analysis.wordsPerMinute <= 180) {
-      accuracy += 15; // Good pace
+    return Math.round((wordAccuracy * 0.7) + (punctuationAccuracy * 0.3));
+  }
+
+  private calculateWordAccuracy(userText: string, targetText: string): number {
+    if (!userText || !targetText) return 0;
+    
+    const userWords = userText.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+    const targetWords = targetText.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+    
+    if (targetWords.length === 0) return 0;
+    
+    let correctWords = 0;
+    const minLength = Math.min(userWords.length, targetWords.length);
+    
+    for (let i = 0; i < minLength; i++) {
+      if (userWords[i] === targetWords[i]) {
+        correctWords++;
+      }
     }
     
-    if (analysis.totalWords >= 30) {
-      accuracy += 15; // Good content length
+    return (correctWords / targetWords.length) * 100;
+  }
+
+  private calculatePunctuationAccuracy(userText: string, targetText: string): number {
+    if (!userText || !targetText) return 0;
+    
+    const userPunctuation = userText.match(/[.,!?;:]/g) || [];
+    const targetPunctuation = targetText.match(/[.,!?;:]/g) || [];
+    
+    if (targetPunctuation.length === 0) return 100;
+    
+    let correctPunctuation = 0;
+    const minLength = Math.min(userPunctuation.length, targetPunctuation.length);
+    
+    for (let i = 0; i < minLength; i++) {
+      if (userPunctuation[i] === targetPunctuation[i]) {
+        correctPunctuation++;
+      }
     }
     
-    return Math.min(accuracy, 100);
+    return (correctPunctuation / targetPunctuation.length) * 100;
   }
 
 }

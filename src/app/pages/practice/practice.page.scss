@@ -88,7 +88,7 @@
     }
   }
   
-  .practice-text-card {
+  .target-text-card {
     margin-bottom: 1rem;
     
     ion-card-title {
@@ -98,7 +98,7 @@
       font-size: 1.1rem;
     }
     
-    .practice-text {
+    .target-text {
       background: var(--ion-color-light);
       padding: 1.5rem;
       border-radius: 12px;
@@ -107,6 +107,7 @@
       color: var(--ion-color-dark);
       margin-bottom: 1.5rem;
       border-left: 4px solid var(--ion-color-primary);
+      font-style: italic;
     }
     
     .listen-controls {

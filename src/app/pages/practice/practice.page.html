@@ -124,23 +124,23 @@
         </div>
       </div>
 
-      <!-- Practice Text Container -->
-      <ion-card class="practice-text-card">
+      <!-- Target Text Container -->
+      <ion-card class="target-text-card">
         <ion-card-header>
           <ion-card-title>
             <ion-icon name="document-text" color="primary"></ion-icon>
-            Practice Text
+            Target Text
           </ion-card-title>
         </ion-card-header>
         <ion-card-content>
-          <p class="practice-text">{{ currentStructuredPractice?.practiceText }}</p>
+          <p class="target-text">{{ currentStructuredPractice?.targetText }}</p>
           
           <div class="listen-controls">
             <ion-button 
               *ngIf="!isListeningToText"
               fill="outline" 
               color="secondary"
-              (click)="listenToPracticeText()">
+              (click)="listenToTargetText()">
               <ion-icon name="volume-high" slot="start"></ion-icon>
               LISTEN
             </ion-button>
@@ -218,12 +218,12 @@
         <ion-card-header>
           <ion-card-title>
             <ion-icon name="bulb" color="warning"></ion-icon>
-            Tips for {{ currentStructuredPractice.title }}
+            Tips for {{ currentStructuredPractice?.title }}
           </ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <ul>
-            <li *ngFor="let tip of currentStructuredPractice.tips">{{ tip }}</li>
+            <li *ngFor="let tip of currentStructuredPractice?.tips">{{ tip }}</li>
           </ul>
         </ion-card-content>
       </ion-card>
