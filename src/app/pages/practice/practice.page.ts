@@ -350,7 +350,7 @@ export class PracticePage implements OnInit, OnDestroy {
         } else {
           clearInterval(transcriptInterval);
         }
-      }, 50); // Increased frequency for more responsive updates
+      }, 1000); // Increased frequency for more responsive updates
       
       // Store interval ID for cleanup
       (this as any).transcriptInterval = transcriptInterval;
