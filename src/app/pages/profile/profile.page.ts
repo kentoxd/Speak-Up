@@ -40,17 +40,52 @@ export class ProfilePage implements OnInit {
   ) { }
 
   async ngOnInit() {
-    await this.loadUserData();
+    // Load user data from Firebase Auth instead of local storage
+    this.authService.getCurrentUser().subscribe(async (user) => {
+      if (user) {
+        console.log('Profile page - User authenticated:', user);
+        // Create a basic user profile from Firebase Auth data
+        this.userProfile = {
+          name: user.displayName || 'User',
+          email: user.email,
+          bio: '',
+          avatar: user.photoURL || '',
+          joinDate: new Date().toISOString(),
+          totalLessons: 0,
+          streakDays: 0,
+          achievements: []
+        };
+        console.log('Profile page - User profile created:', this.userProfile);
+      } else {
+        console.log('Profile page - No authenticated user');
+        this.router.navigate(['/login']);
+      }
+    });
+    
     this.userProgression$ = this.userProgressionService.getUserProgression();
   }
 
   async ionViewWillEnter() {
-    await this.loadUserData();
+    // Refresh user data when entering the page
+    this.authService.getCurrentUser().subscribe(async (user) => {
+      if (user && !this.userProfile) {
+        this.userProfile = {
+          name: user.displayName || 'User',
+          email: user.email,
+          bio: '',
+          avatar: user.photoURL || '',
+          joinDate: new Date().toISOString(),
+          totalLessons: 0,
+          streakDays: 0,
+          achievements: []
+        };
+      }
+    });
   }
 
   private async loadUserData() {
-    this.userProfile = await this.storageService.getUserProfile();
-    this.currentStreak = await this.storageService.getCurrentStreak();
+    // This method is now handled by the auth service subscription
+    // Keep it for backward compatibility but it's not used anymore
     this.darkModeEnabled = await this.storageService.getDarkModeEnabled();
     
     // Check achievements
