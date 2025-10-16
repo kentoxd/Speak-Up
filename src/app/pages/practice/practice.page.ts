@@ -3,6 +3,7 @@ import { AlertController, ToastController, ModalController } from '@ionic/angula
 import { DataService, PracticeExercise, StructuredPractice } from '../../services/data.service';
 import { SpeechService, SpeechRecognitionResult } from '../../services/speech.service';
 import { StorageService } from '../../services/storage.service';
+import { UserProgressionService } from '../../services/user-progression.service';
 import { FeedbackModalComponent } from '../../components/feedback-modal/feedback-modal.component';
 
 @Component({
@@ -45,6 +46,7 @@ export class PracticePage implements OnInit, OnDestroy {
     private dataService: DataService,
     private speechService: SpeechService,
     private storageService: StorageService,
+    private userProgressionService: UserProgressionService,
     private alertController: AlertController,
     private toastController: ToastController,
     private modalController: ModalController,
@@ -397,7 +399,7 @@ export class PracticePage implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  private handleStructuredRecordingResult(result: SpeechRecognitionResult) {
+  private async handleStructuredRecordingResult(result: SpeechRecognitionResult) {
     this.isRecording = false;
     this.userSpeechText = result.transcript;
     
@@ -409,6 +411,29 @@ export class PracticePage implements OnInit, OnDestroy {
       difficulty: this.selectedDifficulty,
       timestamp: new Date().toISOString()
     };
+
+    // Update user progression in Firebase
+    if (this.sessionResults && this.currentStructuredPractice) {
+      const accuracy = this.calculateOverallAccuracy({
+        wordAccuracy: this.calculateWordAccuracy(result.transcript, this.currentStructuredPractice.targetText),
+        punctuationAccuracy: this.calculatePunctuationAccuracy(result.transcript, this.currentStructuredPractice.targetText),
+        confidence: result.confidence,
+        duration: result.duration
+      });
+
+      const durationMinutes = result.duration / 60; // Convert seconds to minutes
+      
+      // Map practice types to match the service
+      const practiceType = this.selectedPracticeType === 'public-speaking' ? 'publicSpeaking' : 
+                          this.selectedPracticeType === 'debate-speech' ? 'debate' : 'monologue';
+      
+      await this.userProgressionService.updatePracticeSession(
+        accuracy,
+        durationMinutes,
+        practiceType as 'monologue' | 'publicSpeaking' | 'debate',
+        this.selectedDifficulty as 'beginner' | 'intermediate' | 'advanced'
+      );
+    }
   }
 
   private async endStructuredPractice() {

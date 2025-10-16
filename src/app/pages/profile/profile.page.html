@@ -75,7 +75,13 @@
 
     <!-- Stats Cards -->
     <div class="stats-section">
-      <h3>Your Stats</h3>
+      <div class="section-header">
+        <h3>Your Stats</h3>
+        <ion-button fill="clear" size="small" (click)="toggleAnalytics()">
+          <ion-icon name="analytics" slot="start"></ion-icon>
+          {{ showAnalytics ? 'Hide' : 'Show' }} Analytics
+        </ion-button>
+      </div>
       
       <div class="stats-grid">
         <ion-card class="stat-card">
@@ -113,6 +119,137 @@
             </div>
           </ion-card-content>
         </ion-card>
+      </div>
+
+      <!-- Firebase Analytics Dashboard -->
+      <div class="analytics-dashboard" *ngIf="showAnalytics && userProgression$ | async as progression">
+        
+        <!-- Level Progress -->
+        <ion-card class="analytics-card">
+          <ion-card-header>
+            <ion-card-title>Level Progress</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="level-info">
+              <div class="level-display">
+                <span class="current-level">Level {{ progression.level }}</span>
+                <span class="total-points">{{ progression.totalPoints }} points</span>
+              </div>
+              <ion-progress-bar 
+                [value]="getLevelProgress(progression) / 100" 
+                color="primary">
+              </ion-progress-bar>
+              <p class="progress-text">{{ getLevelProgress(progression).toFixed(1) }}% to next level</p>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Goals Progress -->
+        <ion-card class="analytics-card">
+          <ion-card-header>
+            <ion-card-title>Goals Progress</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="goals-grid">
+              <div class="goal-item">
+                <div class="goal-header">
+                  <span>Weekly Goal</span>
+                  <span>{{ progression.weeklyGoal }} min</span>
+                </div>
+                <ion-progress-bar 
+                  [value]="getWeeklyGoalProgress(progression) / 100" 
+                  color="success">
+                </ion-progress-bar>
+                <p>{{ getWeeklyGoalProgress(progression).toFixed(1) }}% complete</p>
+              </div>
+              
+              <div class="goal-item">
+                <div class="goal-header">
+                  <span>Monthly Goal</span>
+                  <span>{{ progression.monthlyGoal }} sessions</span>
+                </div>
+                <ion-progress-bar 
+                  [value]="getMonthlyGoalProgress(progression) / 100" 
+                  color="warning">
+                </ion-progress-bar>
+                <p>{{ getMonthlyGoalProgress(progression).toFixed(1) }}% complete</p>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Practice Statistics -->
+        <ion-card class="analytics-card">
+          <ion-card-header>
+            <ion-card-title>Practice Statistics</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="practice-stats">
+              <div class="stat-item">
+                <span class="stat-label">Total Sessions</span>
+                <span class="stat-value">{{ progression.totalPracticeSessions }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Total Speaking Time</span>
+                <span class="stat-value">{{ progression.totalSpeakingTime }} min</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Average Accuracy</span>
+                <span class="stat-value">{{ progression.averageAccuracy.toFixed(1) }}%</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Best Accuracy</span>
+                <span class="stat-value">{{ progression.bestAccuracy.toFixed(1) }}%</span>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Practice Type Breakdown -->
+        <ion-card class="analytics-card">
+          <ion-card-header>
+            <ion-card-title>Practice Type Breakdown</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="practice-types">
+              <div 
+                *ngFor="let stat of getPracticeTypeStats(progression)" 
+                class="practice-type-item">
+                <div class="type-header">
+                  <span class="type-name">{{ stat.type }}</span>
+                  <span class="type-sessions">{{ stat.sessions }} sessions</span>
+                </div>
+                <div class="type-stats">
+                  <span>Accuracy: {{ stat.accuracy.toFixed(1) }}%</span>
+                  <span>Time: {{ stat.time }} min</span>
+                </div>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Recent Achievements -->
+        <ion-card class="analytics-card" *ngIf="getRecentAchievements(progression).length > 0">
+          <ion-card-header>
+            <ion-card-title>Recent Achievements</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="recent-achievements">
+              <div 
+                *ngFor="let achievement of getRecentAchievements(progression)" 
+                class="recent-achievement">
+                <div class="achievement-icon">{{ achievement.icon }}</div>
+                <div class="achievement-details">
+                  <h4>{{ achievement.name }}</h4>
+                  <p>{{ achievement.description }}</p>
+                  <span class="achievement-date">{{ achievement.unlockedAt | date:'short' }}</span>
+                </div>
+                <div class="achievement-points">+{{ achievement.points }} pts</div>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
       </div>
     </div>
 

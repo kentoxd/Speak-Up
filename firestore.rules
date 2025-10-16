@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read and write their own progression data
+    match /userProgressions/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Public leaderboard data (read-only for all authenticated users)
+    match /leaderboards/{document} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only server can write leaderboards
+    }
+    
+    // Allow users to read their own data
+    match /{document=**} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+  }
+}

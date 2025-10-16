@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { AlertController, ActionSheetController, ToastController } from '@ionic/angular';
 import { StorageService, UserProfile } from '../../services/storage.service';
+import { UserProgressionService } from '../../services/user-progression.service';
+import { UserProgression, Achievement } from '../../models/user-progression.model';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-profile',
@@ -9,10 +12,12 @@ import { StorageService, UserProfile } from '../../services/storage.service';
 })
 export class ProfilePage implements OnInit {
   userProfile: UserProfile | null = null;
+  userProgression$: Observable<UserProgression | null>;
   currentStreak = 0;
   isEditing = false;
   editProfile: Partial<UserProfile> = {};
   darkModeEnabled = false;
+  showAnalytics = false;
 
   achievements = [
     { id: 'first-lesson', title: 'First Steps', description: 'Completed your first lesson', icon: 'school', earned: false },
@@ -24,6 +29,7 @@ export class ProfilePage implements OnInit {
 
   constructor(
     private storageService: StorageService,
+    private userProgressionService: UserProgressionService,
     private alertController: AlertController,
     private actionSheetController: ActionSheetController,
     private toastController: ToastController
@@ -31,6 +37,7 @@ export class ProfilePage implements OnInit {
 
   async ngOnInit() {
     await this.loadUserData();
+    this.userProgression$ = this.userProgressionService.getUserProgression();
   }
 
   async ionViewWillEnter() {
@@ -182,6 +189,69 @@ export class ProfilePage implements OnInit {
   getAchievementProgress(): number {
     const earned = this.getEarnedAchievements().length;
     return Math.round((earned / this.achievements.length) * 100);
+  }
+
+  toggleAnalytics() {
+    this.showAnalytics = !this.showAnalytics;
+  }
+
+  getLevelProgress(progression: UserProgression | null): number {
+    if (!progression) return 0;
+    const currentLevel = progression.level;
+    const pointsForCurrentLevel = (currentLevel - 1) * (currentLevel - 1) * 100;
+    const pointsForNextLevel = currentLevel * currentLevel * 100;
+    const progress = ((progression.totalPoints - pointsForCurrentLevel) / (pointsForNextLevel - pointsForCurrentLevel)) * 100;
+    return Math.max(0, Math.min(100, progress));
+  }
+
+  getWeeklyGoalProgress(progression: UserProgression | null): number {
+    if (!progression) return 0;
+    // This would need to be calculated based on current week's progress
+    return Math.min(100, (progression.totalSpeakingTime / progression.weeklyGoal) * 100);
+  }
+
+  getMonthlyGoalProgress(progression: UserProgression | null): number {
+    if (!progression) return 0;
+    // This would need to be calculated based on current month's progress
+    return Math.min(100, (progression.totalPracticeSessions / progression.monthlyGoal) * 100);
+  }
+
+  getRecentAchievements(progression: UserProgression | null): Achievement[] {
+    if (!progression) return [];
+    return progression.achievements
+      .sort((a, b) => b.unlockedAt.getTime() - a.unlockedAt.getTime())
+      .slice(0, 3);
+  }
+
+  getAccuracyTrend(progression: UserProgression | null): number[] {
+    if (!progression) return [];
+    return progression.accuracyHistory
+      .slice(-7) // Last 7 records
+      .map(record => record.accuracy);
+  }
+
+  getPracticeTypeStats(progression: UserProgression | null) {
+    if (!progression) return [];
+    return [
+      {
+        type: 'Monologue',
+        sessions: progression.practiceStats.monologue.sessionsCompleted,
+        accuracy: progression.practiceStats.monologue.averageAccuracy,
+        time: progression.practiceStats.monologue.totalTime
+      },
+      {
+        type: 'Public Speaking',
+        sessions: progression.practiceStats.publicSpeaking.sessionsCompleted,
+        accuracy: progression.practiceStats.publicSpeaking.averageAccuracy,
+        time: progression.practiceStats.publicSpeaking.totalTime
+      },
+      {
+        type: 'Debate',
+        sessions: progression.practiceStats.debate.sessionsCompleted,
+        accuracy: progression.practiceStats.debate.averageAccuracy,
+        time: progression.practiceStats.debate.totalTime
+      }
+    ];
   }
 
 }
