@@ -115,4 +115,9 @@ export class StorageService {
   async getCurrentStreak(): Promise<number> {
     return await this._storage?.get('currentStreak') || 0;
   }
+
+  // Clear all stored data
+  async clearAllData(): Promise<void> {
+    await this._storage?.clear();
+  }
 }

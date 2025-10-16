@@ -308,6 +308,19 @@
           </ion-item>
         </ion-card-content>
       </ion-card>
+
+      <!-- Account Actions -->
+      <ion-card>
+        <ion-card-content>
+          <ion-item button (click)="logout()" lines="none">
+            <ion-icon name="log-out" slot="start" color="danger"></ion-icon>
+            <div slot="label">
+              <h3>Sign Out</h3>
+              <p>Sign out of your account</p>
+            </div>
+          </ion-item>
+        </ion-card-content>
+      </ion-card>
     </div>
 
   </div>

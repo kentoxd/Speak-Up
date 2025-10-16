@@ -1,0 +1,126 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>SpeakUp</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="login-container">
+    <div class="logo-section">
+      <ion-icon name="mic" size="large" color="primary"></ion-icon>
+      <h1>SpeakUp</h1>
+      <p>Master the art of confident communication</p>
+    </div>
+
+    <div class="form-section">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>
+            {{ isLoginMode ? 'Welcome Back' : 'Create Account' }}
+          </ion-card-title>
+          <ion-card-subtitle>
+            {{ isLoginMode ? 'Sign in to continue your journey' : 'Join thousands of confident speakers' }}
+          </ion-card-subtitle>
+        </ion-card-header>
+
+        <ion-card-content>
+          <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+            <!-- Display Name (only for sign up) -->
+            <ion-item *ngIf="!isLoginMode" class="ion-margin-bottom">
+              <ion-label position="stacked">Full Name *</ion-label>
+              <ion-input
+                type="text"
+                [(ngModel)]="displayName"
+                name="displayName"
+                placeholder="Enter your full name"
+                required>
+              </ion-input>
+            </ion-item>
+
+            <!-- Email -->
+            <ion-item class="ion-margin-bottom">
+              <ion-label position="stacked">Email Address *</ion-label>
+              <ion-input
+                type="email"
+                [(ngModel)]="email"
+                name="email"
+                placeholder="Enter your email"
+                required>
+              </ion-input>
+            </ion-item>
+
+            <!-- Password -->
+            <ion-item class="ion-margin-bottom">
+              <ion-label position="stacked">Password *</ion-label>
+              <ion-input
+                type="password"
+                [(ngModel)]="password"
+                name="password"
+                placeholder="Enter your password"
+                required>
+              </ion-input>
+            </ion-item>
+
+            <!-- Submit Button -->
+            <ion-button
+              expand="block"
+              type="submit"
+              [disabled]="isLoading"
+              class="ion-margin-top">
+              <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+              <span *ngIf="!isLoading">
+                {{ isLoginMode ? 'Sign In' : 'Create Account' }}
+              </span>
+            </ion-button>
+          </form>
+
+          <!-- Toggle Mode -->
+          <div class="toggle-section ion-margin-top">
+            <p>
+              {{ isLoginMode ? "Don't have an account?" : "Already have an account?" }}
+              <ion-button
+                fill="clear"
+                size="small"
+                (click)="toggleMode()">
+                {{ isLoginMode ? 'Sign Up' : 'Sign In' }}
+              </ion-button>
+            </p>
+          </div>
+
+          <!-- Reset Password (only for login) -->
+          <div *ngIf="isLoginMode" class="reset-section ion-margin-top">
+            <ion-button
+              fill="clear"
+              size="small"
+              (click)="resetPassword()">
+              Forgot Password?
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Features Section -->
+    <div class="features-section ion-margin-top">
+      <h3>Why Choose SpeakUp?</h3>
+      <div class="feature-list">
+        <div class="feature-item">
+          <ion-icon name="mic-outline" color="primary"></ion-icon>
+          <span>Real-time speech feedback</span>
+        </div>
+        <div class="feature-item">
+          <ion-icon name="trophy-outline" color="primary"></ion-icon>
+          <span>Gamified learning experience</span>
+        </div>
+        <div class="feature-item">
+          <ion-icon name="analytics-outline" color="primary"></ion-icon>
+          <span>Detailed progress tracking</span>
+        </div>
+        <div class="feature-item">
+          <ion-icon name="people-outline" color="primary"></ion-icon>
+          <span>Join a community of learners</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

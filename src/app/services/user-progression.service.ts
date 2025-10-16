@@ -38,6 +38,11 @@ export class UserProgressionService {
 
   // Initialize user progression for new users
   async initializeUserProgression(user: any): Promise<void> {
+    // Check if user progression already exists
+    const existingDoc = await this.progressionCollection.doc(user.uid).get().toPromise();
+    if (existingDoc?.exists) {
+      return; // User progression already exists
+    }
     const initialProgression: UserProgression = {
       userId: user.uid,
       email: user.email,

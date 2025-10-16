@@ -63,4 +63,8 @@ export class WelcomePage implements OnInit {
     this.router.navigate(['/tabs']);
   }
 
+  goToLogin() {
+    this.router.navigate(['/login']);
+  }
+
 }

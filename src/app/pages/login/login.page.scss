@@ -1,0 +1,166 @@
+.login-container {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.logo-section {
+  text-align: center;
+  margin-bottom: 30px;
+  
+  ion-icon {
+    font-size: 4rem;
+    margin-bottom: 10px;
+  }
+  
+  h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin: 10px 0;
+    color: var(--ion-color-primary);
+  }
+  
+  p {
+    color: var(--ion-color-medium);
+    font-size: 1.1rem;
+  }
+}
+
+.form-section {
+  ion-card {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+  }
+  
+  ion-card-header {
+    text-align: center;
+    padding-bottom: 0;
+    
+    ion-card-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--ion-color-dark);
+    }
+    
+    ion-card-subtitle {
+      color: var(--ion-color-medium);
+      font-size: 0.9rem;
+      margin-top: 5px;
+    }
+  }
+  
+  ion-card-content {
+    padding-top: 0;
+  }
+  
+  ion-item {
+    --border-radius: 8px;
+    --background: var(--ion-color-light);
+    margin-bottom: 15px;
+    
+    ion-label {
+      font-weight: 500;
+      color: var(--ion-color-dark);
+    }
+    
+    ion-input {
+      --padding-start: 12px;
+      --padding-end: 12px;
+    }
+  }
+  
+  ion-button {
+    --border-radius: 8px;
+    height: 48px;
+    font-weight: 600;
+    font-size: 1rem;
+    
+    ion-spinner {
+      margin-right: 8px;
+    }
+  }
+}
+
+.toggle-section {
+  text-align: center;
+  
+  p {
+    color: var(--ion-color-medium);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+  
+  ion-button {
+    --color: var(--ion-color-primary);
+    font-weight: 600;
+  }
+}
+
+.reset-section {
+  text-align: center;
+  
+  ion-button {
+    --color: var(--ion-color-medium);
+    font-size: 0.9rem;
+  }
+}
+
+.features-section {
+  text-align: center;
+  
+  h3 {
+    color: var(--ion-color-dark);
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  
+  .feature-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    
+    .feature-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+      background: var(--ion-color-light);
+      border-radius: 8px;
+      
+      ion-icon {
+        font-size: 2rem;
+        margin-bottom: 8px;
+      }
+      
+      span {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--ion-color-dark);
+        text-align: center;
+      }
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .login-container {
+    padding: 10px;
+  }
+  
+  .features-section .feature-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Dark theme adjustments
+@media (prefers-color-scheme: dark) {
+  .form-section ion-card {
+    --background: var(--ion-color-step-50);
+  }
+  
+  .features-section .feature-item {
+    --background: var(--ion-color-step-100);
+  }
+}

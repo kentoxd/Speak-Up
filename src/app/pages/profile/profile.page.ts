@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { AlertController, ActionSheetController, ToastController } from '@ionic/angular';
+import { Router } from '@angular/router';
 import { StorageService, UserProfile } from '../../services/storage.service';
 import { UserProgressionService } from '../../services/user-progression.service';
+import { AuthService } from '../../services/auth.service';
 import { UserProgression, Achievement } from '../../models/user-progression.model';
 import { Observable } from 'rxjs';
 
@@ -30,6 +32,8 @@ export class ProfilePage implements OnInit {
   constructor(
     private storageService: StorageService,
     private userProgressionService: UserProgressionService,
+    private authService: AuthService,
+    private router: Router,
     private alertController: AlertController,
     private actionSheetController: ActionSheetController,
     private toastController: ToastController
@@ -252,6 +256,41 @@ export class ProfilePage implements OnInit {
         time: progression.practiceStats.debate.totalTime
       }
     ];
+  }
+
+  async logout() {
+    const alert = await this.alertController.create({
+      header: 'Sign Out',
+      message: 'Are you sure you want to sign out?',
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel'
+        },
+        {
+          text: 'Sign Out',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await this.authService.signOut();
+              // Clear local storage
+              await this.storageService.clearAllData();
+              this.router.navigate(['/welcome']);
+            } catch (error) {
+              console.error('Logout error:', error);
+              const toast = await this.toastController.create({
+                message: 'Error signing out. Please try again.',
+                duration: 3000,
+                color: 'danger'
+              });
+              await toast.present();
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
   }
 
 }

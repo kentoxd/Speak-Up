@@ -4,6 +4,7 @@ import { DataService, PracticeExercise, StructuredPractice } from '../../service
 import { SpeechService, SpeechRecognitionResult } from '../../services/speech.service';
 import { StorageService } from '../../services/storage.service';
 import { UserProgressionService } from '../../services/user-progression.service';
+import { AuthService } from '../../services/auth.service';
 import { FeedbackModalComponent } from '../../components/feedback-modal/feedback-modal.component';
 
 @Component({
@@ -47,6 +48,7 @@ export class PracticePage implements OnInit, OnDestroy {
     private speechService: SpeechService,
     private storageService: StorageService,
     private userProgressionService: UserProgressionService,
+    private authService: AuthService,
     private alertController: AlertController,
     private toastController: ToastController,
     private modalController: ModalController,
@@ -57,6 +59,13 @@ export class PracticePage implements OnInit, OnDestroy {
     this.exercises = this.dataService.getPracticeExercises();
     await this.loadPracticeHistory();
     this.loadStructuredPractice();
+    
+    // Initialize user progression for authenticated users
+    this.authService.getCurrentUser().subscribe(user => {
+      if (user) {
+        this.userProgressionService.initializeUserProgression(user);
+      }
+    });
   }
 
   async ionViewWillEnter() {
