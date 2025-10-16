@@ -44,7 +44,10 @@ export class AuthService {
 
   // Check if user is authenticated
   isAuthenticated(): Observable<boolean> {
-    return this.user$.pipe(map(user => !!user));
+    return this.user$.pipe(map(user => {
+      console.log('Auth state check:', !!user, user?.uid);
+      return !!user;
+    }));
   }
 
   // Sign up with email and password
@@ -72,7 +75,15 @@ export class AuthService {
   // Sign in with email and password
   async signIn(email: string, password: string): Promise<any> {
     try {
+      console.log('Attempting to sign in with:', email);
       const result = await this.afAuth.signInWithEmailAndPassword(email, password);
+      console.log('Sign in successful:', result.user?.uid);
+      
+      if (result.user) {
+        // Ensure user document exists in Firestore
+        await this.ensureUserDocument(result.user);
+      }
+      
       return { success: true, user: result.user };
     } catch (error: any) {
       console.error('Sign in error:', error);
@@ -84,7 +95,7 @@ export class AuthService {
   async signOut(): Promise<void> {
     try {
       await this.afAuth.signOut();
-      this.router.navigate(['/welcome']);
+      this.router.navigate(['/login']);
     } catch (error) {
       console.error('Sign out error:', error);
     }
@@ -99,7 +110,33 @@ export class AuthService {
       photoURL: user.photoURL || ''
     };
 
+    console.log('Creating user document:', userData);
     await this.firestore.doc(`users/${user.uid}`).set(userData, { merge: true });
+    console.log('User document created successfully');
+  }
+
+  // Ensure user document exists (for existing users)
+  private async ensureUserDocument(user: any): Promise<void> {
+    try {
+      const userDoc = await this.firestore.doc(`users/${user.uid}`).get().toPromise();
+      
+      if (!userDoc?.exists) {
+        console.log('User document does not exist, creating it...');
+        const userData: AuthUser = {
+          uid: user.uid,
+          email: user.email!,
+          displayName: user.displayName || '',
+          photoURL: user.photoURL || ''
+        };
+        
+        await this.firestore.doc(`users/${user.uid}`).set(userData, { merge: true });
+        console.log('User document created for existing user');
+      } else {
+        console.log('User document already exists');
+      }
+    } catch (error) {
+      console.error('Error ensuring user document:', error);
+    }
   }
 
   // Get error message for user-friendly display

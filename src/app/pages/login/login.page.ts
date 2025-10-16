@@ -77,7 +77,20 @@ export class LoginPage implements OnInit {
           this.isLoginMode ? 'Welcome back!' : 'Account created successfully!',
           'success'
         );
-        this.router.navigate(['/tabs']);
+        
+        // Wait for auth state to be fully updated
+        setTimeout(() => {
+          console.log('Navigating to /tabs after successful login');
+          this.router.navigate(['/tabs']).then(() => {
+            console.log('Navigation to /tabs completed');
+          }).catch((error) => {
+            console.error('Navigation error:', error);
+            // Fallback: try again after a longer delay
+            setTimeout(() => {
+              this.router.navigate(['/tabs']);
+            }, 1000);
+          });
+        }, 500);
       } else {
         this.showAlert('Error', result.error);
       }
