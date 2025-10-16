@@ -61,9 +61,9 @@ export class PracticePage implements OnInit, OnDestroy {
     this.loadStructuredPractice();
     
     // Initialize user progression for authenticated users
-    this.authService.getCurrentUser().subscribe(user => {
+    this.authService.getCurrentUser().subscribe(async user => {
       if (user) {
-        this.userProgressionService.initializeUserProgression(user);
+        await this.userProgressionService.initializeUserProgression(user);
       }
     });
   }

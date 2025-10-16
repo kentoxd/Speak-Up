@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { StorageService } from '../../services/storage.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-splash',
@@ -11,19 +12,20 @@ export class SplashPage implements OnInit {
 
   constructor(
     private router: Router,
-    private storageService: StorageService
+    private storageService: StorageService,
+    private authService: AuthService
   ) { }
 
   async ngOnInit() {
-    // Show splash for 2 seconds, then check if user has seen welcome
+    // Show splash for 2 seconds, then check authentication
     setTimeout(async () => {
-      const isFirstTime = await this.storageService.isFirstTimeUser();
-      
-      if (isFirstTime) {
-        this.router.navigate(['/welcome']);
-      } else {
-        this.router.navigate(['/tabs']);
-      }
+      this.authService.isAuthenticated().subscribe(isAuth => {
+        if (isAuth) {
+          this.router.navigate(['/tabs']);
+        } else {
+          this.router.navigate(['/login']);
+        }
+      });
     }, 2000);
   }
 

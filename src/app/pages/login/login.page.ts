@@ -27,7 +27,7 @@ export class LoginPage implements OnInit {
     // Check if user is already logged in
     this.authService.isAuthenticated().subscribe(isAuth => {
       if (isAuth) {
-        this.router.navigate(['/tabs/home']);
+        this.router.navigate(['/tabs']);
       }
     });
   }
@@ -77,7 +77,7 @@ export class LoginPage implements OnInit {
           this.isLoginMode ? 'Welcome back!' : 'Account created successfully!',
           'success'
         );
-        this.router.navigate(['/tabs/home']);
+        this.router.navigate(['/tabs']);
       } else {
         this.showAlert('Error', result.error);
       }
