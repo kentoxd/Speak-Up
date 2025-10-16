@@ -83,8 +83,7 @@
             [value]="selectedAnswers[i]" 
             (ionChange)="selectAnswer(i, $event.detail.value)">
             <ion-item *ngFor="let option of question.options; let j = index">
-              <ion-label>{{ option }}</ion-label>
-              <ion-radio slot="start" [value]="j"></ion-radio>
+              <ion-radio slot="start" [value]="j">{{ option }}</ion-radio>
             </ion-item>
           </ion-radio-group>
         </div>
