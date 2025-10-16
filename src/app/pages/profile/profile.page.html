@@ -77,19 +77,16 @@
     <div class="stats-section">
       <div class="section-header">
         <h3>Your Stats</h3>
-        <ion-button fill="clear" size="small" (click)="toggleAnalytics()">
-          <ion-icon name="analytics" slot="start"></ion-icon>
-          {{ showAnalytics ? 'Hide' : 'Show' }} Analytics
-        </ion-button>
       </div>
       
-      <div class="stats-grid">
+      <!-- Dynamic Stats from Firebase Progression -->
+      <div class="stats-grid" *ngIf="userProgression$ | async as progression">
         <ion-card class="stat-card">
           <ion-card-content>
             <div class="stat-content">
               <ion-icon name="flame" color="danger"></ion-icon>
               <div class="stat-info">
-                <span class="stat-number">{{ currentStreak }}</span>
+                <span class="stat-number">{{ progression.currentStreak || 0 }}</span>
                 <span class="stat-label">Day Streak</span>
               </div>
             </div>
@@ -101,8 +98,8 @@
             <div class="stat-content">
               <ion-icon name="book" color="primary"></ion-icon>
               <div class="stat-info">
-                <span class="stat-number">{{ userProfile.totalLessons }}</span>
-                <span class="stat-label">Lessons</span>
+                <span class="stat-number">{{ localCompletedLessons }}</span>
+                <span class="stat-label">Lessons Completed</span>
               </div>
             </div>
           </ion-card-content>
@@ -113,8 +110,20 @@
             <div class="stat-content">
               <ion-icon name="trophy" color="warning"></ion-icon>
               <div class="stat-info">
-                <span class="stat-number">{{ getEarnedAchievements().length }}</span>
+                <span class="stat-number">{{ progression.achievements.length || 0 }}</span>
                 <span class="stat-label">Achievements</span>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="stat-card">
+          <ion-card-content>
+            <div class="stat-content">
+              <ion-icon name="star" color="success"></ion-icon>
+              <div class="stat-info">
+                <span class="stat-number">{{ progression.totalPoints || 0 }}</span>
+                <span class="stat-label">Total Points</span>
               </div>
             </div>
           </ion-card-content>
@@ -122,7 +131,7 @@
       </div>
 
       <!-- Firebase Analytics Dashboard -->
-      <div class="analytics-dashboard" *ngIf="showAnalytics">
+      <div class="analytics-dashboard">
         <div *ngIf="userProgression$ | async as progression">
         
         <!-- Level Progress -->
@@ -243,7 +252,7 @@
                 <div class="achievement-details">
                   <h4>{{ achievement.name }}</h4>
                   <p>{{ achievement.description }}</p>
-                  <span class="achievement-date">{{ achievement.unlockedAt | date:'short' }}</span>
+                  <span class="achievement-date">Recently earned</span>
                 </div>
                 <div class="achievement-points">+{{ achievement.points }} pts</div>
               </div>
@@ -255,35 +264,38 @@
       </div>
     </div>
 
-    <!-- Achievements -->
-    <div class="achievements-section">
+    <!-- Dynamic Achievements from Firebase Progression -->
+    <div class="achievements-section" *ngIf="userProgression$ | async as progression">
       <div class="section-header">
         <h3>Achievements</h3>
         <div class="achievement-progress">
-          <span>{{ getAchievementProgress() }}% Complete</span>
-          <ion-progress-bar [value]="getAchievementProgress() / 100" color="warning"></ion-progress-bar>
+          <span>{{ getAchievementProgress(progression) }}% Complete</span>
+          <ion-progress-bar [value]="getAchievementProgress(progression) / 100" color="warning"></ion-progress-bar>
         </div>
       </div>
       
       <div class="achievements-grid">
         <div 
-          *ngFor="let achievement of achievements" 
+          *ngFor="let achievement of progression.achievements || []" 
           class="achievement-item"
-          [class.earned]="achievement.earned">
+          [class.earned]="true">
           <div class="achievement-icon">
-            <ion-icon [name]="achievement.icon" [color]="achievement.earned ? 'warning' : 'medium'"></ion-icon>
+            <ion-icon [name]="achievement.icon || 'trophy'" color="warning"></ion-icon>
           </div>
           <div class="achievement-info">
-            <h4>{{ achievement.title }}</h4>
+            <h4>{{ achievement.name }}</h4>
             <p>{{ achievement.description }}</p>
+                <small class="achievement-date">Recently earned</small>
           </div>
           <div class="achievement-status">
-            <ion-icon 
-              *ngIf="achievement.earned" 
-              name="checkmark-circle" 
-              color="success">
-            </ion-icon>
+            <ion-icon name="checkmark-circle" color="success"></ion-icon>
           </div>
+        </div>
+        
+        <!-- Show message if no achievements yet -->
+        <div *ngIf="!progression.achievements || progression.achievements.length === 0" class="no-achievements">
+          <ion-icon name="trophy-outline" color="medium"></ion-icon>
+          <p>Complete lessons and practice sessions to earn achievements!</p>
         </div>
       </div>
     </div>

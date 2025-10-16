@@ -4,8 +4,10 @@ import { Router } from '@angular/router';
 import { StorageService, UserProfile } from '../../services/storage.service';
 import { UserProgressionService } from '../../services/user-progression.service';
 import { AuthService } from '../../services/auth.service';
+import { DataService } from '../../services/data.service';
 import { UserProgression, Achievement } from '../../models/user-progression.model';
 import { Observable } from 'rxjs';
+import { take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-profile',
@@ -15,24 +17,20 @@ import { Observable } from 'rxjs';
 export class ProfilePage implements OnInit {
   userProfile: UserProfile | null = null;
   userProgression$: Observable<UserProgression | null> = new Observable();
-  currentStreak = 0;
   isEditing = false;
   editProfile: Partial<UserProfile> = {};
   darkModeEnabled = false;
-  showAnalytics = false;
-
-  achievements = [
-    { id: 'first-lesson', title: 'First Steps', description: 'Completed your first lesson', icon: 'school', earned: false },
-    { id: 'week-streak', title: 'Week Warrior', description: '7-day learning streak', icon: 'flame', earned: false },
-    { id: 'quiz-master', title: 'Quiz Master', description: 'Scored 100% on a quiz', icon: 'trophy', earned: false },
-    { id: 'practice-pro', title: 'Practice Pro', description: 'Completed 10 practice sessions', icon: 'mic', earned: false },
-    { id: 'lesson-complete', title: 'Course Crusher', description: 'Completed all available lessons', icon: 'medal', earned: false }
-  ];
+  showAnalytics = true; // Always show analytics
+  
+  // Local data for immediate display
+  localCompletedLessons = 0;
+  localTotalLessons = 0;
 
   constructor(
     private storageService: StorageService,
     private userProgressionService: UserProgressionService,
     private authService: AuthService,
+    private dataService: DataService,
     private router: Router,
     private alertController: AlertController,
     private actionSheetController: ActionSheetController,
@@ -56,13 +54,20 @@ export class ProfilePage implements OnInit {
           achievements: []
         };
         console.log('Profile page - User profile created:', this.userProfile);
+        
+        // Initialize user progression if not exists
+        await this.userProgressionService.initializeUserProgression(user);
       } else {
         console.log('Profile page - No authenticated user');
         this.router.navigate(['/login']);
       }
     });
     
+    // Load user progression data from Firebase
     this.userProgression$ = this.userProgressionService.getUserProgression();
+    
+    // Load additional user data
+    await this.loadUserData();
   }
 
   async ionViewWillEnter() {
@@ -81,42 +86,41 @@ export class ProfilePage implements OnInit {
         };
       }
     });
+    
+    // Force refresh progression data
+    await this.refreshProgressionData();
+    
+    // Refresh local lesson data
+    await this.loadLocalLessonData();
+  }
+
+  private async refreshProgressionData() {
+    // Get current user and ensure progression exists
+    const user = await this.authService.getCurrentUser().pipe(take(1)).toPromise();
+    if (user) {
+      await this.userProgressionService.initializeUserProgression(user);
+    }
+    
+    // Refresh the observable
+    this.userProgression$ = this.userProgressionService.getUserProgression();
   }
 
   private async loadUserData() {
-    // This method is now handled by the auth service subscription
-    // Keep it for backward compatibility but it's not used anymore
+    // Load user preferences
     this.darkModeEnabled = await this.storageService.getDarkModeEnabled();
     
-    // Check achievements
-    await this.checkAchievements();
+    // Load local lesson progress for immediate display
+    await this.loadLocalLessonData();
   }
 
-  private async checkAchievements() {
-    if (!this.userProfile) return;
-
+  private async loadLocalLessonData() {
+    // Get lesson progress from local storage (same as home page)
     const allProgress = await this.storageService.getAllLessonProgress();
-    const completedLessons = Object.values(allProgress).filter(p => p.completed).length;
-    const practiceHistory = await this.storageService.getPracticeHistory();
-
-    // Update achievements based on progress
-    this.achievements.forEach(achievement => {
-      switch (achievement.id) {
-        case 'first-lesson':
-          achievement.earned = completedLessons > 0;
-          break;
-        case 'week-streak':
-          achievement.earned = this.currentStreak >= 7;
-          break;
-        case 'practice-pro':
-          achievement.earned = practiceHistory.length >= 10;
-          break;
-        case 'lesson-complete':
-          achievement.earned = completedLessons >= 5; // Assuming 5 total lessons
-          break;
-      }
-    });
+    const lessons = this.dataService.getLessons();
+    this.localTotalLessons = lessons.length;
+    this.localCompletedLessons = Object.values(allProgress).filter(p => p.completed).length;
   }
+
 
   async editProfileInfo() {
     if (!this.userProfile) return;
@@ -221,18 +225,15 @@ export class ProfilePage implements OnInit {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 
-  getEarnedAchievements() {
-    return this.achievements.filter(a => a.earned);
+  getAchievementProgress(progression: UserProgression | null): number {
+    if (!progression || !progression.achievements) return 0;
+    // Calculate progress based on total possible achievements vs earned
+    const totalPossible = 10; // Total possible achievements in the system
+    const earned = progression.achievements.length;
+    return Math.round((earned / totalPossible) * 100);
   }
 
-  getAchievementProgress(): number {
-    const earned = this.getEarnedAchievements().length;
-    return Math.round((earned / this.achievements.length) * 100);
-  }
 
-  toggleAnalytics() {
-    this.showAnalytics = !this.showAnalytics;
-  }
 
   getLevelProgress(progression: UserProgression | null): number {
     if (!progression) return 0;
