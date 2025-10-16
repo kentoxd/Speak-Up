@@ -29,7 +29,9 @@ export class UserProgressionService {
     return this.currentUser$.pipe(
       switchMap(user => {
         if (!user) return [null];
-        return this.firestore.doc<UserProgression>(`userProgressions/${user.uid}`).valueChanges();
+        return this.firestore.doc<UserProgression>(`userProgressions/${user.uid}`).valueChanges().pipe(
+          map(progression => progression || null)
+        );
       })
     );
   }

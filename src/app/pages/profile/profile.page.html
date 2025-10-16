@@ -122,7 +122,8 @@
       </div>
 
       <!-- Firebase Analytics Dashboard -->
-      <div class="analytics-dashboard" *ngIf="showAnalytics && userProgression$ | async as progression">
+      <div class="analytics-dashboard" *ngIf="showAnalytics">
+        <div *ngIf="userProgression$ | async as progression">
         
         <!-- Level Progress -->
         <ion-card class="analytics-card">
@@ -250,6 +251,7 @@
           </ion-card-content>
         </ion-card>
 
+        </div>
       </div>
     </div>
 

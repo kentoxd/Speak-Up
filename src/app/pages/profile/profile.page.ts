@@ -12,7 +12,7 @@ import { Observable } from 'rxjs';
 })
 export class ProfilePage implements OnInit {
   userProfile: UserProfile | null = null;
-  userProgression$: Observable<UserProgression | null>;
+  userProgression$: Observable<UserProgression | null> = new Observable();
   currentStreak = 0;
   isEditing = false;
   editProfile: Partial<UserProfile> = {};
