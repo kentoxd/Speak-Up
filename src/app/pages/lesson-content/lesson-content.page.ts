@@ -3,6 +3,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AlertController, ToastController } from '@ionic/angular';
 import { DataService, Lesson, QuizQuestion } from '../../services/data.service';
 import { StorageService, LessonProgress } from '../../services/storage.service';
+import { UserProgressionService } from '../../services/user-progression.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-lesson-content',
@@ -23,6 +25,8 @@ export class LessonContentPage implements OnInit {
     private router: Router,
     private dataService: DataService,
     private storageService: StorageService,
+    private userProgressionService: UserProgressionService,
+    private authService: AuthService,
     private alertController: AlertController,
     private toastController: ToastController
   ) { }
@@ -136,12 +140,25 @@ export class LessonContentPage implements OnInit {
     await alert.present();
   }
 
-  private async completeLesson() {
+  async completeLesson() {
     if (!this.lesson || !this.lessonProgress) return;
     
     this.lessonProgress.completed = true;
     this.lessonProgress.progress = 100;
     await this.storageService.setLessonProgress(this.lesson.id, this.lessonProgress);
+    
+    // Update Firebase user progression
+    try {
+      this.authService.getCurrentUser().subscribe(async user => {
+        if (user) {
+          console.log('Updating user progression for lesson completion');
+          await this.userProgressionService.completeLesson(this.lesson!.id);
+          console.log('User progression updated successfully');
+        }
+      });
+    } catch (error) {
+      console.error('Error updating user progression:', error);
+    }
     
     const toast = await this.toastController.create({
       message: 'Lesson completed! 🎉',

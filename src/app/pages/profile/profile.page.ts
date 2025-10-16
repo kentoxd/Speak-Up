@@ -308,9 +308,8 @@ export class ProfilePage implements OnInit {
           handler: async () => {
             try {
               await this.authService.signOut();
-              // Clear local storage
-              await this.storageService.clearAllData();
-              this.router.navigate(['/welcome']);
+              // The authService.signOut() already handles navigation to /login
+              console.log('Logout completed successfully');
             } catch (error) {
               console.error('Logout error:', error);
               const toast = await this.toastController.create({

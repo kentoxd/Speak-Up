@@ -95,9 +95,20 @@ export class AuthService {
   async signOut(): Promise<void> {
     try {
       await this.afAuth.signOut();
-      this.router.navigate(['/login']);
+      // Navigate to login page
+      this.router.navigate(['/login']).then(() => {
+        console.log('Successfully navigated to login page after logout');
+      }).catch((error) => {
+        console.error('Navigation error after logout:', error);
+        // Fallback: try to navigate again
+        setTimeout(() => {
+          this.router.navigate(['/login']);
+        }, 100);
+      });
     } catch (error) {
       console.error('Sign out error:', error);
+      // Even if signOut fails, try to navigate to login
+      this.router.navigate(['/login']);
     }
   }
 
