@@ -1,0 +1,84 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button fill="clear" (click)="goBack()">
+        <ion-icon name="arrow-back" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="signin-content">
+  <div class="signin-container">
+    <div class="form-section">
+      <div class="form-header">
+        <h1>Welcome Back</h1>
+        <p>Sign in to continue your journey</p>
+      </div>
+
+      <form [formGroup]="signInForm" (ngSubmit)="onSubmit()">
+        <!-- Email -->
+        <div class="form-group">
+          <ion-item>
+            <ion-label position="stacked">Email *</ion-label>
+            <ion-input
+              type="email"
+              formControlName="email"
+              placeholder="Enter your email">
+            </ion-input>
+          </ion-item>
+          <div class="error-message" *ngIf="getFieldError('email')">
+            {{ getFieldError('email') }}
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <ion-item>
+            <ion-label position="stacked">Password *</ion-label>
+            <ion-input
+              [type]="showPassword ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="Enter your password">
+            </ion-input>
+            <ion-button
+              slot="end"
+              fill="clear"
+              (click)="togglePasswordVisibility()">
+              <ion-icon [name]="showPassword ? 'eye-off' : 'eye'" slot="icon-only"></ion-icon>
+            </ion-button>
+          </ion-item>
+          <div class="error-message" *ngIf="getFieldError('password')">
+            {{ getFieldError('password') }}
+          </div>
+        </div>
+
+        <!-- Remember Me -->
+        <div class="remember-section">
+          <ion-checkbox [(ngModel)]="rememberMe" [ngModelOptions]="{standalone: true}"></ion-checkbox>
+          <ion-label>Remember me</ion-label>
+        </div>
+
+        <!-- Submit Button -->
+        <ion-button
+          expand="block"
+          type="submit"
+          [disabled]="signInForm.invalid || isLoading"
+          class="submit-btn">
+          <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+          <span *ngIf="!isLoading">SIGN IN</span>
+        </ion-button>
+      </form>
+
+      <!-- Forgot Password Link -->
+      <div class="forgot-password-link">
+        <span (click)="goToForgotPassword()">Forgot Password?</span>
+      </div>
+
+      <!-- Register Link -->
+      <div class="register-link">
+        <p>Don't have an account? <span (click)="goToRegister()">Register here</span></p>
+      </div>
+    </div>
+  </div>
+</ion-content>

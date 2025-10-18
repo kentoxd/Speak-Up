@@ -5,16 +5,50 @@ import { AuthGuard } from './guards/auth.guard';
 const routes: Routes = [
   {
     path: '',
-    redirectTo: '/splash',
+    redirectTo: '/auth/splash',
     pathMatch: 'full'
   },
   {
-    path: 'splash',
-    loadChildren: () => import('./pages/splash/splash.module').then(m => m.SplashPageModule)
-  },
-  {
-    path: 'login',
-    loadChildren: () => import('./pages/login/login.module').then(m => m.LoginPageModule)
+    path: 'auth',
+    children: [
+      { 
+        path: 'splash', 
+        loadChildren: () => import('./pages/auth/splash-screen/splash-screen.module').then(m => m.SplashScreenComponentModule) 
+      },
+      { 
+        path: 'landing', 
+        loadChildren: () => import('./pages/auth/landing-page/landing-page.module').then(m => m.LandingPageComponentModule) 
+      },
+      { 
+        path: 'register', 
+        loadChildren: () => import('./pages/auth/registration-page/registration-page.module').then(m => m.RegistrationPageComponentModule) 
+      },
+      { 
+        path: 'signin', 
+        loadChildren: () => import('./pages/auth/signin-page/signin-page.module').then(m => m.SignInPageComponentModule) 
+      },
+      { 
+        path: 'forgot-password', 
+        loadChildren: () => import('./pages/auth/forgot-password-page/forgot-password-page.module').then(m => m.ForgotPasswordPageComponentModule) 
+      },
+      { 
+        path: 'otp', 
+        loadChildren: () => import('./pages/auth/otp-page/otp-page.module').then(m => m.OTPPageComponentModule) 
+      },
+            {
+              path: 'create-password',
+              loadChildren: () => import('./pages/auth/create-new-password-page/create-new-password-page.module').then(m => m.CreateNewPasswordPageComponentModule)
+            },
+            {
+              path: 'email-verification',
+              loadChildren: () => import('./pages/auth/email-verification-page/email-verification-page.module').then(m => m.EmailVerificationPageComponentModule)
+            },
+            {
+              path: '',
+              redirectTo: 'splash',
+              pathMatch: 'full'
+            }
+    ]
   },
   {
     path: 'tabs',

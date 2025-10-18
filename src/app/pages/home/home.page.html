@@ -1,115 +1,41 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title>
-      SpeakUp
-    </ion-title>
+    <ion-title>Home</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">SpeakUp</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
+<ion-content>
   <div class="home-container">
     
-    <!-- Greeting Card -->
-    <ion-card class="greeting-card">
-      <ion-card-content>
-        <h2>{{ getGreeting() }}</h2>
-        <p>Ready to improve your speaking skills today?</p>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Stats Cards -->
-    <div class="stats-grid">
-      <ion-card class="stat-card">
-        <ion-card-content>
-          <div class="stat-content">
-            <ion-icon name="flame" color="danger"></ion-icon>
-            <div class="stat-info">
-              <h3>{{ currentStreak }}</h3>
-              <p>Day Streak</p>
-            </div>
-          </div>
-        </ion-card-content>
-      </ion-card>
-
-      <ion-card class="stat-card">
-        <ion-card-content>
-          <div class="stat-content">
-            <ion-icon name="book" color="primary"></ion-icon>
-            <div class="stat-info">
-              <h3>{{ completedLessons }}/{{ totalLessons }}</h3>
-              <p>Lessons</p>
-            </div>
-          </div>
-        </ion-card-content>
-      </ion-card>
+    <!-- Daily Progress Section -->
+    <div class="daily-progress-section">
+      <h2>Daily Progress</h2>
+      <div class="welcome-card">
+        <h3>Welcome To Speak Up.</h3>
+      </div>
+      <div class="lessons-cards">
+        <div class="lesson-card">
+          <ion-icon name="book"></ion-icon>
+          <span>1/1 Lessons</span>
+        </div>
+        <div class="lesson-card">
+          <ion-icon name="book"></ion-icon>
+          <span>1/1 Lessons</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Progress Card -->
-    <ion-card class="progress-card">
-      <ion-card-header>
-        <ion-card-title>Learning Progress</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <div class="progress-info">
-          <span>{{ getProgressPercentage() }}% Complete</span>
-          <span>{{ completedLessons }}/{{ totalLessons }} lessons</span>
-        </div>
-        <ion-progress-bar 
-          [value]="getProgressPercentage() / 100" 
-          color="secondary">
-        </ion-progress-bar>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Motivational Quote -->
-    <ion-card class="quote-card" *ngIf="motivationalQuote">
-      <ion-card-content>
-        <div class="quote-content">
-          <ion-icon name="chatbubble-ellipses" color="tertiary"></ion-icon>
-          <blockquote>
-            "{{ motivationalQuote.text }}"
-          </blockquote>
-          <cite>— {{ motivationalQuote.author }}</cite>
-        </div>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Quick Actions -->
-    <div class="quick-actions">
-      <h3>Quick Actions</h3>
+    <!-- Practice Sections -->
+    <div class="practice-sections">
+      <div class="practice-card">
+        <h3>Practice Impromptu Speech</h3>
+        <p>Craft a compelling speech spontaneously on the given topic.</p>
+      </div>
       
-      <ion-button 
-        expand="block" 
-        fill="solid" 
-        color="primary"
-        (click)="navigateToLessons()">
-        <ion-icon name="book-outline" slot="start"></ion-icon>
-        Continue Learning
-      </ion-button>
-      
-      <ion-button 
-        expand="block" 
-        fill="outline" 
-        color="secondary"
-        (click)="navigateToPractice()">
-        <ion-icon name="mic-outline" slot="start"></ion-icon>
-        Start Practicing
-      </ion-button>
-      
-      <ion-button 
-        expand="block" 
-        fill="clear" 
-        color="medium"
-        (click)="navigateToProfile()">
-        <ion-icon name="person-outline" slot="start"></ion-icon>
-        View Profile
-      </ion-button>
+      <div class="practice-card">
+        <h3>Practice Informative Speech</h3>
+        <p>Craft a compelling speech spontaneously on the given topic.</p>
+      </div>
     </div>
 
   </div>

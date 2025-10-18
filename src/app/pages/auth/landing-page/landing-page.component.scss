@@ -1,0 +1,53 @@
+.landing-content {
+  --background: #EDF2FA;
+}
+
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 100vh;
+  padding: 2rem;
+  background-color: #EDF2FA;
+}
+
+.action-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  
+  .get-started-btn {
+    --border-radius: 8px;
+    --padding-top: 1rem;
+    --padding-bottom: 1rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    --background: #ABC4FF;
+    --color: #000000;
+    height: 50px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .login-link {
+    text-align: center;
+    
+    p {
+      margin: 0;
+      font-family: 'Noto Sans', sans-serif;
+      font-weight: 400;
+      font-size: 16px;
+      color: #666666;
+      
+      span {
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        color: #ABC4FF;
+        cursor: pointer;
+      }
+    }
+  }
+}

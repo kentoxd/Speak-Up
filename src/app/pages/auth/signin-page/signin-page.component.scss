@@ -1,0 +1,171 @@
+.signin-content {
+  --background: #EDF2FA;
+}
+
+.signin-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 1rem;
+  background-color: #EDF2FA;
+}
+
+.form-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 500px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.form-header {
+  margin-bottom: 2rem;
+  
+  h1 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    color: #1a1a1a;
+    margin: 0 0 0.5rem 0;
+  }
+  
+  p {
+    font-family: 'Noto Sans', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    color: #666666;
+    line-height: 1.4;
+    margin: 0;
+  }
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+  
+  ion-item {
+    --border-radius: 8px;
+    --background: #FFFFFF;
+    --border-color: #D7E3FC;
+    --border-width: 1px;
+    --border-style: solid;
+    --padding-start: 1rem;
+    --padding-end: 1rem;
+    --padding-top: 0.75rem;
+    --padding-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    
+    ion-label {
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      color: #1a1a1a;
+      margin-bottom: 0.5rem;
+    }
+    
+    ion-input {
+      --padding-top: 0.5rem;
+      --padding-bottom: 0.5rem;
+      --color: #1a1a1a;
+      font-family: 'Noto Sans', sans-serif;
+      font-weight: 400;
+      font-size: 16px;
+    }
+  }
+}
+
+.error-message {
+  font-family: 'Noto Sans', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  color: #ff4444;
+  margin-top: 0.25rem;
+  margin-left: 1rem;
+}
+
+.remember-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  
+  ion-checkbox {
+    --size: 20px;
+  }
+  
+  ion-label {
+    font-family: 'Noto Sans', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    color: #1a1a1a;
+  }
+}
+
+.submit-btn {
+  --border-radius: 8px;
+  --padding-top: 1rem;
+  --padding-bottom: 1rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  --background: #ABC4FF;
+  --color: #000000;
+  margin: 2rem 0;
+  height: 50px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  
+  &:disabled {
+    --background: #CCDBFD;
+    --color: #666666;
+  }
+}
+
+.forgot-password-link {
+  text-align: center;
+  margin-bottom: 1rem;
+  
+  span {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: #ABC4FF;
+    cursor: pointer;
+  }
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 1rem;
+  
+  p {
+    margin: 0;
+    font-family: 'Noto Sans', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    color: #666666;
+    
+    span {
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      color: #ABC4FF;
+      cursor: pointer;
+    }
+  }
+}
+
+@media (min-width: 768px) {
+  .signin-container {
+    padding: 2rem;
+  }
+  
+  .form-section {
+    padding: 2rem;
+    background: transparent;
+    border-radius: 16px;
+  }
+}

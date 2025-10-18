@@ -24,10 +24,6 @@ const routes: Routes = [
         loadChildren: () => import('../pages/profile/profile.module').then(m => m.ProfilePageModule)
       },
       {
-        path: 'faq',
-        loadChildren: () => import('../pages/faq/faq.module').then(m => m.FaqPageModule)
-      },
-      {
         path: '',
         redirectTo: '/tabs/home',
         pathMatch: 'full'

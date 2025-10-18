@@ -59,7 +59,7 @@ export class ProfilePage implements OnInit {
         await this.userProgressionService.initializeUserProgression(user);
       } else {
         console.log('Profile page - No authenticated user');
-        this.router.navigate(['/login']);
+        this.router.navigate(['/auth/signin']);
       }
     });
     
@@ -202,20 +202,46 @@ export class ProfilePage implements OnInit {
     }
   }
 
-  async toggleDarkMode() {
-    this.darkModeEnabled = !this.darkModeEnabled;
-    await this.storageService.setDarkModeEnabled(this.darkModeEnabled);
-    
-    // Apply dark mode class to body
-    document.body.classList.toggle('dark', this.darkModeEnabled);
-    
-    const toast = await this.toastController.create({
-      message: `${this.darkModeEnabled ? 'Dark' : 'Light'} mode enabled`,
-      duration: 1500,
-      color: 'primary'
-    });
-    await toast.present();
+ 
+async toggleDarkMode() {
+  this.darkModeEnabled = !this.darkModeEnabled;
+  await this.storageService.setDarkModeEnabled(this.darkModeEnabled);
+  
+  // Toggle dark class on body
+  if (this.darkModeEnabled) {
+    document.body.classList.add('dark');
+  } else {
+    document.body.classList.remove('dark');
   }
+  
+  const toast = await this.toastController.create({
+    message: `${this.darkModeEnabled ? 'Dark' : 'Light'} mode enabled`,
+    duration: 1500,
+    color: 'primary'
+  });
+  await toast.present();
+}
+
+// Call this on app initialization to restore saved preference
+async initializeDarkMode() {
+  // Check if dark mode preference exists in storage
+  const savedPreference = await this.storageService.getDarkModeEnabled();
+  
+  // If no saved preference (first-time user), default to light mode
+  if (savedPreference === null || savedPreference === undefined) {
+    this.darkModeEnabled = false;
+    await this.storageService.setDarkModeEnabled(false);
+    document.body.classList.remove('dark');
+  } else {
+    // For existing users, use their saved preference
+    this.darkModeEnabled = savedPreference;
+    if (this.darkModeEnabled) {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
+    }
+  }
+}
 
   getJoinedDaysAgo(): number {
     if (!this.userProfile?.joinDate) return 0;
@@ -294,6 +320,33 @@ export class ProfilePage implements OnInit {
     ];
   }
 
+  async openFAQ() {
+    const alert = await this.alertController.create({
+      header: 'Frequently Asked Questions',
+      message: `
+        <div style="text-align: left;">
+          <h4>How do I complete lessons?</h4>
+          <p>Go to the Lessons tab and select a lesson. Follow the instructions and practice speaking.</p>
+          
+          <h4>How does practice work?</h4>
+          <p>Use the Practice tab to improve your speaking skills with different exercises.</p>
+          
+          <h4>How do I track my progress?</h4>
+          <p>Your progress is automatically tracked and displayed in your Profile tab.</p>
+          
+          <h4>Can I change my profile?</h4>
+          <p>Yes! Tap the edit button in your Profile tab to update your information.</p>
+          
+          <h4>How do I reset my password?</h4>
+          <p>Go to Sign In and tap "Forgot Password" to reset your password via email.</p>
+        </div>
+      `,
+      buttons: ['Got it!']
+    });
+
+    await alert.present();
+  }
+
   async logout() {
     const alert = await this.alertController.create({
       header: 'Sign Out',
@@ -309,8 +362,9 @@ export class ProfilePage implements OnInit {
           handler: async () => {
             try {
               await this.authService.signOut();
-              // The authService.signOut() already handles navigation to /login
               console.log('Logout completed successfully');
+              // Navigate to signin page after successful logout
+              this.router.navigate(['/auth/signin']);
             } catch (error) {
               console.error('Logout error:', error);
               const toast = await this.toastController.create({

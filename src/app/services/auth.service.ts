@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { Router } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { User } from 'firebase/auth';
@@ -9,6 +8,8 @@ import { User } from 'firebase/auth';
 export interface AuthUser {
   uid: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
   displayName?: string;
   photoURL?: string;
 }
@@ -21,8 +22,7 @@ export class AuthService {
 
   constructor(
     private afAuth: AngularFireAuth,
-    private firestore: AngularFirestore,
-    private router: Router
+    private firestore: AngularFirestore
   ) {
     this.user$ = this.afAuth.authState.pipe(
       switchMap(user => {
@@ -95,20 +95,10 @@ export class AuthService {
   async signOut(): Promise<void> {
     try {
       await this.afAuth.signOut();
-      // Navigate to login page
-      this.router.navigate(['/login']).then(() => {
-        console.log('Successfully navigated to login page after logout');
-      }).catch((error) => {
-        console.error('Navigation error after logout:', error);
-        // Fallback: try to navigate again
-        setTimeout(() => {
-          this.router.navigate(['/login']);
-        }, 100);
-      });
+      console.log('Successfully signed out');
     } catch (error) {
       console.error('Sign out error:', error);
-      // Even if signOut fails, try to navigate to login
-      this.router.navigate(['/login']);
+      throw error;
     }
   }
 
@@ -160,9 +150,11 @@ export class AuthService {
       case 'auth/invalid-email':
         return 'Please enter a valid email address.';
       case 'auth/user-not-found':
-        return 'No account found with this email address.';
+        return 'No account found';
       case 'auth/wrong-password':
-        return 'Incorrect password. Please try again.';
+        return 'Invalid password';
+      case 'auth/invalid-credential':
+        return 'Invalid password'; // Firebase returns this for both wrong password and user not found
       case 'auth/too-many-requests':
         return 'Too many failed attempts. Please try again later.';
       case 'auth/network-request-failed':

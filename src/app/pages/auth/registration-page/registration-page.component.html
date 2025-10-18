@@ -1,0 +1,103 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button fill="clear" (click)="goBack()">
+        <ion-icon name="arrow-back" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="registration-content">
+  <div class="registration-container">
+    <div class="form-section">
+      <div class="form-header">
+        <h1>Create an account</h1>
+        <p>Please complete your profile. Don't worry your data will remain private and only you can see it.</p>
+      </div>
+
+      <form [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
+        <!-- First Name -->
+        <div class="form-group">
+          <ion-item>
+            <ion-label position="stacked">First Name *</ion-label>
+            <ion-input
+              type="text"
+              formControlName="firstName"
+              placeholder="Enter your first name">
+            </ion-input>
+          </ion-item>
+          <div class="error-message" *ngIf="getFieldError('firstName')">
+            {{ getFieldError('firstName') }}
+          </div>
+        </div>
+
+        <!-- Last Name -->
+        <div class="form-group">
+          <ion-item>
+            <ion-label position="stacked">Last Name *</ion-label>
+            <ion-input
+              type="text"
+              formControlName="lastName"
+              placeholder="Enter your last name">
+            </ion-input>
+          </ion-item>
+          <div class="error-message" *ngIf="getFieldError('lastName')">
+            {{ getFieldError('lastName') }}
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <ion-item>
+            <ion-label position="stacked">Email *</ion-label>
+            <ion-input
+              type="email"
+              formControlName="email"
+              placeholder="Enter your email">
+            </ion-input>
+          </ion-item>
+          <div class="error-message" *ngIf="getFieldError('email')">
+            {{ getFieldError('email') }}
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <ion-item>
+            <ion-label position="stacked">Password *</ion-label>
+            <ion-input
+              [type]="showPassword ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="Enter your password">
+            </ion-input>
+            <ion-button
+              slot="end"
+              fill="clear"
+              (click)="togglePasswordVisibility()">
+              <ion-icon [name]="showPassword ? 'eye-off' : 'eye'" slot="icon-only"></ion-icon>
+            </ion-button>
+          </ion-item>
+          <div class="error-message" *ngIf="getFieldError('password')">
+            {{ getFieldError('password') }}
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <ion-button
+          expand="block"
+          type="submit"
+          [disabled]="registrationForm.invalid || isLoading"
+          class="submit-btn">
+          <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+          <span *ngIf="!isLoading">GET STARTED</span>
+        </ion-button>
+      </form>
+
+      <!-- Sign In Link -->
+      <div class="signin-link">
+        <p>Already have an account? <span (click)="goToSignIn()">Login here</span></p>
+      </div>
+    </div>
+  </div>
+</ion-content>

@@ -12,8 +12,9 @@ export class AppComponent implements OnInit {
 
   async ngOnInit() {
     await this.storageService.init();
-    await this.initializeTheme();
+    await this.initializeTheme(); // ✅ fixed
   }
+  
 
   private async initializeTheme() {
     // Force dark mode as default

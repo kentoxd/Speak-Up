@@ -1,196 +1,199 @@
 /*
  * App Global CSS
- * ----------------------------------------------------------------------------
- * Put style rules here that you want to apply globally. These styles are for
- * the entire app and not just one component. Additionally, this file can be
- * used as an entry point to import other CSS/Sass files to be included in the
- * output CSS.
- * For more information on global stylesheets, visit the documentation:
- * https://ionicframework.com/docs/layout/global-stylesheets
+ * Support for Light & Dark Mode
  */
 
-/* Core CSS required for Ionic components to work properly */
+/* Core Ionic CSS */
 @import "@ionic/angular/css/core.css";
-
-/* Basic CSS for apps built with Ionic */
 @import "@ionic/angular/css/normalize.css";
 @import "@ionic/angular/css/structure.css";
 @import "@ionic/angular/css/typography.css";
 @import "@ionic/angular/css/display.css";
-
-/* Optional CSS utils that can be commented out */
 @import "@ionic/angular/css/padding.css";
 @import "@ionic/angular/css/float-elements.css";
 @import "@ionic/angular/css/text-alignment.css";
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
 
-/* Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+/* Google Fonts - Inter & Noto Sans */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap');
 
-/* Force Dark Theme by Default */
+/** DEFAULT BODY STYLES - LIGHT THEME **/
+html {
+  color-scheme: light;
+}
+
+body {
+  background: #EDF2FA;
+  color: #000000;
+}
+
+/** DARK MODE - Apply when dark class added to body **/
 body.dark {
-  --ion-background-color: #121212;
-  --ion-background-color-rgb: 18,18,18;
-  --ion-text-color: #ffffff;
-  --ion-text-color-rgb: 255,255,255;
-  --ion-card-background: #1e1e1e;
-  
-  --ion-color-primary: #4c8dff;
-  --ion-color-primary-rgb: 76,141,255;
-  --ion-color-primary-contrast: #ffffff;
-  --ion-color-primary-contrast-rgb: 255,255,255;
-  --ion-color-primary-shade: #4380e0;
-  --ion-color-primary-tint: #5e97ff;
-
-  --ion-color-secondary: #50c8ff;
-  --ion-color-secondary-rgb: 80,200,255;
-  --ion-color-secondary-contrast: #ffffff;
-  --ion-color-secondary-contrast-rgb: 255,255,255;
-  --ion-color-secondary-shade: #46b0e0;
-  --ion-color-secondary-tint: #62ceff;
-
-  --ion-color-tertiary: #7974ff;
-  --ion-color-tertiary-rgb: 121,116,255;
-  --ion-color-tertiary-contrast: #ffffff;
-  --ion-color-tertiary-contrast-rgb: 255,255,255;
-  --ion-color-tertiary-shade: #6a66e0;
-  --ion-color-tertiary-tint: #8782ff;
-
-  --ion-color-success: #2fdf75;
-  --ion-color-success-rgb: 47,223,117;
-  --ion-color-success-contrast: #000000;
-  --ion-color-success-contrast-rgb: 0,0,0;
-  --ion-color-success-shade: #29c467;
-  --ion-color-success-tint: #44e283;
-
-  --ion-color-warning: #ffd534;
-  --ion-color-warning-rgb: 255,213,52;
-  --ion-color-warning-contrast: #000000;
-  --ion-color-warning-contrast-rgb: 0,0,0;
-  --ion-color-warning-shade: #e0bb2e;
-  --ion-color-warning-tint: #ffd948;
-
-  --ion-color-danger: #ff4961;
-  --ion-color-danger-rgb: 255,73,97;
-  --ion-color-danger-contrast: #ffffff;
-  --ion-color-danger-contrast-rgb: 255,255,255;
-  --ion-color-danger-shade: #e04055;
-  --ion-color-danger-tint: #ff5b71;
-
-  --ion-color-dark: #f4f5f8;
-  --ion-color-dark-rgb: 244,245,248;
-  --ion-color-dark-contrast: #000000;
-  --ion-color-dark-contrast-rgb: 0,0,0;
-  --ion-color-dark-shade: #d7d8da;
-  --ion-color-dark-tint: #f5f6f9;
-
-  --ion-color-medium: #989aa2;
-  --ion-color-medium-rgb: 152,154,162;
-  --ion-color-medium-contrast: #ffffff;
-  --ion-color-medium-contrast-rgb: 255,255,255;
-  --ion-color-medium-shade: #86888f;
-  --ion-color-medium-tint: #a2a4ab;
-
-  --ion-color-light: #222428;
-  --ion-color-light-rgb: 34,36,40;
-  --ion-color-light-contrast: #ffffff;
-  --ion-color-light-contrast-rgb: 255,255,255;
-  --ion-color-light-shade: #1e2023;
-  --ion-color-light-tint: #383a3e;
+  color-scheme: dark;
+  background: #1a1a2e;
+  color: #ffffff;
 }
 
-/* Dark Theme Support for System Preference */
-@media (prefers-color-scheme: dark) {
-  body {
-    --ion-color-primary: #4c8dff;
-    --ion-color-secondary: #50c8ff;
-    --ion-color-tertiary: #7974ff;
-  }
-}
+/** TYPOGRAPHY - Inter & Noto Sans Hierarchy **/
 
-/* iOS Dark Theme */
-.ios body.dark {
-  --ion-background-color: #000000;
-  --ion-background-color-rgb: 0,0,0;
-
-  --ion-text-color: #ffffff;
-  --ion-text-color-rgb: 255,255,255;
-
-  --ion-color-step-50: #0d0d0d;
-  --ion-color-step-100: #1a1a1a;
-  --ion-color-step-150: #262626;
-  --ion-color-step-200: #333333;
-  --ion-color-step-250: #404040;
-  --ion-color-step-300: #4d4d4d;
-  --ion-color-step-350: #595959;
-  --ion-color-step-400: #666666;
-  --ion-color-step-450: #737373;
-  --ion-color-step-500: #808080;
-  --ion-color-step-550: #8c8c8c;
-  --ion-color-step-600: #999999;
-  --ion-color-step-650: #a6a6a6;
-  --ion-color-step-700: #b3b3b3;
-  --ion-color-step-750: #bfbfbf;
-  --ion-color-step-800: #cccccc;
-  --ion-color-step-850: #d9d9d9;
-  --ion-color-step-900: #e6e6e6;
-  --ion-color-step-950: #f2f2f2;
-
-  --ion-item-background: #000000;
-  --ion-card-background: #1c1c1d;
-}
-
-/* Material Design Dark Theme */
-.md body.dark {
-  --ion-background-color: #121212;
-  --ion-background-color-rgb: 18,18,18;
-
-  --ion-text-color: #ffffff;
-  --ion-text-color-rgb: 255,255,255;
-
-  --ion-border-color: #222222;
-
-  --ion-color-step-50: #1e1e1e;
-  --ion-color-step-100: #2a2a2a;
-  --ion-color-step-150: #363636;
-  --ion-color-step-200: #414141;
-  --ion-color-step-250: #4d4d4d;
-  --ion-color-step-300: #595959;
-  --ion-color-step-350: #656565;
-  --ion-color-step-400: #717171;
-  --ion-color-step-450: #7d7d7d;
-  --ion-color-step-500: #898989;
-  --ion-color-step-550: #949494;
-  --ion-color-step-600: #a0a0a0;
-  --ion-color-step-650: #acacac;
-  --ion-color-step-700: #b8b8b8;
-  --ion-color-step-750: #c4c4c4;
-  --ion-color-step-800: #d0d0d0;
-  --ion-color-step-850: #dbdbdb;
-  --ion-color-step-900: #e7e7e7;
-  --ion-color-step-950: #f3f3f3;
-
-  --ion-item-background: #1e1e1e;
-  --ion-toolbar-background: #1f1f1f;
-  --ion-tab-bar-background: #1f1f1f;
-  --ion-card-background: #1e1e1e;
-}
-
-/* Global Typography */
+/* Default Font - Noto Sans */
+body,
 * {
-  font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Playfair Display', serif;
+/* Page Titles (H1) - Inter Bold 32px */
+h1 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 32px;
+  color: inherit;
+  margin: 0;
 }
 
-.serif-text {
-  font-family: 'Cormorant Garamond', serif;
+/* Section Headings (H2) - Inter Semibold 24px */
+h2 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+  color: inherit;
+  margin: 0;
 }
 
-/* Utility Classes */
+/* Subheadings (H3) - Inter Semibold 18px */
+h3 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: inherit;
+  margin: 0;
+}
+
+/* Body Text - Noto Sans Regular 16px */
+p {
+  font-family: 'Noto Sans', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: inherit;
+}
+
+/* Button Text - Inter Semibold 16px */
+ion-button {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  text-transform: capitalize;
+}
+
+/* Form Labels - Inter Medium 14px */
+ion-label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: inherit;
+}
+
+/* Form Inputs - Noto Sans Regular 16px */
+ion-input,
+ion-textarea {
+  font-family: 'Noto Sans', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: inherit;
+}
+
+/* Navigation/Tabs - Inter Medium 14px */
+ion-tab-button {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* Secondary Text - Noto Sans Regular 14px */
+.secondary-text {
+  font-family: 'Noto Sans', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* Caption Text - Noto Sans Regular 12px */
+.caption-text {
+  font-family: 'Noto Sans', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+/** COMPONENT STYLING **/
+
+/* Cards */
+ion-card {
+  --background: var(--ion-card-background);
+  --color: var(--ion-text-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+body.dark ion-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Toolbar */
+ion-toolbar {
+  --background: var(--ion-toolbar-background);
+  --color: var(--ion-toolbar-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+body.dark ion-toolbar {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Tab Bar */
+ion-tab-bar {
+  --background: var(--ion-tab-bar-background);
+  --color: var(--ion-tab-bar-color);
+  --color-selected: var(--ion-tab-bar-color-selected);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.dark ion-tab-bar {
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Active Tab Button */
+ion-tab-button.tab-selected {
+  --background: var(--ion-tab-bar-color-selected);
+  --color: var(--ion-toolbar-color);
+  border-radius: 50%;
+  margin: 4px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Tab Icons */
+ion-tab-button ion-icon {
+  font-size: 20px;
+}
+
+/* Content Background */
+ion-content {
+  --background: var(--ion-background-color);
+}
+
+/* Items */
+ion-item {
+  --background: var(--ion-card-background);
+  --color: var(--ion-text-color);
+}
+
+/** ANIMATIONS **/
+
 .fade-in {
   animation: fadeIn 0.5s ease-in;
 }
@@ -221,18 +224,8 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Custom Card Styles */
-.gradient-card {
-  background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
-  color: white;
-  
-  ion-card-title,
-  ion-card-subtitle {
-    color: white;
-  }
-}
+/** UTILITY CLASSES **/
 
-/* Text Utilities */
 .text-center {
   text-align: center;
 }
@@ -241,11 +234,6 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: bold;
 }
 
-.text-italic {
-  font-style: italic;
-}
-
-/* Spacing Utilities */
 .margin-top {
   margin-top: 1rem;
 }
@@ -259,7 +247,8 @@ h1, h2, h3, h4, h5, h6 {
   padding-right: 1rem;
 }
 
-/* Responsive Design */
+/** RESPONSIVE DESIGN **/
+
 @media (min-width: 768px) {
   .desktop-grid {
     display: grid;
@@ -268,7 +257,8 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Custom Button Styles */
+/** BUTTON STYLES **/
+
 .round-button {
   --border-radius: 50px;
 }
@@ -278,50 +268,4 @@ h1, h2, h3, h4, h5, h6 {
   --padding-bottom: 1rem;
   --padding-start: 2rem;
   --padding-end: 2rem;
-}
-
-/* Additional Dark Theme Styles for Ionic Components */
-body.dark {
-  ion-content {
-    --background: #121212;
-  }
-  
-  ion-card {
-    --background: #1e1e1e;
-    --color: #ffffff;
-  }
-  
-  ion-item {
-    --background: #1e1e1e;
-    --color: #ffffff;
-  }
-  
-  ion-toolbar {
-    --background: #1f1f1f;
-    --color: #ffffff;
-  }
-  
-  ion-tab-bar {
-    --background: #1f1f1f;
-    --color: #ffffff;
-  }
-  
-  ion-header {
-    background: #1f1f1f;
-  }
-  
-  /* Force dark background for all pages */
-  .home-container,
-  .lessons-container,
-  .practice-container,
-  .profile-container,
-  .faq-container,
-  .lesson-container,
-  .not-found-container,
-  .welcome-container,
-  .splash-container {
-    background: #121212;
-    color: #ffffff;
-    min-height: 100vh;
-  }
 }

@@ -23,7 +23,7 @@ export class SplashPage implements OnInit {
         if (isAuth) {
           this.router.navigate(['/tabs']);
         } else {
-          this.router.navigate(['/login']);
+          this.router.navigate(['/auth/splash']);
         }
       });
     }, 2000);
