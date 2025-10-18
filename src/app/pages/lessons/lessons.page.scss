@@ -1,7 +1,7 @@
 // Learn Tab Styling
 .learn-container {
   padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #EDF2FA;
   min-height: 100vh;
 }
 
@@ -44,11 +44,11 @@
 
 .topics-section {
   h2 {
-    color: white;
+    color: rgb(0, 0, 0);
     font-size: 1.5rem;
     font-weight: 600;
     margin: 0 0 16px 0;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    
   }
 }
 

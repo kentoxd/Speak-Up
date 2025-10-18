@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Storage } from '@ionic/storage-angular';
+import { DataService } from './data.service';
+import { BehaviorSubject } from 'rxjs';
 
 export interface UserProfile {
   name: string;
@@ -35,8 +37,12 @@ export interface TopicProgress {
 })
 export class StorageService {
   private _storage: Storage | null = null;
+  
+  // BehaviorSubject to notify of progress changes
+  private topicProgressChanged = new BehaviorSubject<string | null>(null);
+  public topicProgressChanged$ = this.topicProgressChanged.asObservable();
 
-  constructor(private storage: Storage) {
+  constructor(private storage: Storage, private dataService: DataService) {
     this.init();
   }
 
@@ -53,7 +59,6 @@ export class StorageService {
   async setUserProfile(profile: UserProfile): Promise<void> {
     await this._storage?.set('userProfile', profile);
   }
-
 
   // First time user
   async isFirstTimeUser(): Promise<boolean> {
@@ -128,6 +133,9 @@ export class StorageService {
     const allProgress = await this._storage?.get('topicProgress') || {};
     allProgress[topicId] = progress;
     await this._storage?.set('topicProgress', allProgress);
+    
+    // Notify subscribers of progress change
+    this.topicProgressChanged.next(topicId);
   }
 
   async getAllTopicProgress(): Promise<{[key: string]: TopicProgress}> {
@@ -135,35 +143,33 @@ export class StorageService {
   }
 
   async updateTopicProgress(topicId: string, lessonCompleted: boolean): Promise<TopicProgress> {
-    const currentProgress = await this.getTopicProgress(topicId);
-    const now = new Date().toISOString();
-    
-    if (!currentProgress) {
-      const newProgress: TopicProgress = {
-        topicId,
-        completed: false,
-        progress: lessonCompleted ? 20 : 0, // 20% per lesson (5 lessons total)
-        lessonsCompleted: lessonCompleted ? 1 : 0,
-        totalLessons: 5,
-        quizUnlocked: lessonCompleted && 1 >= 5, // Unlock when all lessons done
-        quizCompleted: false,
-        lastAccessed: now
-      };
-      await this.setTopicProgress(topicId, newProgress);
-      return newProgress;
-    }
+    const topic = this.dataService.getTopic(topicId);
+    if (!topic) throw new Error('Topic not found');
 
-    const updatedProgress: TopicProgress = {
-      ...currentProgress,
-      lessonsCompleted: lessonCompleted ? currentProgress.lessonsCompleted + 1 : currentProgress.lessonsCompleted,
-      progress: Math.min(100, (currentProgress.lessonsCompleted + (lessonCompleted ? 1 : 0)) * 20),
-      quizUnlocked: (currentProgress.lessonsCompleted + (lessonCompleted ? 1 : 0)) >= 5,
-      completed: (currentProgress.lessonsCompleted + (lessonCompleted ? 1 : 0)) >= 5,
-      lastAccessed: now
+    let progress = await this.getTopicProgress(topicId) || {
+      topicId,
+      lessonsCompleted: 0,
+      progress: 0,
+      completed: false,
+      quizUnlocked: false,
+      quizCompleted: false,
+      totalLessons: topic.lessons.length,
+      lastAccessed: new Date().toISOString()
     };
 
-    await this.setTopicProgress(topicId, updatedProgress);
-    return updatedProgress;
+    if (lessonCompleted) {
+      if (progress.lessonsCompleted < topic.lessons.length) {
+        progress.lessonsCompleted += 1;
+      }
+    }
+
+    progress.progress = (progress.lessonsCompleted / topic.lessons.length) * 100;
+    progress.completed = progress.lessonsCompleted === topic.lessons.length;
+    progress.quizUnlocked = progress.completed;
+    progress.lastAccessed = new Date().toISOString();
+
+    await this.setTopicProgress(topicId, progress);
+    return progress;
   }
 
   // Clear all stored data

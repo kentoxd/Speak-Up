@@ -100,7 +100,7 @@ ion-textarea {
 ion-tab-button {
   font-family: 'Inter', sans-serif;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 1px;
 }
 
 /* Secondary Text - Noto Sans Regular 14px */
@@ -140,25 +140,22 @@ ion-toolbar {
 
 /* Tab Bar */
 ion-tab-bar {
-  --background: var(--ion-tab-bar-background);
-  --color: var(--ion-tab-bar-color);
-  --color-selected: var(--ion-tab-bar-color-selected);
+  background: #FFFFFF;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
 }
 
-
-/* Active Tab Button */
-ion-tab-button.tab-selected {
-  --background: var(--ion-tab-bar-color-selected);
-  --color: var(--ion-toolbar-color);
-  border-radius: 50%;
-  margin: 4px;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+ion-tab-button {
+  --background: transparent;
+  color: #000000; /* default icon/text color */
+  border-radius: 12px; /* optional for smooth edges */
+  margin: 4px; /* optional spacing between tabs */
 }
+
+ion-tab-button.tab-selected {
+  --background: #C1DEFE;
+  color: #000000; /* keeps icons readable */
+}
+
 
 /* Tab Icons */
 ion-tab-button ion-icon {
