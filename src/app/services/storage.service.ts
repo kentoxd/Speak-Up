@@ -43,15 +43,6 @@ export class StorageService {
     await this._storage?.set('userProfile', profile);
   }
 
-  // Theme methods
-  async getDarkModeEnabled(): Promise<boolean> {
-    const stored = await this._storage?.get('darkModeEnabled');
-    return stored !== undefined ? stored : true; // Default to dark mode
-  }
-
-  async setDarkModeEnabled(enabled: boolean): Promise<void> {
-    await this._storage?.set('darkModeEnabled', enabled);
-  }
 
   // First time user
   async isFirstTimeUser(): Promise<boolean> {

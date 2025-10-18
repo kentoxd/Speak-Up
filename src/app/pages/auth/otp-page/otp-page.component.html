@@ -1,11 +1,10 @@
-<ion-header>
+<ion-header class="otp-header">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button fill="clear" (click)="goBack()">
+      <ion-button fill="clear" (click)="goBack()" class="back-button">
         <ion-icon name="arrow-back" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>{{ verificationType === 'verification' ? 'Email Verification' : 'OTP Verification' }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -13,56 +12,65 @@
   <div class="otp-container">
     <div class="form-section">
       <div class="form-header">
-        <div class="mail-icon">
-          <ion-icon name="mail" size="large" color="primary"></ion-icon>
-        </div>
-        <h1>{{ verificationType === 'verification' ? 'Verify Your Email' : 'You\'ve got mail' }}</h1>
-        <p>{{ verificationType === 'verification' ? 
-          'We\'ve sent a verification code to your email address. Please enter the code below to complete your registration.' : 
-          'We have sent the OTP verification code to your email address. Check your email and enter the code below.' }}</p>
-        <div class="email-display">
-          <strong>{{ email }}</strong>
-        </div>
+        <h1>You've got mail</h1>
+        <p>We have sent the OTP verification code to your email address. Check your email and enter the code below.</p>
       </div>
 
       <div class="otp-input-section">
-        <div class="otp-inputs">
-          <ion-input
-            *ngFor="let digit of otpInputs; let i = index"
-            [id]="'otp-' + i"
-            type="text"
-            maxlength="1"
-            [value]="digit"
-            (ionInput)="onOTPInput($event, i)"
-            (keydown)="onOTPKeyDown($event, i)"
-            (paste)="onPaste($event)"
-            class="otp-input">
-          </ion-input>
-        </div>
+        <ion-input
+          type="text"
+          maxlength="6"
+          inputmode="numeric"
+          [value]="otpCode"
+          (ionInput)="onOTPInput($event)"
+          (keydown)="onOTPKeyDown($event)"
+          (paste)="onPaste($event)"
+          class="otp-input"
+          placeholder="000000">
+        </ion-input>
       </div>
 
       <div class="resend-section">
         <p *ngIf="!canResend">
-          Didn't receive email? Resend code in {{ countdownTimer }}s
+          Didn't receive email? <span class="resend-link">Resend code in {{ countdownTimer }}s</span>
         </p>
         <ion-button 
           *ngIf="canResend"
           fill="clear" 
           color="primary"
           [disabled]="isLoading"
-          (click)="resendOTP()">
+          (click)="resendOTP()"
+          class="resend-btn">
           Resend code
         </ion-button>
       </div>
 
       <ion-button
         expand="block"
-        [disabled]="!isOTPComplete() || isLoading"
+        [disabled]="otpCode.length !== 6 || isLoading"
         (click)="onSubmit()"
         class="submit-btn">
         <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
         <span *ngIf="!isLoading">Confirm</span>
       </ion-button>
+    </div>
+  </div>
+  
+  <!-- Success Modal -->
+  <div class="success-modal" *ngIf="showSuccessModal">
+    <div class="success-modal-content">
+      <div class="success-icon">
+        <div class="checkmark">
+          <div class="checkmark-circle"></div>
+          <div class="checkmark-stem"></div>
+          <div class="checkmark-kick"></div>
+        </div>
+        <div class="confetti">
+          <div class="confetti-piece" *ngFor="let piece of confettiPieces"></div>
+        </div>
+      </div>
+      <h2>Successful!</h2>
+      <p>Please wait a moment, we are preparing for you...</p>
     </div>
   </div>
 </ion-content>

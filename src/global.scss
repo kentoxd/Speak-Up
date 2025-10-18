@@ -18,7 +18,7 @@
 /* Google Fonts - Inter & Noto Sans */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap');
 
-/** DEFAULT BODY STYLES - LIGHT THEME **/
+/** BODY STYLES - LIGHT THEME ONLY **/
 html {
   color-scheme: light;
 }
@@ -26,13 +26,6 @@ html {
 body {
   background: #EDF2FA;
   color: #000000;
-}
-
-/** DARK MODE - Apply when dark class added to body **/
-body.dark {
-  color-scheme: dark;
-  background: #1a1a2e;
-  color: #ffffff;
 }
 
 /** TYPOGRAPHY - Inter & Noto Sans Hierarchy **/
@@ -136,9 +129,6 @@ ion-card {
   border-radius: 8px;
 }
 
-body.dark ion-card {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
 
 /* Toolbar */
 ion-toolbar {
@@ -147,9 +137,6 @@ ion-toolbar {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-body.dark ion-toolbar {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
 
 /* Tab Bar */
 ion-tab-bar {
@@ -159,9 +146,6 @@ ion-tab-bar {
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
 }
 
-body.dark ion-tab-bar {
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
-}
 
 /* Active Tab Button */
 ion-tab-button.tab-selected {

@@ -9,12 +9,14 @@ import { EmailJSService } from '../../../services/emailjs.service';
   styleUrls: ['./otp-page.component.scss'],
 })
 export class OTPPageComponent implements OnInit, OnDestroy {
-  otpInputs: string[] = ['', '', '', '', '', ''];
+  otpCode: string = '';
   email: string = '';
   verificationType: string = 'password-reset';
   isLoading = false;
   countdownTimer = 60;
   canResend = false;
+  showSuccessModal = false;
+  confettiPieces: number[] = [];
   private countdownInterval: any;
 
   constructor(
@@ -47,6 +49,10 @@ export class OTPPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  generateConfetti() {
+    this.confettiPieces = Array.from({ length: 20 }, (_, i) => i);
+  }
+
   goBack() {
     if (this.verificationType === 'verification') {
       this.router.navigate(['/auth/register']);
@@ -55,110 +61,61 @@ export class OTPPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  private inputLock = false;
-
-  onOTPInput(event: any, index: number) {
-    const input = event.target as HTMLInputElement;
-    const value = input.value.replace(/\D/g, '').slice(-1); // one digit only
-  
-    this.otpInputs[index] = value;
-    input.value = value; // sync immediately
-  
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
-      nextInput?.focus();
-    }
-  
-    if (this.isOTPComplete()) {
-      setTimeout(() => this.onSubmit(), 200);
-    }
-  }
-  
-  
-
-  onOTPKeyDown(event: KeyboardEvent, index: number) {
-    const inputElement = event.target as HTMLInputElement;
-    const key = event.key;
-
-    // Handle backspace - clear current and move to previous
-    if (key === 'Backspace') {
-      event.preventDefault();
-      this.otpInputs[index] = '';
-      inputElement.value = '';
-
-      if (index > 0) {
-        const prevInput = document.getElementById(`otp-${index - 1}`) as HTMLInputElement;
-        if (prevInput) {
-          prevInput.focus();
-          prevInput.setSelectionRange(0, 1);
-        }
-      }
-      return;
-    }
-
-    // Handle arrow keys for navigation
-    if (key === 'ArrowLeft' && index > 0) {
-      event.preventDefault();
-      const prevInput = document.getElementById(`otp-${index - 1}`) as HTMLInputElement;
-      if (prevInput) {
-        prevInput.focus();
-      }
-      return;
-    }
-
-    if (key === 'ArrowRight' && index < 5) {
-      event.preventDefault();
-      const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
-      if (nextInput) {
-        nextInput.focus();
-      }
-      return;
-    }
+  onOTPInput(event: any) {
+    let value = event.target.value;
 
     // Only allow digits
-    if (!/^\d$/.test(key) && !['Tab', 'Shift'].includes(key)) {
+    value = value.replace(/\D/g, '');
+
+    // Max 6 digits
+    if (value.length > 6) {
+      value = value.slice(0, 6);
+    }
+
+    this.otpCode = value;
+    event.target.value = value;
+
+    // Auto-submit when 6 digits entered
+    if (value.length === 6 && !this.isLoading) {
+      setTimeout(() => this.onSubmit(), 300);
+    }
+  }
+
+  onOTPKeyDown(event: KeyboardEvent) {
+    const key = event.key;
+
+    // Allow only digits and control keys
+    if (!/^\d$/.test(key) && !['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight'].includes(key)) {
       event.preventDefault();
     }
   }
 
   onPaste(event: ClipboardEvent) {
     event.preventDefault();
-    
+
     const pastedData = event.clipboardData?.getData('text') || '';
-    const digits = pastedData.replace(/\D/g, '').slice(0, 6);
+    let digits = pastedData.replace(/\D/g, '').slice(0, 6);
 
     if (digits.length === 0) return;
 
-    // Fill inputs with pasted digits
-    for (let i = 0; i < digits.length && i < 6; i++) {
-      this.otpInputs[i] = digits[i];
-      const inputElement = document.getElementById(`otp-${i}`) as HTMLInputElement;
-      if (inputElement) {
-        inputElement.value = digits[i];
-      }
-    }
-
-    // Focus last input or next empty input
-    const focusIndex = Math.min(digits.length - 1, 5);
-    const focusInput = document.getElementById(`otp-${focusIndex}`) as HTMLInputElement;
-    if (focusInput) {
-      focusInput.focus();
-    }
+    this.otpCode = digits;
+    const input = event.target as HTMLInputElement;
+    input.value = digits;
 
     // Auto-submit if 6 digits pasted
-    if (digits.length === 6) {
-      setTimeout(() => {
-        this.onSubmit();
-      }, 100);
+    if (digits.length === 6 && !this.isLoading) {
+      setTimeout(() => this.onSubmit(), 200);
     }
   }
 
   async onSubmit() {
-    const otpCode = this.otpInputs.join('');
+    if (this.isLoading) {
+      return;
+    }
 
-    if (!this.isOTPComplete()) {
+    if (this.otpCode.length !== 6) {
       const toast = await this.toastController.create({
-        message: 'Please enter the complete 6-digit OTP',
+        message: 'Please enter a 6-digit OTP',
         duration: 2000,
         color: 'warning',
         position: 'top'
@@ -167,32 +124,36 @@ export class OTPPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.isLoading) {
-      this.isLoading = true;
+    this.isLoading = true;
 
-      const loading = await this.loadingController.create({
-        message: 'Verifying OTP...',
-        spinner: 'crescent'
-      });
-      await loading.present();
+    const loading = await this.loadingController.create({
+      message: 'Verifying OTP...',
+      spinner: 'crescent'
+    });
+    await loading.present();
 
-      try {
-        let isValid = false;
+    try {
+      let isValid = false;
 
+      if (this.verificationType === 'verification') {
+        isValid = await this.emailJSService.verifyEmailOTP(this.email, this.otpCode);
+      } else {
+        isValid = this.emailJSService.validateOTP(this.email, this.otpCode);
+      }
+
+      await loading.dismiss();
+
+      if (isValid) {
         if (this.verificationType === 'verification') {
-          isValid = await this.emailJSService.verifyEmailOTP(this.email, otpCode);
+          this.showSuccessModal = true;
+          this.generateConfetti();
+
+          setTimeout(() => {
+            this.router.navigate(['/auth/signin']);
+          }, 3000);
         } else {
-          isValid = this.emailJSService.validateOTP(this.email, otpCode);
-        }
-
-        await loading.dismiss();
-        this.isLoading = false;
-
-        if (isValid) {
           const toast = await this.toastController.create({
-            message: this.verificationType === 'verification' ?
-              'Email verified successfully! You can now sign in.' :
-              'OTP verified successfully!',
+            message: 'OTP verified successfully!',
             duration: 2000,
             color: 'success',
             position: 'top'
@@ -200,49 +161,38 @@ export class OTPPageComponent implements OnInit, OnDestroy {
           await toast.present();
 
           setTimeout(() => {
-            if (this.verificationType === 'verification') {
-              this.router.navigate(['/auth/signin']);
-            } else {
-              const navigationExtras: NavigationExtras = {
-                state: { email: this.email }
-              };
-              this.router.navigate(['/auth/create-password'], navigationExtras);
-            }
+            const navigationExtras: NavigationExtras = {
+              state: { email: this.email }
+            };
+            this.router.navigate(['/auth/create-password'], navigationExtras);
           }, 1000);
         }
-
-      } catch (error: any) {
-        await loading.dismiss();
-        this.isLoading = false;
-
+      } else {
         const toast = await this.toastController.create({
-          message: error.message || 'Invalid OTP. Please try again.',
+          message: 'Invalid OTP. Please try again.',
           duration: 3000,
           color: 'danger',
           position: 'top'
         });
         await toast.present();
-
-        this.clearOTPInputs();
+        this.otpCode = '';
       }
-    }
-  }
 
-  isOTPComplete(): boolean {
-    return this.otpInputs.every(digit => digit !== '') && this.otpInputs.length === 6;
-  }
+      this.isLoading = false;
 
-  private clearOTPInputs() {
-    this.otpInputs = ['', '', '', '', '', ''];
-    for (let i = 0; i < 6; i++) {
-      const inputElement = document.getElementById(`otp-${i}`) as HTMLInputElement;
-      if (inputElement) {
-        inputElement.value = '';
-      }
-    }
-    const firstInput = document.getElementById('otp-0') as HTMLInputElement;
-    if (firstInput) {
-      firstInput.focus();
+    } catch (error: any) {
+      await loading.dismiss();
+      this.isLoading = false;
+
+      const toast = await this.toastController.create({
+        message: error.message || 'Invalid OTP. Please try again.',
+        duration: 3000,
+        color: 'danger',
+        position: 'top'
+      });
+      await toast.present();
+
+      this.otpCode = '';
     }
   }
 
@@ -276,9 +226,8 @@ export class OTPPageComponent implements OnInit, OnDestroy {
 
         this.countdownTimer = 60;
         this.canResend = false;
+        this.otpCode = '';
         this.startCountdown();
-
-        this.clearOTPInputs();
 
       } catch (error: any) {
         await loading.dismiss();

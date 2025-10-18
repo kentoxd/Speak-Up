@@ -1,14 +1,9 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>FAQ</ion-title>
-    <ion-buttons slot="end">
-      <ion-button fill="clear" (click)="expandAll()">
-        <ion-icon name="expand" slot="icon-only"></ion-icon>
-      </ion-button>
-      <ion-button fill="clear" (click)="collapseAll()">
-        <ion-icon name="contract" slot="icon-only"></ion-icon>
-      </ion-button>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/profile"></ion-back-button>
     </ion-buttons>
+    <ion-title>FAQ</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -20,67 +15,43 @@
   </ion-header>
 
   <div class="faq-container">
-    
-    <!-- Header -->
     <div class="faq-header">
-      <h2>Frequently Asked Questions</h2>
-      <p>Find answers to common questions about using SpeakUp and improving your public speaking skills.</p>
+      <h1>Frequently Asked Questions</h1>
+      <p>Find answers to common questions about SpeakUp</p>
     </div>
 
-    <!-- Search -->
-    <div class="search-section">
-      <ion-searchbar 
-        placeholder="Search questions..."
-        (ionInput)="onSearchChange($event)"
-        debounce="300">
-      </ion-searchbar>
-    </div>
-
-    <!-- FAQ List -->
     <div class="faq-list">
-      <ion-accordion-group *ngFor="let faq of filteredFaqs; let i = index">
-        <ion-accordion [value]="faq.expanded ? 'open' : undefined">
-          <ion-item slot="header" (click)="toggleFaq(i)">
+      <ion-card *ngFor="let faq of faqs; let i = index" class="faq-card">
+        <ion-card-content>
+          <ion-item button (click)="toggleFAQ(i)" lines="none" class="faq-item">
             <ion-label>
               <h3>{{ faq.question }}</h3>
             </ion-label>
             <ion-icon 
               [name]="faq.expanded ? 'chevron-up' : 'chevron-down'" 
-              slot="end"
-              color="medium">
+              slot="end" 
+              color="primary">
             </ion-icon>
           </ion-item>
           
-          <div slot="content" class="faq-answer">
+          <div class="faq-answer" [class.expanded]="faq.expanded">
             <p>{{ faq.answer }}</p>
           </div>
-        </ion-accordion>
-      </ion-accordion-group>
+        </ion-card-content>
+      </ion-card>
     </div>
 
-    <!-- Empty State -->
-    <div *ngIf="filteredFaqs.length === 0" class="empty-state">
-      <ion-icon name="search-outline" color="medium"></ion-icon>
-      <h3>No results found</h3>
-      <p>Try searching with different keywords or check your spelling.</p>
+    <div class="contact-section">
+      <ion-card>
+        <ion-card-content>
+          <h3>Still have questions?</h3>
+          <p>If you can't find the answer you're looking for, feel free to contact our support team.</p>
+          <ion-button fill="outline" color="primary" expand="block">
+            <ion-icon name="mail" slot="start"></ion-icon>
+            Contact Support
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
     </div>
-
-    <!-- Contact Support -->
-    <ion-card class="contact-card">
-      <ion-card-content>
-        <div class="contact-content">
-          <ion-icon name="help-circle" color="primary"></ion-icon>
-          <div class="contact-info">
-            <h3>Still need help?</h3>
-            <p>Can't find what you're looking for? Our support team is here to help.</p>
-          </div>
-        </div>
-        <ion-button expand="block" fill="outline" color="primary">
-          <ion-icon name="mail" slot="start"></ion-icon>
-          Contact Support
-        </ion-button>
-      </ion-card-content>
-    </ion-card>
-
   </div>
 </ion-content>

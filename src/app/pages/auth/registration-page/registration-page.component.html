@@ -1,7 +1,7 @@
-<ion-header>
+<ion-header class="registration-header">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button fill="clear" (click)="goBack()">
+      <ion-button fill="clear" (click)="goBack()" class="back-button">
         <ion-icon name="arrow-back" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -19,12 +19,12 @@
       <form [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
         <!-- First Name -->
         <div class="form-group">
-          <ion-item>
-            <ion-label position="stacked">First Name *</ion-label>
+          <ion-item class="form-item">
+            <ion-label position="stacked">First Name</ion-label>
             <ion-input
               type="text"
               formControlName="firstName"
-              placeholder="Enter your first name">
+              placeholder="Juan">
             </ion-input>
           </ion-item>
           <div class="error-message" *ngIf="getFieldError('firstName')">
@@ -34,12 +34,12 @@
 
         <!-- Last Name -->
         <div class="form-group">
-          <ion-item>
-            <ion-label position="stacked">Last Name *</ion-label>
+          <ion-item class="form-item">
+            <ion-label position="stacked">Last Name</ion-label>
             <ion-input
               type="text"
               formControlName="lastName"
-              placeholder="Enter your last name">
+              placeholder="Dela Cruz">
             </ion-input>
           </ion-item>
           <div class="error-message" *ngIf="getFieldError('lastName')">
@@ -49,12 +49,12 @@
 
         <!-- Email -->
         <div class="form-group">
-          <ion-item>
-            <ion-label position="stacked">Email *</ion-label>
+          <ion-item class="form-item">
+            <ion-label position="stacked">Email</ion-label>
             <ion-input
               type="email"
               formControlName="email"
-              placeholder="Enter your email">
+              placeholder="juandelacruz@gmail.com">
             </ion-input>
           </ion-item>
           <div class="error-message" *ngIf="getFieldError('email')">
@@ -64,17 +64,18 @@
 
         <!-- Password -->
         <div class="form-group">
-          <ion-item>
-            <ion-label position="stacked">Password *</ion-label>
+          <ion-item class="form-item">
+            <ion-label position="stacked">Password</ion-label>
             <ion-input
               [type]="showPassword ? 'text' : 'password'"
               formControlName="password"
-              placeholder="Enter your password">
+              placeholder="••••••••">
             </ion-input>
             <ion-button
               slot="end"
               fill="clear"
-              (click)="togglePasswordVisibility()">
+              (click)="togglePasswordVisibility()"
+              class="password-toggle">
               <ion-icon [name]="showPassword ? 'eye-off' : 'eye'" slot="icon-only"></ion-icon>
             </ion-button>
           </ion-item>
@@ -90,14 +91,9 @@
           [disabled]="registrationForm.invalid || isLoading"
           class="submit-btn">
           <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
-          <span *ngIf="!isLoading">GET STARTED</span>
+          <span *ngIf="!isLoading">CONTINUE</span>
         </ion-button>
       </form>
-
-      <!-- Sign In Link -->
-      <div class="signin-link">
-        <p>Already have an account? <span (click)="goToSignIn()">Login here</span></p>
-      </div>
     </div>
   </div>
 </ion-content>

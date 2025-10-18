@@ -1,5 +1,17 @@
+.registration-header {
+  ion-toolbar {
+    --background: #F5F5F5;
+    --color: #000000;
+    
+    .back-button {
+      --color: #000000;
+      font-size: 20px;
+    }
+  }
+}
+
 .registration-content {
-  --background: #EDF2FA;
+  --background: #F5F5F5;
 }
 
 .registration-container {
@@ -7,7 +19,7 @@
   flex-direction: column;
   min-height: 100vh;
   padding: 1rem;
-  background-color: #EDF2FA;
+  background-color: #F5F5F5;
 }
 
 .form-section {
@@ -27,7 +39,7 @@
     font-family: 'Inter', sans-serif;
     font-weight: 700;
     font-size: 32px;
-    color: #1a1a1a;
+    color: #000000;
     margin: 0 0 0.5rem 0;
   }
   
@@ -44,10 +56,10 @@
 .form-group {
   margin-bottom: 1.5rem;
   
-  ion-item {
+  .form-item {
     --border-radius: 8px;
     --background: #FFFFFF;
-    --border-color: #D7E3FC;
+    --border-color: #E0E0E0;
     --border-width: 1px;
     --border-style: solid;
     --padding-start: 1rem;
@@ -61,17 +73,22 @@
       font-family: 'Inter', sans-serif;
       font-weight: 500;
       font-size: 14px;
-      color: #1a1a1a;
+      color: #000000;
       margin-bottom: 0.5rem;
     }
     
     ion-input {
       --padding-top: 0.5rem;
       --padding-bottom: 0.5rem;
-      --color: #1a1a1a;
+      --color: #000000;
       font-family: 'Noto Sans', sans-serif;
       font-weight: 400;
       font-size: 16px;
+    }
+    
+    .password-toggle {
+      --color: #666666;
+      font-size: 20px;
     }
   }
 }
@@ -103,27 +120,6 @@
   &:disabled {
     --background: #CCDBFD;
     --color: #666666;
-  }
-}
-
-.signin-link {
-  text-align: center;
-  margin-top: 1rem;
-  
-  p {
-    margin: 0;
-    font-family: 'Noto Sans', sans-serif;
-    font-weight: 400;
-    font-size: 16px;
-    color: #666666;
-    
-    span {
-      font-family: 'Inter', sans-serif;
-      font-weight: 500;
-      font-size: 14px;
-      color: #ABC4FF;
-      cursor: pointer;
-    }
   }
 }
 

@@ -155,7 +155,7 @@ export class FirebaseAuthService {
       
       // If it's a rate limiting error, provide a helpful message
       if (error.code === 'auth/too-many-requests') {
-        throw new Error('Please wait a few minutes before trying again. Too many password reset attempts.');
+        throw new Error('Firebase has temporarily blocked requests from this device due to unusual activity. Please wait 15-30 minutes, clear your browser cache, and try again. You can also try using a different browser or incognito mode.');
       }
       
       throw new Error(this.getErrorMessage(error.code));
@@ -301,7 +301,7 @@ export class FirebaseAuthService {
       case 'auth/invalid-credential':
         return 'Invalid password'; // Firebase returns this for both wrong password and user not found
       case 'auth/too-many-requests':
-        return 'Too many failed attempts. Please try again later.';
+        return 'Firebase has temporarily blocked requests from this device due to unusual activity. Please wait 15-30 minutes, clear your browser cache, and try again. You can also try using a different browser or incognito mode.';
       case 'auth/network-request-failed':
         return 'Network error. Please check your connection.';
       case 'auth/user-disabled':

@@ -7,120 +7,132 @@
   text-align: center;
   margin-bottom: 2rem;
   
-  h2 {
-    color: var(--ion-color-primary);
-    margin-bottom: 0.5rem;
-    font-family: 'Playfair Display', serif;
+  h1 {
+    margin: 0 0 0.5rem 0;
+    color: var(--ion-color-dark);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 2rem;
   }
   
   p {
-    color: var(--ion-color-medium);
     margin: 0;
-    line-height: 1.4;
-  }
-}
-
-.search-section {
-  margin-bottom: 1.5rem;
-  
-  ion-searchbar {
-    --border-radius: 12px;
-    --background: var(--ion-color-light);
+    color: var(--ion-color-medium);
+    font-size: 1rem;
   }
 }
 
 .faq-list {
   margin-bottom: 2rem;
   
-  ion-accordion-group {
-    margin-bottom: 0.5rem;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    
-    ion-accordion {
-      ion-item {
-        --background: var(--ion-background);
-        --border-color: transparent;
-        
-        h3 {
-          margin: 0;
-          color: var(--ion-color-dark);
-          font-weight: 500;
-          font-size: 1rem;
-          line-height: 1.4;
-        }
-        
-        ion-icon {
-          transition: transform 0.3s ease;
-        }
-      }
-      
-      .faq-answer {
-        padding: 1rem 1.5rem;
-        background: var(--ion-color-light);
-        border-top: 1px solid var(--ion-color-medium-tint);
-        
-        p {
-          margin: 0;
-          color: var(--ion-color-dark);
-          line-height: 1.5;
-        }
-      }
-    }
-  }
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--ion-color-medium);
-  
-  ion-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-  }
-  
-  h3 {
+  .faq-card {
     margin: 0 0 0.5rem 0;
-    color: var(--ion-color-medium);
-  }
-  
-  p {
-    margin: 0;
-    font-size: 0.9rem;
-  }
-}
-
-.contact-card {
-  .contact-content {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     
-    ion-icon {
-      font-size: 2.5rem;
-    }
-    
-    .contact-info {
-      flex: 1;
+    .faq-item {
+      --padding-start: 1rem;
+      --padding-end: 1rem;
+      --padding-top: 1rem;
+      --padding-bottom: 1rem;
       
       h3 {
-        margin: 0 0 0.25rem 0;
+        margin: 0;
         color: var(--ion-color-dark);
         font-weight: 600;
+        font-size: 1rem;
+        line-height: 1.4;
+      }
+      
+      ion-icon {
+        font-size: 1.2rem;
+        transition: transform 0.3s ease;
+      }
+    }
+    
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      padding: 0 1rem;
+      
+      &.expanded {
+        max-height: 200px;
+        padding: 0 1rem 1rem 1rem;
       }
       
       p {
         margin: 0;
         color: var(--ion-color-medium);
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+        line-height: 1.5;
       }
     }
   }
+}
+
+.contact-section {
+  ion-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    
+    ion-card-content {
+      text-align: center;
+      padding: 2rem 1rem;
+      
+      h3 {
+        margin: 0 0 0.5rem 0;
+        color: var(--ion-color-dark);
+        font-weight: 600;
+        font-size: 1.2rem;
+      }
+      
+      p {
+        margin: 0 0 1.5rem 0;
+        color: var(--ion-color-medium);
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+      
+      ion-button {
+        --border-radius: 8px;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+// Responsive design
+@media (min-width: 768px) {
+  .faq-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
   
-  ion-button {
-    --border-radius: 12px;
+  .faq-header {
+    h1 {
+      font-size: 2.5rem;
+    }
+    
+    p {
+      font-size: 1.1rem;
+    }
+  }
+  
+  .faq-list {
+    .faq-card {
+      .faq-item {
+        h3 {
+          font-size: 1.1rem;
+        }
+      }
+      
+      .faq-answer {
+        p {
+          font-size: 1rem;
+        }
+      }
+    }
   }
 }

@@ -1,5 +1,48 @@
 <ion-content class="landing-content">
   <div class="landing-container">
+    <!-- Slides Container -->
+    <div class="slides-container" [ngSwitch]="currentPage">
+      
+      <!-- Slide 1: Practice anywhere -->
+      <div *ngSwitchCase="1" class="slide fade-in">
+        <div class="slide-content">
+          <div class="illustration-section">
+            <img src="assets/logo/landing page 1.svg" alt="Practice anywhere">
+          </div>
+          
+          <div class="text-section">
+            <h2>Practice with us anytime anywhere you like!</h2>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Slide 2: Speak confidently -->
+      <div *ngSwitchCase="2" class="slide fade-in">
+        <div class="slide-content">
+          <div class="illustration-section">
+            <img src="assets/logo/landing page 2 image.png" alt="Speak confidently">
+          </div>
+          
+          <div class="text-section">
+            <h2>Speak confidently with us!</h2>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Slide 3: Learn more -->
+      <div *ngSwitchCase="3" class="slide fade-in">
+        <div class="slide-content">
+          <div class="illustration-section">
+            <img src="assets/logo/landing page 3 image.svg" alt="Learn more">
+          </div>
+          
+          <div class="text-section">
+            <h2>Learn more with <span class="speakup-brand">SpeakUp</span></h2>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <!-- Action Section -->
     <div class="action-section">
       <ion-button 
@@ -13,6 +56,13 @@
       <div class="login-link">
         <p>Already have an account? <span (click)="goToSignIn()">Login here</span></p>
       </div>
+    </div>
+    
+    <!-- Page Indicators -->
+    <div class="page-indicators">
+      <div class="indicator" [class.active]="currentPage === 1" (click)="goToPage(1)"></div>
+      <div class="indicator" [class.active]="currentPage === 2" (click)="goToPage(2)"></div>
+      <div class="indicator" [class.active]="currentPage === 3" (click)="goToPage(3)"></div>
     </div>
   </div>
 </ion-content>

@@ -149,80 +149,6 @@
   }
 }
 
-/* Dark Mode Styles */
-body.dark {
-  .email-verification-content {
-    --background: #121212;
-  }
-
-  .email-verification-container {
-    background: #121212;
-    color: #ffffff;
-  }
-
-  .form-section {
-    background: transparent;
-    color: #ffffff;
-  }
-
-  .form-header h1 {
-    color: #ffffff;
-  }
-
-  .form-header p {
-    color: #cccccc;
-  }
-
-  .email-display {
-    background: #2a2a2a;
-    color: #ffffff;
-  }
-
-  .form-group ion-item {
-    --background: #000000 !important;
-    --color: #ffffff !important;
-    --border-color: #404040;
-    --border-width: 1px;
-    --border-style: solid;
-    background: #000000 !important;
-    color: #ffffff !important;
-    border: 1px solid #404040;
-    border-radius: 12px;
-    position: relative;
-  }
-
-  .form-group ion-label {
-    color: #ffffff;
-  }
-
-  .form-group ion-input {
-    --background: #000000 !important;
-    --color: #ffffff !important;
-    --placeholder-color: #888888;
-    --placeholder-opacity: 1;
-    background: #000000 !important;
-    color: #ffffff !important;
-    border: none;
-  }
-
-  .form-group ion-input input {
-    background: #000000 !important;
-    color: #ffffff !important;
-  }
-
-  .error-message {
-    color: #ff6b6b;
-  }
-
-  .resend-section p {
-    color: #cccccc;
-  }
-
-  .help-text p {
-    color: #888888;
-  }
-}
-
 @media (min-width: 768px) {
   .email-verification-container {
     padding: 2rem;
@@ -234,8 +160,4 @@ body.dark {
     border-radius: 16px;
   }
 
-  /* Dark mode desktop styles */
-  body.dark .form-section {
-    background: transparent;
-  }
 }
