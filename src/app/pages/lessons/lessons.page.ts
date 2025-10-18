@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { DataService, Lesson } from '../../services/data.service';
-import { StorageService, LessonProgress } from '../../services/storage.service';
+import { DataService, Topic, Lesson } from '../../services/data.service';
+import { StorageService, TopicProgress, LessonProgress } from '../../services/storage.service';
 
 @Component({
   selector: 'app-lessons',
@@ -9,12 +9,12 @@ import { StorageService, LessonProgress } from '../../services/storage.service';
   styleUrls: ['./lessons.page.scss'],
 })
 export class LessonsPage implements OnInit {
-  lessons: Lesson[] = [];
-  filteredLessons: Lesson[] = [];
-  searchTerm = '';
-  selectedCategory = 'all';
-  categories: string[] = ['all'];
-  lessonProgress: {[key: string]: LessonProgress} = {};
+  topics: Topic[] = [];
+  topicProgress: {[key: string]: TopicProgress} = {};
+  overallProgress = 0;
+  completedTopics = 0;
+  totalTopics = 0;
+  Math = Math;
 
   constructor(
     private router: Router,
@@ -23,76 +23,70 @@ export class LessonsPage implements OnInit {
   ) { }
 
   async ngOnInit() {
-    await this.loadLessons();
+    await this.loadTopics();
   }
 
   async ionViewWillEnter() {
-    await this.loadLessonProgress();
+    await this.loadTopicProgress();
   }
 
-  private async loadLessons() {
-    this.lessons = this.dataService.getLessons();
-    this.filteredLessons = [...this.lessons];
-    
-    // Extract unique categories
-    const categorySet = new Set(['all']);
-    this.lessons.forEach(lesson => categorySet.add(lesson.category));
-    this.categories = Array.from(categorySet);
-    
-    await this.loadLessonProgress();
+  private async loadTopics() {
+    this.topics = this.dataService.getTopics();
+    this.totalTopics = this.topics.length;
+    await this.loadTopicProgress();
   }
 
-  private async loadLessonProgress() {
-    this.lessonProgress = await this.storageService.getAllLessonProgress();
+  private async loadTopicProgress() {
+    this.topicProgress = await this.storageService.getAllTopicProgress();
+    this.calculateOverallProgress();
   }
 
-  filterLessons() {
-    this.filteredLessons = this.lessons.filter(lesson => {
-      const matchesSearch = lesson.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-                          lesson.description.toLowerCase().includes(this.searchTerm.toLowerCase());
-      const matchesCategory = this.selectedCategory === 'all' || lesson.category === this.selectedCategory;
-      
-      return matchesSearch && matchesCategory;
+  private calculateOverallProgress() {
+    const totalLessons = this.topics.length * 5; // 5 lessons per topic
+    let completedLessons = 0;
+    this.completedTopics = 0;
+
+    this.topics.forEach(topic => {
+      const progress = this.topicProgress[topic.id];
+      if (progress) {
+        completedLessons += progress.lessonsCompleted;
+        if (progress.completed) {
+          this.completedTopics++;
+        }
+      }
     });
+
+    this.overallProgress = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
   }
 
-  onSearchChange(event: any) {
-    this.searchTerm = event.detail.value;
-    this.filterLessons();
+  getTopicProgress(topicId: string): TopicProgress | null {
+    return this.topicProgress[topicId] || null;
   }
 
-  onCategoryChange(event: any) {
-    this.selectedCategory = event.detail.value;
-    this.filterLessons();
+  isTopicCompleted(topicId: string): boolean {
+    const progress = this.getTopicProgress(topicId);
+    return progress?.completed || false;
   }
 
-  getLessonProgress(lessonId: string): number {
-    return this.lessonProgress[lessonId]?.progress || 0;
+  isQuizUnlocked(topicId: string): boolean {
+    const progress = this.getTopicProgress(topicId);
+    return progress?.quizUnlocked || false;
   }
 
-  isLessonCompleted(lessonId: string): boolean {
-    return this.lessonProgress[lessonId]?.completed || false;
+  openTopic(topic: Topic) {
+    this.router.navigate(['/topic-lessons', topic.id]);
   }
 
-  getDifficultyColor(difficulty: string): string {
-    switch (difficulty) {
-      case 'beginner': return 'success';
-      case 'intermediate': return 'warning';
-      case 'advanced': return 'danger';
-      default: return 'medium';
-    }
+  getCompletedTopicsCount(): number {
+    return this.completedTopics;
   }
 
-  openLesson(lesson: Lesson) {
-    this.router.navigate(['/lesson-content', lesson.id]);
+  getTotalTopicsCount(): number {
+    return this.totalTopics;
   }
 
-  getCompletedCount(): number {
-    return Object.values(this.lessonProgress).filter(p => p.completed).length;
-  }
-
-  getTotalLessons(): number {
-    return this.lessons.length;
+  startQuiz(topic: Topic) {
+    this.router.navigate(['/topic-quiz', topic.id]);
   }
 
 }

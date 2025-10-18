@@ -20,6 +20,12 @@
   width: 100%;
 }
 
+ion-item ion-button[slot="end"] {
+  position: relative;
+  top: 30px; /* increase value to move it lower */
+}
+
+
 .form-header {
   margin-bottom: 2rem;
   

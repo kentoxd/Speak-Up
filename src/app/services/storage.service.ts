@@ -19,6 +19,17 @@ export interface LessonProgress {
   lastAccessed: string;
 }
 
+export interface TopicProgress {
+  topicId: string;
+  completed: boolean;
+  progress: number;
+  lessonsCompleted: number;
+  totalLessons: number;
+  quizUnlocked: boolean;
+  quizCompleted: boolean;
+  lastAccessed: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -105,6 +116,54 @@ export class StorageService {
 
   async getCurrentStreak(): Promise<number> {
     return await this._storage?.get('currentStreak') || 0;
+  }
+
+  // Topic Progress
+  async getTopicProgress(topicId: string): Promise<TopicProgress | null> {
+    const allProgress = await this._storage?.get('topicProgress') || {};
+    return allProgress[topicId] || null;
+  }
+
+  async setTopicProgress(topicId: string, progress: TopicProgress): Promise<void> {
+    const allProgress = await this._storage?.get('topicProgress') || {};
+    allProgress[topicId] = progress;
+    await this._storage?.set('topicProgress', allProgress);
+  }
+
+  async getAllTopicProgress(): Promise<{[key: string]: TopicProgress}> {
+    return await this._storage?.get('topicProgress') || {};
+  }
+
+  async updateTopicProgress(topicId: string, lessonCompleted: boolean): Promise<TopicProgress> {
+    const currentProgress = await this.getTopicProgress(topicId);
+    const now = new Date().toISOString();
+    
+    if (!currentProgress) {
+      const newProgress: TopicProgress = {
+        topicId,
+        completed: false,
+        progress: lessonCompleted ? 20 : 0, // 20% per lesson (5 lessons total)
+        lessonsCompleted: lessonCompleted ? 1 : 0,
+        totalLessons: 5,
+        quizUnlocked: lessonCompleted && 1 >= 5, // Unlock when all lessons done
+        quizCompleted: false,
+        lastAccessed: now
+      };
+      await this.setTopicProgress(topicId, newProgress);
+      return newProgress;
+    }
+
+    const updatedProgress: TopicProgress = {
+      ...currentProgress,
+      lessonsCompleted: lessonCompleted ? currentProgress.lessonsCompleted + 1 : currentProgress.lessonsCompleted,
+      progress: Math.min(100, (currentProgress.lessonsCompleted + (lessonCompleted ? 1 : 0)) * 20),
+      quizUnlocked: (currentProgress.lessonsCompleted + (lessonCompleted ? 1 : 0)) >= 5,
+      completed: (currentProgress.lessonsCompleted + (lessonCompleted ? 1 : 0)) >= 5,
+      lastAccessed: now
+    };
+
+    await this.setTopicProgress(topicId, updatedProgress);
+    return updatedProgress;
   }
 
   // Clear all stored data

@@ -16,12 +16,26 @@
   margin-bottom: 4rem;
 }
 
-.logo-icon {
-  font-size: 6rem;
-  color: white;
+.logo-img {
+  width: 200px; /* make it bigger if needed */
+  height: auto;
   margin-bottom: 1rem;
   animation: pulse 2s infinite;
 }
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+
 
 .app-title {
   font-size: 3rem;

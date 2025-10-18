@@ -70,6 +70,21 @@ const routes: Routes = [
     loadChildren: () => import('./pages/not-found/not-found.module').then(m => m.NotFoundPageModule)
   },
   {
+    path: 'topic-lessons/:id',
+    loadChildren: () => import('./pages/topic-lessons/topic-lessons.module').then( m => m.TopicLessonsPageModule),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'topic-quiz/:id',
+    loadChildren: () => import('./pages/topic-quiz/topic-quiz.module').then( m => m.TopicQuizPageModule),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'quiz-results/:id',
+    loadChildren: () => import('./pages/quiz-results/quiz-results.module').then( m => m.QuizResultsPageModule),
+    canActivate: [AuthGuard]
+  },
+  {
     path: '**',
     redirectTo: '/not-found'
   }

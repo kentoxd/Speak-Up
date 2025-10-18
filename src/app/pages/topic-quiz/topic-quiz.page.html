@@ -1,0 +1,91 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Quiz</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Quiz</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="quiz-container" *ngIf="topic && getCurrentQuestion()">
+    
+    <!-- Quiz Progress -->
+    <div class="quiz-progress">
+      <div class="progress-info">
+        <span>Question {{ currentQuestionIndex + 1 }} of {{ totalQuestions }}</span>
+      </div>
+      <ion-progress-bar 
+        [value]="getProgress() / 100"
+        color="secondary">
+      </ion-progress-bar>
+    </div>
+
+    <!-- Quiz Question -->
+    <ion-card class="question-card">
+      <ion-card-content>
+        <h2>{{ getCurrentQuestion()?.question }}</h2>
+        
+        <div class="answer-options">
+          <ion-button 
+            *ngFor="let option of getCurrentQuestion()?.options; let i = index"
+            [fill]="isAnswerSelected(i) ? 'solid' : 'outline'"
+            [color]="isAnswerSelected(i) ? 'primary' : 'medium'"
+            expand="block"
+            class="answer-button"
+            (click)="selectAnswer(i)">
+            {{ option }}
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Navigation Buttons -->
+    <div class="quiz-navigation">
+      <ion-button 
+        *ngIf="currentQuestionIndex < totalQuestions - 1"
+        fill="solid"
+        [disabled]="!hasAnswerSelected()"
+        (click)="nextQuestion()">
+        Next
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-button>
+
+      <ion-button 
+        *ngIf="currentQuestionIndex === totalQuestions - 1"
+        fill="solid"
+        color="success"
+        [disabled]="!hasAnswerSelected()"
+        (click)="submitQuiz()">
+        Submit Quiz
+        <ion-icon name="checkmark" slot="end"></ion-icon>
+      </ion-button>
+    </div>
+
+  </div>
+
+  <!-- Quiz Completed State -->
+  <div class="quiz-completed" *ngIf="quizCompleted">
+    <ion-card class="completion-card">
+      <ion-card-content>
+        <div class="completion-actions">
+          <ion-button 
+            fill="solid" 
+            color="tertiary"
+            (click)="goToResults()">
+            View Results
+          </ion-button>
+          <ion-button 
+            fill="outline"
+            (click)="goBack()">
+            Back to Lessons
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+</ion-content>

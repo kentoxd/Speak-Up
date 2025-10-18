@@ -32,6 +32,21 @@
   width: 100%;
 }
 
+ion-item ion-button[slot="end"] {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  padding-top: 25px;
+
+  color:#ABC4FF;
+  
+}
+
+ion-item ion-button[slot="end"] ion-icon {
+  font-size: 30px; /* smaller eye icon */
+}
+
 .form-header {
   margin-bottom: 2rem;
   

@@ -36,7 +36,7 @@ export class HomePage implements OnInit {
     
     // Calculate lesson progress
     const allProgress = await this.storageService.getAllLessonProgress();
-    const lessons = this.dataService.getLessons();
+    const lessons = this.dataService.getAllLessons();
     this.totalLessons = lessons.length;
     this.completedLessons = Object.values(allProgress).filter(p => p.completed).length;
   }

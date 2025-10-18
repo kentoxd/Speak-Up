@@ -1,17 +1,17 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Lessons</ion-title>
+    <ion-title>Learn</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <ion-header collapse="condense">
     <ion-toolbar>
-      <ion-title size="large">Lessons</ion-title>
+      <ion-title size="large">Learn</ion-title>
     </ion-toolbar>
   </ion-header>
 
-  <div class="lessons-container">
+  <div class="learn-container">
     
     <!-- Progress Summary -->
     <ion-card class="progress-summary">
@@ -19,94 +19,89 @@
         <div class="summary-content">
           <div class="summary-text">
             <h3>Your Progress</h3>
-            <p>{{ getCompletedCount() }} of {{ getTotalLessons() }} lessons completed</p>
+            <p>{{ getCompletedTopicsCount() }} of {{ getTotalTopicsCount() }} Topics completed</p>
+            <p>{{ Math.round(overallProgress) }}% Overall Progress</p>
           </div>
           <div class="summary-icon">
             <ion-icon name="trophy" color="warning"></ion-icon>
           </div>
         </div>
         <ion-progress-bar 
-          [value]="getCompletedCount() / getTotalLessons()" 
+          [value]="overallProgress / 100" 
           color="secondary">
         </ion-progress-bar>
       </ion-card-content>
     </ion-card>
 
-    <!-- Search and Filter -->
-    <div class="search-filter">
-      <ion-searchbar 
-        placeholder="Search lessons..."
-        (ionInput)="onSearchChange($event)"
-        debounce="300">
-      </ion-searchbar>
+    <!-- Topics Section -->
+    <div class="topics-section">
+      <h2>Topics</h2>
       
-      <ion-item>
-        <ion-label>Category</ion-label>
-        <ion-select 
-          [value]="selectedCategory" 
-          (ionChange)="onCategoryChange($event)"
-          interface="popover">
-          <ion-select-option *ngFor="let category of categories" [value]="category">
-            {{ category | titlecase }}
-          </ion-select-option>
-        </ion-select>
-      </ion-item>
-    </div>
-
-    <!-- Lessons List -->
-    <div class="lessons-list">
-      <ion-card 
-        *ngFor="let lesson of filteredLessons" 
-        class="lesson-card"
-        (click)="openLesson(lesson)">
-        
-        <ion-card-content>
-          <div class="lesson-header">
-            <div class="lesson-info">
-              <h3>{{ lesson.title }}</h3>
-              <p>{{ lesson.description }}</p>
-            </div>
-            <div class="lesson-status">
-              <ion-icon 
-                *ngIf="isLessonCompleted(lesson.id)"
-                name="checkmark-circle" 
-                color="success">
-              </ion-icon>
-              <ion-icon 
-                *ngIf="!isLessonCompleted(lesson.id) && getLessonProgress(lesson.id) > 0"
-                name="play-circle" 
-                color="primary">
-              </ion-icon>
-            </div>
-          </div>
+      <div class="topics-list">
+        <ion-card 
+          *ngFor="let topic of topics" 
+          class="topic-card"
+          (click)="openTopic(topic)">
           
-          <div class="lesson-meta">
-            <ion-chip 
-              [color]="getDifficultyColor(lesson.difficulty)" 
-              outline>
-              {{ lesson.difficulty | titlecase }}
-            </ion-chip>
+          <ion-card-content>
+            <div class="topic-header">
+              <div class="topic-info">
+                <h3>{{ topic.title }}</h3>
+                <p>{{ topic.description }}</p>
+              </div>
+              <div class="topic-status">
+                <ion-icon 
+                  *ngIf="isTopicCompleted(topic.id)"
+                  name="checkmark-circle" 
+                  color="success">
+                </ion-icon>
+                <ion-icon 
+                  *ngIf="!isTopicCompleted(topic.id) && (getTopicProgress(topic.id)?.progress || 0) > 0"
+                  name="play-circle" 
+                  color="primary">
+                </ion-icon>
+                <ion-icon 
+                  *ngIf="!getTopicProgress(topic.id) || getTopicProgress(topic.id)?.progress === 0"
+                  name="lock-closed" 
+                  color="medium">
+                </ion-icon>
+              </div>
+            </div>
             
-            <div class="lesson-duration">
-              <ion-icon name="time-outline"></ion-icon>
-              <span>{{ lesson.duration }}</span>
+            <div class="topic-progress">
+              <div class="progress-info">
+                <span *ngIf="getTopicProgress(topic.id)">
+                  {{ getTopicProgress(topic.id)?.lessonsCompleted || 0 }} of 5 lessons completed
+                </span>
+                <span *ngIf="!getTopicProgress(topic.id)">
+                  0 of 5 lessons completed
+                </span>
+              </div>
+              <ion-progress-bar 
+                [value]="(getTopicProgress(topic.id)?.progress || 0) / 100"
+                color="secondary">
+              </ion-progress-bar>
             </div>
-          </div>
-          
-          <ion-progress-bar 
-            *ngIf="getLessonProgress(lesson.id) > 0"
-            [value]="getLessonProgress(lesson.id) / 100"
-            color="secondary">
-          </ion-progress-bar>
-        </ion-card-content>
-      </ion-card>
-    </div>
 
-    <!-- Empty State -->
-    <div *ngIf="filteredLessons.length === 0" class="empty-state">
-      <ion-icon name="search-outline" color="medium"></ion-icon>
-      <h3>No lessons found</h3>
-      <p>Try adjusting your search or filter criteria.</p>
+            <div class="topic-actions">
+              <ion-button 
+                fill="outline" 
+                size="small"
+                (click)="openTopic(topic); $event.stopPropagation()">
+                View Lessons
+              </ion-button>
+              <ion-button 
+                *ngIf="isQuizUnlocked(topic.id)"
+                fill="solid" 
+                size="small"
+                color="tertiary"
+                (click)="startQuiz(topic); $event.stopPropagation()">
+                Take Quiz
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
     </div>
 
   </div>

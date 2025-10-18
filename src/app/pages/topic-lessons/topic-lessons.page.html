@@ -1,0 +1,130 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/lessons"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ topic?.title || 'Topic' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">{{ topic?.title || 'Topic' }}</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="topic-lessons-container" *ngIf="topic">
+    
+    <!-- Topic Header -->
+    <ion-card class="topic-header-card">
+      <ion-card-content>
+        <h1>{{ topic.title }}</h1>
+        <p>{{ topic.description }}</p>
+        
+        <div class="topic-progress-section">
+          <div class="progress-info">
+            <span>{{ topicProgress?.lessonsCompleted || 0 }} of 5 lessons completed</span>
+          </div>
+          <ion-progress-bar 
+            [value]="getTopicProgress() / 100"
+            color="secondary">
+          </ion-progress-bar>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Lessons List -->
+    <div class="lessons-section">
+      <h2>Lessons</h2>
+      
+      <div class="lessons-list">
+        <ion-card 
+          *ngFor="let lesson of lessons; let i = index" 
+          class="lesson-card">
+          
+          <ion-card-content>
+            <div class="lesson-header">
+              <div class="lesson-info">
+                <h3>Lesson {{ i + 1 }}: {{ lesson.title }}</h3>
+                <p>{{ lesson.description }}</p>
+                <div class="lesson-meta">
+                  <ion-chip 
+                    [color]="getDifficultyColor(lesson.difficulty)" 
+                    outline>
+                    {{ lesson.difficulty | titlecase }}
+                  </ion-chip>
+                  <span class="lesson-duration">
+                    <ion-icon name="time-outline"></ion-icon>
+                    {{ lesson.duration }}
+                  </span>
+                </div>
+              </div>
+              <div class="lesson-status">
+                <ion-icon 
+                  *ngIf="isLessonCompleted(lesson.id)"
+                  name="checkmark-circle" 
+                  color="success">
+                </ion-icon>
+                <ion-icon 
+                  *ngIf="!isLessonCompleted(lesson.id)"
+                  name="ellipse-outline" 
+                  color="medium">
+                </ion-icon>
+              </div>
+            </div>
+            
+            <div class="lesson-actions">
+              <ion-button 
+                fill="outline" 
+                size="small"
+                color="primary"
+                (click)="readLesson(lesson)">
+                <ion-icon name="book-outline" slot="start"></ion-icon>
+                Read
+              </ion-button>
+              <ion-button 
+                *ngIf="!isLessonCompleted(lesson.id)"
+                fill="solid" 
+                size="small"
+                (click)="markLessonAsDone(lesson)">
+                Mark as Done
+              </ion-button>
+              <ion-button 
+                *ngIf="isLessonCompleted(lesson.id)"
+                fill="outline" 
+                size="small"
+                color="success"
+                disabled>
+                <ion-icon name="checkmark-circle" slot="start"></ion-icon>
+                Completed
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </div>
+
+    <!-- Quiz Section -->
+    <div class="quiz-section" *ngIf="isQuizUnlocked()">
+      <ion-card class="quiz-card">
+        <ion-card-content>
+          <div class="quiz-header">
+            <ion-icon name="help-circle" color="tertiary"></ion-icon>
+            <div class="quiz-info">
+              <h3>Quiz</h3>
+              <p>Start quiz about the topic</p>
+            </div>
+          </div>
+          <ion-button 
+            fill="solid" 
+            color="tertiary"
+            (click)="startQuiz()">
+            Start Quiz
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+  </div>
+</ion-content>

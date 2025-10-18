@@ -112,7 +112,7 @@ export class ProfilePage implements OnInit {
   private async loadLocalLessonData() {
     // Get lesson progress from local storage (same as home page)
     const allProgress = await this.storageService.getAllLessonProgress();
-    const lessons = this.dataService.getLessons();
+    const lessons = this.dataService.getAllLessons();
     this.localTotalLessons = lessons.length;
     this.localCompletedLessons = Object.values(allProgress).filter(p => p.completed).length;
   }

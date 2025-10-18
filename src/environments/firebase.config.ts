@@ -1,11 +1,11 @@
 export const firebaseConfig = {
-  apiKey: "AIzaSyBnrA0bZICqGt8g-ncm3ODBWYR4lFZtFvI",
-  authDomain: "speakup-32e64.firebaseapp.com",
-  projectId: "speakup-32e64",
-  storageBucket: "speakup-32e64.firebasestorage.app",
-  messagingSenderId: "16941668023",
-  appId: "1:16941668023:web:2dd61ab7ceffaa4f20df32",
-  measurementId: "G-JQRELVSP9L"
+  apiKey: "AIzaSyDnsjVlPXYeUL0AOMCFwLaIe1JYqS_f1bs",
+  authDomain: "speakup-79807.firebaseapp.com",
+  projectId: "speakup-79807",
+  storageBucket: "speakup-79807.firebasestorage.app",
+  messagingSenderId: "335659839925",
+  appId: "1:335659839925:web:f01b4e16388a1d250529fc",
+  measurementId: "G-5NPK94YKLQ"
 };
 
 // Note: Replace the placeholder values above with your actual Firebase config
