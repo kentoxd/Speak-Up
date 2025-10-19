@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { LoadingController, ToastController } from '@ionic/angular';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
@@ -21,6 +21,7 @@ export class CreateNewPasswordPageComponent implements OnInit {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private formBuilder: FormBuilder,
     private loadingController: LoadingController,
     private toastController: ToastController,
@@ -33,15 +34,18 @@ export class CreateNewPasswordPageComponent implements OnInit {
   }
 
   ngOnInit() {
-    const navigation = this.router.getCurrentNavigation();
-    if (navigation?.extras?.state?.['actionCode'] && navigation?.extras?.state?.['email']) {
-      this.actionCode = navigation.extras.state['actionCode'];
-      this.email = navigation.extras.state['email'];
-      console.log('Password reset - actionCode:', this.actionCode, 'email:', this.email);
-    } else {
-      console.log('No actionCode found, redirecting to signin');
-      this.router.navigate(['/auth/signin']);
-    }
+    // Get action code from URL query parameters (from Firebase email link)
+    this.route.queryParams.subscribe(params => {
+      this.actionCode = params['oobCode'] || '';
+      
+      if (!this.actionCode) {
+        console.log('No actionCode in URL, redirecting to forgot password');
+        this.router.navigate(['/auth/forgot-password']);
+        return;
+      }
+      
+      console.log('Password reset - actionCode from URL:', this.actionCode);
+    });
   }
 
   goBack() {
@@ -138,7 +142,7 @@ export class CreateNewPasswordPageComponent implements OnInit {
   }
 
   async onSubmit() {
-    if (this.passwordForm.valid && !this.isLoading) {
+    if (this.passwordForm.valid && !this.isLoading && this.actionCode) {
       this.isLoading = true;
 
       const loading = await this.loadingController.create({
@@ -150,6 +154,15 @@ export class CreateNewPasswordPageComponent implements OnInit {
       try {
         const { password } = this.passwordForm.value;
 
+        // First verify the action code is still valid
+        try {
+          await this.afAuth.verifyPasswordResetCode(this.actionCode);
+        } catch (verifyError: any) {
+          console.error('Action code verification failed:', verifyError);
+          throw verifyError;
+        }
+
+        // If verification succeeds, proceed with password reset
         await this.afAuth.confirmPasswordReset(this.actionCode, password);
 
         await loading.dismiss();
@@ -172,6 +185,8 @@ export class CreateNewPasswordPageComponent implements OnInit {
         await loading.dismiss();
         this.isLoading = false;
 
+        console.error('Password reset error:', error);
+        
         let message = 'Failed to update password. Please try again.';
         
         if (error.code === 'auth/expired-action-code') {
@@ -180,6 +195,10 @@ export class CreateNewPasswordPageComponent implements OnInit {
           message = 'Invalid password reset link. Please request a new one.';
         } else if (error.code === 'auth/weak-password') {
           message = 'Password is too weak. Please choose a stronger password.';
+        } else if (error.code === 'auth/user-disabled') {
+          message = 'This account has been disabled. Please contact support.';
+        } else if (error.code === 'auth/user-not-found') {
+          message = 'User account not found. Please request a new password reset.';
         }
 
         const toast = await this.toastController.create({
@@ -190,6 +209,18 @@ export class CreateNewPasswordPageComponent implements OnInit {
         });
         await toast.present();
       }
+    } else if (!this.actionCode) {
+      const toast = await this.toastController.create({
+        message: 'Invalid password reset session. Please request a new password reset.',
+        duration: 4000,
+        color: 'danger',
+        position: 'top'
+      });
+      await toast.present();
+      
+      setTimeout(() => {
+        this.router.navigate(['/auth/forgot-password']);
+      }, 2000);
     }
   }
 }

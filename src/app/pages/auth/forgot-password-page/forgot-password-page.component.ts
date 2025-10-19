@@ -43,9 +43,7 @@ export class ForgotPasswordPageComponent {
         const { email } = this.forgotPasswordForm.value;
         
         // Send Firebase password reset email
-        await this.afAuth.sendPasswordResetEmail(email, {
-          url: `${window.location.origin}/?mode=resetPassword&email=${email}`
-        });
+        await this.afAuth.sendPasswordResetEmail(email);
         
         await loading.dismiss();
         this.isLoading = false;

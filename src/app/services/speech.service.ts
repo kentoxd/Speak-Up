@@ -25,6 +25,7 @@ export class SpeechService {
   private interimTranscript = '';
   private recordingStartTime = 0;
   private targetText = '';
+  private lastProcessedWordIndex = 0;
 
   constructor() {
     this.synthesis = window.speechSynthesis;
@@ -56,6 +57,7 @@ export class SpeechService {
     this.currentTranscript = '';
     this.interimTranscript = '';
     this.recordingStartTime = Date.now();
+    this.lastProcessedWordIndex = 0;
 
     this.recognition.onstart = () => {
       console.log('Speech recognition started');
@@ -68,12 +70,12 @@ export class SpeechService {
         let transcript = event.results[i][0].transcript.trim();
         const isFinal = event.results[i].isFinal;
 
-        console.log(`%cResult ${i}:`, 'color: blue', `"${transcript}" | isFinal: ${isFinal}`);
+        console.log(`Result ${i}: "${transcript}" | isFinal: ${isFinal}`);
 
         if (isFinal) {
-          // Add punctuation to final results
-          transcript = this.addSmartPunctuation(transcript);
-          console.log(`%cAfter punctuation:`, 'color: green', `"${transcript}"`);
+          // Add punctuation to all words in final result
+          transcript = this.addPunctuationToAllWords(transcript);
+          console.log(`After punctuation: "${transcript}"`);
           
           // Append to current transcript with space
           if (this.currentTranscript && !this.currentTranscript.endsWith(' ')) {
@@ -81,10 +83,10 @@ export class SpeechService {
           }
           this.currentTranscript += transcript;
           
-          console.log(`%cUpdated currentTranscript:`, 'color: red', `"${this.currentTranscript}"`);
+          console.log(`Updated currentTranscript: "${this.currentTranscript}"`);
         } else {
-          // Also add punctuation to interim results for display (but only if matches found)
-          const enhancedInterim = this.addSmartPunctuation(transcript, true);
+          // For interim results, show live with punctuation
+          const enhancedInterim = this.addPunctuationToAllWords(transcript, true);
           interimText += enhancedInterim + ' ';
         }
       }
@@ -114,6 +116,92 @@ export class SpeechService {
       console.error('Failed to start recognition:', error);
       this.isRecording = false;
     }
+  }
+
+  private addPunctuationToAllWords(text: string, isInterim: boolean = false): string {
+    if (!text || !this.targetText) {
+      return text;
+    }
+
+    const userWords = text.split(/\s+/);
+    const targetWords = this.targetText.toLowerCase().split(/\s+/);
+    let result = '';
+    let targetIndex = 0;
+
+    for (let i = 0; i < userWords.length; i++) {
+      const userWord = userWords[i].toLowerCase().replace(/[.,!?;:]/g, '');
+      
+      if (!userWord) continue;
+
+      let foundMatch = false;
+      let matchedPunctuation = '';
+
+      // Try to find matching word in target (with fuzzy matching)
+      for (let j = targetIndex; j < Math.min(targetIndex + 5, targetWords.length); j++) {
+        const targetWord = targetWords[j].toLowerCase();
+        const cleanTargetWord = targetWord.replace(/[.,!?;:]/g, '');
+        const punctuation = targetWord.match(/[.,!?;:]+$/)?.[0] || '';
+
+        // Exact match or similar match
+        if (userWord === cleanTargetWord || this.isSimilarWord(userWord, cleanTargetWord)) {
+          matchedPunctuation = punctuation;
+          targetIndex = j + 1;
+          foundMatch = true;
+          console.log(`✓ Word match: "${userWord}" → "${cleanTargetWord}" (punctuation: "${punctuation}")`);
+          break;
+        }
+      }
+
+      // Add word with punctuation
+      if (result) result += ' ';
+      result += userWords[i];
+
+      if (foundMatch && matchedPunctuation) {
+        result += matchedPunctuation;
+      } else if (!isInterim && i === userWords.length - 1 && !userWords[i].match(/[.!?;:]$/)) {
+        // Add default period to last word if no match found
+        result += '.';
+      }
+    }
+
+    return result;
+  }
+
+  private isSimilarWord(word1: string, word2: string): boolean {
+    // Exact match
+    if (word1 === word2) return true;
+
+    // Allow small Levenshtein distance
+    const distance = this.levenshteinDistance(word1, word2);
+    const maxDistance = Math.max(word1.length, word2.length) > 5 ? 2 : 1;
+    
+    return distance <= maxDistance;
+  }
+
+  private levenshteinDistance(s1: string, s2: string): number {
+    const track = Array(s2.length + 1).fill(null).map(() => 
+      Array(s1.length + 1).fill(0)
+    );
+
+    for (let i = 0; i <= s1.length; i++) {
+      track[0][i] = i;
+    }
+    for (let j = 0; j <= s2.length; j++) {
+      track[j][0] = j;
+    }
+
+    for (let j = 1; j <= s2.length; j++) {
+      for (let i = 1; i <= s1.length; i++) {
+        const indicator = s1[i - 1] === s2[j - 1] ? 0 : 1;
+        track[j][i] = Math.min(
+          track[j][i - 1] + 1,
+          track[j - 1][i] + 1,
+          track[j - 1][i - 1] + indicator
+        );
+      }
+    }
+
+    return track[s2.length][s1.length];
   }
 
   getRecordingResult(): SpeechRecognitionResult {
@@ -149,88 +237,11 @@ export class SpeechService {
     this.currentTranscript = '';
     this.interimTranscript = '';
     this.targetText = '';
+    this.lastProcessedWordIndex = 0;
   }
 
   setTargetText(text: string): void {
     this.targetText = text;
-  }
-
-  private addSmartPunctuation(text: string, isInterim: boolean = false): string {
-    if (!text) return text;
-
-    // Don't reprocess text that already has punctuation marks throughout
-    // Only enhance the last word
-    const words = text.split(/\s+/);
-    if (words.length === 0) return text;
-
-    const lastWord = words[words.length - 1];
-    const precedingText = words.slice(0, -1).join(' ');
-
-    // Check if last word already ends with punctuation
-    if (lastWord.match(/[.!?;:]$/)) {
-      return text;
-    }
-
-    // Match the last word against target text for punctuation
-    if (this.targetText) {
-      const lastWordClean = lastWord.toLowerCase();
-      const targetWords = this.targetText.toLowerCase().split(/\s+/);
-
-      console.log(`%cLast user word: "${lastWordClean}"`, 'color: purple');
-
-      // Find matching word in target to get its punctuation
-      for (let j = 0; j < targetWords.length; j++) {
-        const targetWord = targetWords[j];
-        const cleanTargetWord = targetWord.replace(/[.,!?;:]/g, '');
-
-        if (lastWordClean === cleanTargetWord) {
-          // Extract punctuation from target word
-          const punctuation = targetWord.match(/[.,!?;:]+$/);
-          console.log(`%cMATCH FOUND! Target word: "${targetWord}", Punctuation: "${punctuation ? punctuation[0] : 'none'}"`, 'color: lime; font-weight: bold');
-          
-          if (punctuation) {
-            const result = precedingText ? precedingText + ' ' + lastWord + punctuation[0] : lastWord + punctuation[0];
-            return result;
-          }
-          // If word matches but has no punctuation, don't add anything
-          return text;
-        }
-      }
-    }
-
-    // Only add default period if this is a FINAL result, not interim
-    if (!isInterim) {
-      console.log(`%cNo target match, adding default period`, 'color: orange');
-      return text + '.';
-    }
-    
-    // For interim results, don't add punctuation if no match found
-    return text;
-  }
-
-  private normalizeCommonPatterns(text: string): string {
-    let result = text;
-
-    // Fix common contractions
-    result = result.replace(/\b(dont)\b/gi, "don't");
-    result = result.replace(/\b(cant)\b/gi, "can't");
-    result = result.replace(/\b(wont)\b/gi, "won't");
-    result = result.replace(/\b(isnt)\b/gi, "isn't");
-    result = result.replace(/\b(doesnt)\b/gi, "doesn't");
-    result = result.replace(/\b(havent)\b/gi, "haven't");
-    result = result.replace(/\b(hasnt)\b/gi, "hasn't");
-    result = result.replace(/\b(im)\b/gi, "I'm");
-    result = result.replace(/\b(youre)\b/gi, "you're");
-    result = result.replace(/\b(theres)\b/gi, "there's");
-    result = result.replace(/\b(lets)\b/gi, "let's");
-
-    // Capitalize "I"
-    result = result.replace(/\b(i)\b/g, 'I');
-
-    // Remove extra spaces
-    result = result.replace(/\s+/g, ' ').trim();
-
-    return result;
   }
 
   private calculateConfidence(transcript: string): number {
@@ -249,7 +260,6 @@ export class SpeechService {
     return Math.min(0.99, confidence);
   }
 
-  // Text-to-Speech
   async speak(options: TextToSpeechOptions): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.synthesis) {

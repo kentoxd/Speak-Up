@@ -481,74 +481,81 @@ export class PracticePage implements OnInit, OnDestroy {
   }
 
   async showDetailedFeedback() {
-    if (!this.sessionResults || !this.currentStructuredPractice) {
-      const toast = await this.toastController.create({
-        message: 'No speech recorded. Please record first.',
-        duration: 2000,
-        color: 'warning'
-      });
-      await toast.present();
-      return;
-    }
-
-    const userTranscript = this.sessionResults.transcript;
-    const targetText = this.currentStructuredPractice.targetText;
-
-    if (!userTranscript || userTranscript.trim() === '') {
-      const toast = await this.toastController.create({
-        message: 'No speech text found. Please record again.',
-        duration: 2000,
-        color: 'warning'
-      });
-      await toast.present();
-      return;
-    }
-
-    const analysis = this.speechService.analyzeSpeech(
-      userTranscript, 
-      this.sessionResults.duration
-    );
-
-    const targetWords = targetText.split(/\s+/).filter((w: string) => w.length > 0).length;
-    const userWords = userTranscript.split(/\s+/).filter((w: string) => w.length > 0).length;
-    const wordDifference = userWords - targetWords;
-    
-    const overallAccuracy = this.calculateOverallAccuracy(analysis);
-    const wordAccuracy = this.calculateWordAccuracy(userTranscript, targetText);
-    const punctuationAccuracy = this.calculatePunctuationAccuracy(userTranscript, targetText);
-
-    const getAccuracyColor = (accuracy: number) => accuracy < 50 ? 'red' : 'green';
-    const overallColor = getAccuracyColor(overallAccuracy);
-    const wordColor = getAccuracyColor(wordAccuracy);
-    const punctuationColor = getAccuracyColor(punctuationAccuracy);
-
-    const modal = await this.modalController.create({
-      component: FeedbackModalComponent,
-      componentProps: {
-        overallAccuracy,
-        wordAccuracy,
-        punctuationAccuracy,
-        wordDifference,
-        overallColor,
-        wordColor,
-        punctuationColor,
-        targetText: targetText,
-        userSpeech: userTranscript,
-        analysis: analysis
-      },
-      cssClass: 'feedback-modal'
+  if (!this.sessionResults || !this.currentStructuredPractice) {
+    const toast = await this.toastController.create({
+      message: 'No speech recorded. Please record first.',
+      duration: 2000,
+      color: 'warning'
     });
-
-    await modal.present();
-    this.showFeedback = true;
+    await toast.present();
+    return;
   }
 
-  private calculateOverallAccuracy(analysis: any): number {
-    const wordAccuracy = this.calculateWordAccuracy(this.sessionResults?.transcript || '', this.currentStructuredPractice?.targetText || '');
-    const punctuationAccuracy = this.calculatePunctuationAccuracy(this.sessionResults?.transcript || '', this.currentStructuredPractice?.targetText || '');
-    
-    return Math.round((wordAccuracy * 0.7) + (punctuationAccuracy * 0.3));
+  // Use userSpeechText (which has punctuation) instead of sessionResults.transcript
+  const userTranscript = this.userSpeechText || this.sessionResults.transcript;
+  const targetText = this.currentStructuredPractice.targetText;
+
+  if (!userTranscript || userTranscript.trim() === '') {
+    const toast = await this.toastController.create({
+      message: 'No speech text found. Please record again.',
+      duration: 2000,
+      color: 'warning'
+    });
+    await toast.present();
+    return;
   }
+
+  const analysis = this.speechService.analyzeSpeech(
+    userTranscript, 
+    this.sessionResults.duration
+  );
+
+  const targetWords = targetText.split(/\s+/).filter((w: string) => w.length > 0).length;
+  const userWords = userTranscript.split(/\s+/).filter((w: string) => w.length > 0).length;
+  const wordDifference = userWords - targetWords;
+  
+  const overallAccuracy = this.calculateOverallAccuracy({
+    wordAccuracy: this.calculateWordAccuracy(userTranscript, targetText),
+    punctuationAccuracy: this.calculatePunctuationAccuracy(userTranscript, targetText),
+    confidence: this.sessionResults.confidence,
+    duration: this.sessionResults.duration
+  });
+  const wordAccuracy = this.calculateWordAccuracy(userTranscript, targetText);
+  const punctuationAccuracy = this.calculatePunctuationAccuracy(userTranscript, targetText);
+
+  const getAccuracyColor = (accuracy: number) => accuracy < 50 ? 'red' : 'green';
+  const overallColor = getAccuracyColor(overallAccuracy);
+  const wordColor = getAccuracyColor(wordAccuracy);
+  const punctuationColor = getAccuracyColor(punctuationAccuracy);
+
+  const modal = await this.modalController.create({
+    component: FeedbackModalComponent,
+    componentProps: {
+      overallAccuracy,
+      wordAccuracy,
+      punctuationAccuracy,
+      wordDifference,
+      overallColor,
+      wordColor,
+      punctuationColor,
+      targetText: targetText,
+      userSpeech: userTranscript,  // Now uses punctuation-enhanced transcript
+      analysis: analysis
+    },
+    cssClass: 'feedback-modal'
+  });
+
+  await modal.present();
+  this.showFeedback = true;
+}
+
+// Also fix calculateOverallAccuracy to use the passed analysis parameter
+private calculateOverallAccuracy(analysis: any): number {
+  const wordAccuracy = analysis.wordAccuracy || 0;
+  const punctuationAccuracy = analysis.punctuationAccuracy || 0;
+  
+  return Math.round((wordAccuracy * 0.7) + (punctuationAccuracy * 0.3));
+}
 
   private calculateWordAccuracy(userText: string, targetText: string): number {
     if (!userText || !targetText) return 0;
