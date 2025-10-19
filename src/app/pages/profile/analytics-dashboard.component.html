@@ -1,0 +1,226 @@
+<ion-content class="analytics-content">
+  <div class="analytics-container">
+    
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-state">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Loading analytics...</p>
+    </div>
+
+    <!-- Analytics Content -->
+    <div *ngIf="!isLoading">
+      
+      <!-- Time Period Stats -->
+      <div class="time-period-stats">
+        <ion-card class="stat-card">
+          <ion-card-header>
+            <ion-card-title>This Week</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="stat-grid">
+              <div class="stat-item">
+                <ion-icon name="calendar" color="primary"></ion-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{ getWeeklyStats().sessions }}</span>
+                  <span class="stat-label">Sessions</span>
+                </div>
+              </div>  
+              <div class="stat-item">
+                <ion-icon name="time" color="secondary"></ion-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{ getWeeklyStats().time }}</span>
+                  <span class="stat-label">Minutes</span>
+                </div>
+              </div>
+              <div class="stat-item">
+                <ion-icon name="trophy" color="warning"></ion-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{ getWeeklyStats().accuracy }}%</span>
+                  <span class="stat-label">Avg Accuracy</span>
+                </div>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="stat-card">
+          <ion-card-header>
+            <ion-card-title>This Month</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="stat-grid">
+              <div class="stat-item">
+                <ion-icon name="calendar" color="primary"></ion-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{ getMonthlyStats().sessions }}</span>
+                  <span class="stat-label">Sessions</span>
+                </div>
+              </div>
+              <div class="stat-item">
+                <ion-icon name="time" color="secondary"></ion-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{ getMonthlyStats().time }}</span>
+                  <span class="stat-label">Minutes</span>
+                </div>
+              </div>
+              <div class="stat-item">
+                <ion-icon name="trophy" color="warning"></ion-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{ getMonthlyStats().accuracy }}%</span>
+                  <span class="stat-label">Avg Accuracy</span>
+                </div>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- Performance Trends -->
+      <div class="trends-section">
+        <h3>Performance Trends</h3>
+        
+        <!-- Accuracy Trend -->
+        <ion-card class="trend-card">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="trending-up" color="primary"></ion-icon>
+              Accuracy Trend
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="trend-info">
+              <div class="trend-direction">
+                <ion-icon 
+                  [name]="getTrendIcon(getTrendDirection(accuracyTrend))" 
+                  [color]="getTrendColor(getTrendDirection(accuracyTrend))">
+                </ion-icon>
+                <span>{{ getTrendDirection(accuracyTrend) | titlecase }} trend</span>
+              </div>
+              <div class="trend-chart">
+                <div class="chart-bars">
+                  <div 
+                    *ngFor="let value of accuracyTrend; let i = index" 
+                    class="chart-bar"
+                    [style.height.%]="Math.max(value, 10)"
+                    [title]="'Day ' + (i + 1) + ': ' + value + '%'">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Pace Trend -->
+        <ion-card class="trend-card">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="speedometer" color="secondary"></ion-icon>
+              Speaking Pace Trend
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="trend-info">
+              <div class="trend-direction">
+                <ion-icon 
+                  [name]="getTrendIcon(getTrendDirection(paceTrend))" 
+                  [color]="getTrendColor(getTrendDirection(paceTrend))">
+                </ion-icon>
+                <span>{{ getTrendDirection(paceTrend) | titlecase }} trend</span>
+              </div>
+              <div class="trend-chart">
+                <div class="chart-bars">
+                  <div 
+                    *ngFor="let value of paceTrend; let i = index" 
+                    class="chart-bar"
+                    [style.height.%]="Math.max(value / 2, 10)"
+                    [title]="'Day ' + (i + 1) + ': ' + value + ' WPM'">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Clarity Trend -->
+        <ion-card class="trend-card">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="eye" color="tertiary"></ion-icon>
+              Clarity Trend
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="trend-info">
+              <div class="trend-direction">
+                <ion-icon 
+                  [name]="getTrendIcon(getTrendDirection(clarityTrend))" 
+                  [color]="getTrendColor(getTrendDirection(clarityTrend))">
+                </ion-icon>
+                <span>{{ getTrendDirection(clarityTrend) | titlecase }} trend</span>
+              </div>
+              <div class="trend-chart">
+                <div class="chart-bars">
+                  <div 
+                    *ngFor="let value of clarityTrend; let i = index" 
+                    class="chart-bar"
+                    [style.height.%]="Math.max(value, 10)"
+                    [title]="'Day ' + (i + 1) + ': ' + value + '%'">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- Improvement Suggestions -->
+      <div class="suggestions-section" *ngIf="userProgression$ | async as progression">
+        <h3>Improvement Suggestions</h3>
+        <ion-card class="suggestions-card">
+          <ion-card-content>
+            <div class="suggestions-list">
+              <div 
+                *ngFor="let suggestion of getImprovementSuggestions(progression)" 
+                class="suggestion-item">
+                <ion-icon name="bulb" color="warning"></ion-icon>
+                <span>{{ suggestion }}</span>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- Practice History Summary -->
+      <div class="history-summary">
+        <h3>Recent Activity</h3>
+        <ion-card class="history-card">
+          <ion-card-content>
+            <div class="activity-list">
+              <div 
+                *ngFor="let session of weeklyData.slice(0, 5)" 
+                class="activity-item">
+                <div class="activity-icon">
+                  <ion-icon name="mic" color="primary"></ion-icon>
+                </div>
+                <div class="activity-details">
+                  <span class="activity-type">Practice Session</span>
+                  <span class="activity-time">{{ session.accuracy || 0 }}% accuracy</span>
+                </div>
+                <div class="activity-date">
+                  {{ session.createdAt | date:'short' }}
+                </div>
+              </div>
+              
+              <div *ngIf="weeklyData.length === 0" class="no-activity">
+                <ion-icon name="calendar-outline" color="medium"></ion-icon>
+                <p>No recent practice sessions</p>
+                <p>Start practicing to see your analytics!</p>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+    </div>
+  </div>
+</ion-content>

@@ -7,6 +7,8 @@ import { IonicModule } from '@ionic/angular';
 import { ProfilePageRoutingModule } from './profile-routing.module';
 
 import { ProfilePage } from './profile.page';
+import { AnalyticsDashboardComponent } from './analytics-dashboard.component';
+import { AnalyticsService } from '../../services/analytics.service';
 
 @NgModule({
   imports: [
@@ -15,6 +17,7 @@ import { ProfilePage } from './profile.page';
     IonicModule,
     ProfilePageRoutingModule
   ],
-  declarations: [ProfilePage]
+  declarations: [ProfilePage, AnalyticsDashboardComponent],
+  providers: [AnalyticsService]
 })
 export class ProfilePageModule {}

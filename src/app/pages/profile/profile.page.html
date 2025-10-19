@@ -13,121 +13,95 @@
 
   <div class="profile-container" *ngIf="userProfile">
 
-    <!-- Profile Header -->
-    <div class="profile-header">
-      <div class="avatar-section" [class.editing]="isEditing" (click)="isEditing && changeAvatar()">
-        <div class="avatar-container" [class.clickable]="isEditing">
-          <img 
-            *ngIf="editProfile.avatar || userProfile.avatar" 
-            [src]="editProfile.avatar || userProfile.avatar" 
-            [alt]="userProfile.name"
-            class="avatar-image">
-          <ion-icon 
-            *ngIf="!editProfile.avatar && !userProfile.avatar" 
-            name="person-circle" 
-            class="avatar-icon">
-          </ion-icon>
-          <div class="avatar-overlay" *ngIf="isEditing">
-            <ion-icon name="camera"></ion-icon>
+    <!-- Profile Header Card -->
+    <ion-card class="profile-header" *ngIf="!isEditing">
+      <ion-card-content>
+        <div class="header-content">
+          <div class="avatar-section" (click)="editProfileInfo()">
+            <div class="avatar-container">
+              <img 
+                *ngIf="userProfile.avatar" 
+                [src]="userProfile.avatar" 
+                [alt]="userProfile.name"
+                class="avatar-image">
+              <ion-icon 
+                *ngIf="!userProfile.avatar" 
+                name="person-circle" 
+                class="avatar-icon">
+              </ion-icon>
+            </div>
+          </div>
+          
+          <div class="profile-info">
+            <h2>{{ userProfile.name }}</h2>
+            <p *ngIf="userProfile.email">{{ userProfile.email }}</p>
+            <p *ngIf="userProfile.bio" class="bio">{{ userProfile.bio }}</p>
+            <p class="join-date">Member for {{ getJoinedDaysAgo() }} days</p>
           </div>
         </div>
-      </div>
-      
-      <div class="profile-info" *ngIf="!isEditing">
-        <h2>{{ userProfile.name }}</h2>
-        <p *ngIf="userProfile.email">{{ userProfile.email }}</p>
-        <p *ngIf="userProfile.bio" class="bio">{{ userProfile.bio }}</p>
-        <p class="join-date">Member for {{ getJoinedDaysAgo() }} days</p>
-      </div>
+      </ion-card-content>
+    </ion-card>
 
-      <!-- Edit Form -->
-      <div class="edit-form" *ngIf="isEditing">
-        <ion-item>
-          <ion-label position="stacked">Name</ion-label>
-          <ion-input [(ngModel)]="editProfile.name" placeholder="Enter your name"></ion-input>
-        </ion-item>
-        
-        <ion-item>
-          <ion-label position="stacked">Email</ion-label>
-          <ion-input [(ngModel)]="editProfile.email" type="email" placeholder="Enter your email"></ion-input>
-        </ion-item>
-        
-        <ion-item>
-          <ion-label position="stacked">Bio</ion-label>
-          <ion-textarea [(ngModel)]="editProfile.bio" placeholder="Tell us about yourself" rows="3"></ion-textarea>
-        </ion-item>
-        
-        <div class="edit-buttons">
-          <ion-button fill="outline" color="medium" (click)="cancelEdit()">
-            Cancel
-          </ion-button>
-          <ion-button fill="solid" color="primary" (click)="saveProfile()">
-            Save
-          </ion-button>
+    <!-- Edit Form Card -->
+    <ion-card class="profile-header" *ngIf="isEditing">
+      <ion-card-content>
+        <div class="edit-form">
+          <ion-item>
+            <ion-label position="stacked">Name</ion-label>
+            <ion-input [(ngModel)]="editProfile.name" placeholder="Enter your name"></ion-input>
+          </ion-item>
+          
+          <ion-item>
+            <ion-label position="stacked">Email</ion-label>
+            <ion-input [(ngModel)]="editProfile.email" type="email" placeholder="Enter your email"></ion-input>
+          </ion-item>
+          
+          <ion-item>
+            <ion-label position="stacked">Bio</ion-label>
+            <ion-textarea [(ngModel)]="editProfile.bio" placeholder="Tell us about yourself" rows="3"></ion-textarea>
+          </ion-item>
+          
+          <div class="edit-buttons">
+            <ion-button fill="outline" color="medium" (click)="cancelEdit()">
+              Cancel
+            </ion-button>
+            <ion-button fill="solid" color="primary" (click)="saveProfile()">
+              Save
+            </ion-button>
+          </div>
         </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Stats Section -->
+    <div class="stats-section">
+      <h3>Your Stats</h3>
+      
+      <div class="stats-list" *ngIf="userProgression$ | async as progression">
+        <ion-card class="stat-card" *ngFor="let stat of [
+          { icon: 'flame', color: 'danger', label: 'Day Streak', value: progression.currentStreak || 0 },
+          { icon: 'book', color: 'primary', label: 'Lessons Completed', value: localCompletedLessons },
+          { icon: 'trophy', color: 'warning', label: 'Achievements', value: progression.achievements.length || 0 },
+          { icon: 'star', color: 'success', label: 'Total Points', value: progression.totalPoints || 0 }
+        ]">
+          <ion-card-content>
+            <div class="stat-header">
+              <div class="stat-info">
+                <p class="stat-label">{{ stat.label }}</p>
+                <h4 class="stat-number">{{ stat.value }}</h4>
+              </div>
+              <div class="stat-icon">
+                <ion-icon [name]="stat.icon" [color]="stat.color"></ion-icon>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
       </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="stats-section">
-      <div class="section-header">
-        <h3>Your Stats</h3>
-      </div>
-      
-      <!-- Dynamic Stats from Firebase Progression -->
-      <div class="stats-grid" *ngIf="userProgression$ | async as progression">
-        <ion-card class="stat-card">
-          <ion-card-content>
-            <div class="stat-content">
-              <ion-icon name="flame" color="danger"></ion-icon>
-              <div class="stat-info">
-                <span class="stat-number">{{ progression.currentStreak || 0 }}</span>
-                <span class="stat-label">Day Streak</span>
-              </div>
-            </div>
-          </ion-card-content>
-        </ion-card>
-
-        <ion-card class="stat-card">
-          <ion-card-content>
-            <div class="stat-content">
-              <ion-icon name="book" color="primary"></ion-icon>
-              <div class="stat-info">
-                <span class="stat-number">{{ localCompletedLessons }}</span>
-                <span class="stat-label">Lessons Completed</span>
-              </div>
-            </div>
-          </ion-card-content>
-        </ion-card>
-
-        <ion-card class="stat-card">
-          <ion-card-content>
-            <div class="stat-content">
-              <ion-icon name="trophy" color="warning"></ion-icon>
-              <div class="stat-info">
-                <span class="stat-number">{{ progression.achievements.length || 0 }}</span>
-                <span class="stat-label">Achievements</span>
-              </div>
-            </div>
-          </ion-card-content>
-        </ion-card>
-
-        <ion-card class="stat-card">
-          <ion-card-content>
-            <div class="stat-content">
-              <ion-icon name="star" color="success"></ion-icon>
-              <div class="stat-info">
-                <span class="stat-number">{{ progression.totalPoints || 0 }}</span>
-                <span class="stat-label">Total Points</span>
-              </div>
-            </div>
-          </ion-card-content>
-        </ion-card>
-      </div>
-
-      <!-- Firebase Analytics Dashboard -->
-      <div class="analytics-dashboard">
-        <div *ngIf="userProgression$ | async as progression">
+    <!-- Analytics Dashboard -->
+    <div class="analytics-section">
+      <div *ngIf="userProgression$ | async as progression">
         
         <!-- Level Progress -->
         <ion-card class="analytics-card">
@@ -135,17 +109,15 @@
             <ion-card-title>Level Progress</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <div class="level-info">
-              <div class="level-display">
-                <span class="current-level">Level {{ progression.level }}</span>
-                <span class="total-points">{{ progression.totalPoints }} points</span>
-              </div>
-              <ion-progress-bar 
-                [value]="getLevelProgress(progression) / 100" 
-                color="primary">
-              </ion-progress-bar>
-              <p class="progress-text">{{ getLevelProgress(progression).toFixed(1) }}% to next level</p>
+            <div class="level-display">
+              <span class="current-level">Level {{ progression.level }}</span>
+              <span class="total-points">{{ progression.totalPoints | number: '1.2-2' }} points</span>
             </div>
+            <ion-progress-bar 
+              [value]="getLevelProgress(progression) / 100" 
+              color="primary">
+            </ion-progress-bar>
+            <p class="progress-text">{{ (getLevelProgress(progression) | number: '1.2-2') }}% to next level</p>
           </ion-card-content>
         </ion-card>
 
@@ -155,7 +127,7 @@
             <ion-card-title>Goals Progress</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <div class="goals-grid">
+            <div class="goals-list">
               <div class="goal-item">
                 <div class="goal-header">
                   <span>Weekly Goal</span>
@@ -165,7 +137,7 @@
                   [value]="getWeeklyGoalProgress(progression) / 100" 
                   color="success">
                 </ion-progress-bar>
-                <p>{{ getWeeklyGoalProgress(progression).toFixed(1) }}% complete</p>
+                <p>{{ (getWeeklyGoalProgress(progression) | number: '1.2-2') }}% complete</p>
               </div>
               
               <div class="goal-item">
@@ -177,7 +149,7 @@
                   [value]="getMonthlyGoalProgress(progression) / 100" 
                   color="warning">
                 </ion-progress-bar>
-                <p>{{ getMonthlyGoalProgress(progression).toFixed(1) }}% complete</p>
+                <p>{{ (getMonthlyGoalProgress(progression) | number: '1.2-2') }}% complete</p>
               </div>
             </div>
           </ion-card-content>
@@ -196,15 +168,15 @@
               </div>
               <div class="stat-item">
                 <span class="stat-label">Total Speaking Time</span>
-                <span class="stat-value">{{ progression.totalSpeakingTime }} min</span>
+                <span class="stat-value">{{ (progression.totalSpeakingTime | number: '1.2-2') }} min</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">Average Accuracy</span>
-                <span class="stat-value">{{ progression.averageAccuracy.toFixed(1) }}%</span>
+                <span class="stat-value">{{ (progression.averageAccuracy | number: '1.2-2') }}%</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">Best Accuracy</span>
-                <span class="stat-value">{{ progression.bestAccuracy.toFixed(1) }}%</span>
+                <span class="stat-value">{{ (progression.bestAccuracy | number: '1.2-2') }}%</span>
               </div>
             </div>
           </ion-card-content>
@@ -225,8 +197,8 @@
                   <span class="type-sessions">{{ stat.sessions }} sessions</span>
                 </div>
                 <div class="type-stats">
-                  <span>Accuracy: {{ stat.accuracy.toFixed(1) }}%</span>
-                  <span>Time: {{ stat.time }} min</span>
+                  <span>Accuracy: {{ (stat.accuracy | number: '1.2-2') }}%</span>
+                  <span>Time: {{ (stat.time | number: '1.2-2') }} min</span>
                 </div>
               </div>
             </div>
@@ -239,7 +211,7 @@
             <ion-card-title>Recent Achievements</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <div class="recent-achievements">
+            <div class="recent-achievements-list">
               <div 
                 *ngFor="let achievement of getRecentAchievements(progression)" 
                 class="recent-achievement">
@@ -254,38 +226,33 @@
             </div>
           </ion-card-content>
         </ion-card>
-
-        </div>
       </div>
     </div>
 
-    <!-- Dynamic Achievements from Firebase Progression -->
+    <!-- Achievements Section -->
     <div class="achievements-section" *ngIf="userProgression$ | async as progression">
-      <div class="section-header">
-        <h3>Achievements</h3>
-        <div class="achievement-progress">
-          <span>{{ getAchievementProgress(progression) }}% Complete</span>
-          <ion-progress-bar [value]="getAchievementProgress(progression) / 100" color="warning"></ion-progress-bar>
-        </div>
+      <h3>Achievements</h3>
+      <div class="achievement-progress">
+        <span>{{ getAchievementProgress(progression) }}% Complete</span>
+        <ion-progress-bar [value]="getAchievementProgress(progression) / 100" color="warning"></ion-progress-bar>
       </div>
       
-      <div class="achievements-grid">
-        <div 
+      <div class="achievements-list">
+        <ion-card 
           *ngFor="let achievement of progression.achievements || []" 
-          class="achievement-item"
-          [class.earned]="true">
-          <div class="achievement-icon">
-            <ion-icon [name]="achievement.icon || 'trophy'" color="warning"></ion-icon>
-          </div>
-          <div class="achievement-info">
-            <h4>{{ achievement.name }}</h4>
-            <p>{{ achievement.description }}</p>
-                <small class="achievement-date">Recently earned</small>
-          </div>
-          <div class="achievement-status">
-            <ion-icon name="checkmark-circle" color="success"></ion-icon>
-          </div>
-        </div>
+          class="achievement-item">
+          <ion-card-content>
+            <div class="achievement-header">
+              <div class="achievement-info">
+                <h4>{{ achievement.name }}</h4>
+                <p>{{ achievement.description }}</p>
+              </div>
+              <div class="achievement-status">
+                <ion-icon name="checkmark-circle" color="success"></ion-icon>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
         
         <!-- Show message if no achievements yet -->
         <div *ngIf="!progression.achievements || progression.achievements.length === 0" class="no-achievements">
@@ -295,37 +262,38 @@
       </div>
     </div>
 
-      <!-- Settings -->
-      <div class="settings-section">
-        <h3>Settings</h3>
+    <!-- Settings Section -->
+    <div class="settings-section">
+      <h3>Settings</h3>
 
-      <!-- Help & Support -->
-      <ion-card>
-        <ion-card-content>
-          <ion-item button (click)="navigateToFAQ()" lines="none">
-            <ion-icon name="help-circle" slot="start" color="primary"></ion-icon>
-            <ion-label>
-              <h3>FAQ</h3>
-              <p>Frequently asked questions</p>
-            </ion-label>
-          </ion-item>
-        </ion-card-content>
-      </ion-card>
+      <div class="settings-list">
+        <!-- Help & Support -->
+        <ion-card>
+          <ion-card-content>
+            <ion-item button (click)="navigateToFAQ()" lines="none">
+              <ion-icon name="help-circle" slot="start" color="primary"></ion-icon>
+              <ion-label>
+                <h3>FAQ</h3>
+                <p>Frequently asked questions</p>
+              </ion-label>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
 
-      <!-- Account Actions -->
-      <ion-card>
-        <ion-card-content>
-          <ion-item button (click)="logout()" lines="none">
-            <ion-icon name="log-out" slot="start" color="danger"></ion-icon>
-            <ion-label>
-              <h3>Sign Out</h3>
-              <p>Sign out of your account</p>
-            </ion-label>
-          </ion-item>
-        </ion-card-content>
-      </ion-card>
+        <!-- Account Actions -->
+        <ion-card>
+          <ion-card-content>
+            <ion-item button (click)="logout()" lines="none">
+              <ion-icon name="log-out" slot="start" color="danger"></ion-icon>
+              <ion-label>
+                <h3>Sign Out</h3>
+                <p>Sign out of your account</p>
+              </ion-label>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
+      </div>
     </div>
-
   </div>
 
 </ion-content>

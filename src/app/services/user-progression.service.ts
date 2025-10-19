@@ -223,6 +223,67 @@ export class UserProgressionService {
     ).valueChanges();
   }
 
+  // Get recent sessions for analytics
+  async getRecentSessions(days: number): Promise<any[]> {
+    const user = await this.currentUser$.pipe(take(1)).toPromise();
+    if (!user) return [];
+
+    try {
+      // Use a simpler query without composite index
+      const sessionsSnapshot = await this.firestore.collection('sessions', ref =>
+        ref
+          .where('userId', '==', user.uid)
+          .orderBy('createdAt', 'desc')
+          .limit(30)
+      ).get().toPromise();
+
+      const sessions = sessionsSnapshot?.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() || {})
+      })) || [];
+
+      // Filter by date on the client side to avoid composite index
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      
+      return sessions.filter(session => {
+        const sessionDate = (session as any).createdAt?.toDate ? 
+          (session as any).createdAt.toDate() : 
+          new Date((session as any).createdAt);
+        return sessionDate >= startDate;
+      });
+    } catch (error) {
+      console.error('Error fetching recent sessions:', error);
+      return [];
+    }
+  }
+
+  // Get sessions for chart display
+  async getSessionsForChart(count: number): Promise<any[]> {
+    const user = await this.currentUser$.pipe(take(1)).toPromise();
+    if (!user) return [];
+
+    try {
+      const sessionsSnapshot = await this.firestore.collection('sessions', ref =>
+        ref
+          .where('userId', '==', user.uid)
+          .orderBy('createdAt', 'desc')
+          .limit(count)
+      ).get().toPromise();
+
+      // Return in ascending order (oldest first) for charts
+      return sessionsSnapshot?.docs
+        .map(doc => ({
+          id: doc.id,
+          ...(doc.data() || {})
+        }))
+        .reverse() || [];
+    } catch (error) {
+      console.error('Error fetching sessions for chart:', error);
+      return [];
+    }
+  }
+
   // Update user preferences
   async updatePreferences(preferences: Partial<UserProgression>): Promise<void> {
     const user = await this.currentUser$.pipe(take(1)).toPromise();

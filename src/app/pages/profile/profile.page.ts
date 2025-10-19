@@ -20,11 +20,13 @@ export class ProfilePage implements OnInit {
   userProgression$: Observable<UserProgression | null> = new Observable();
   isEditing = false;
   editProfile: Partial<UserProfile> = {};
-  showAnalytics = true; // Always show analytics
   
   // Local data for immediate display
   localCompletedLessons = 0;
   localTotalLessons = 0;
+  
+  // Make Math available in template
+  Math = Math;
 
   constructor(
     private storageService: StorageService,
@@ -119,7 +121,6 @@ export class ProfilePage implements OnInit {
     this.localCompletedLessons = Object.values(allProgress).filter(p => p.completed).length;
   }
 
-
   async editProfileInfo() {
     if (!this.userProfile) return;
 
@@ -187,13 +188,12 @@ export class ProfilePage implements OnInit {
     try {
       const image = await Camera.getPhoto({
         quality: 90,
-        allowEditing: false, // Disable default camera editing
+        allowEditing: false,
         resultType: CameraResultType.Uri,
         source: CameraSource.Photos,
       });
 
       if (image && image.webPath) {
-        // Open image cropper modal
         await this.openImageCropper(image.webPath);
       }
     } catch (error) {
@@ -208,7 +208,6 @@ export class ProfilePage implements OnInit {
   }
 
   private async openImageCropper(imagePath: string) {
-    // Create a simple cropper using canvas
     const croppedDataUrl = await this.createSquareCrop(imagePath);
     if (croppedDataUrl) {
       this.updateEditAvatar(croppedDataUrl);
@@ -230,7 +229,6 @@ export class ProfilePage implements OnInit {
           return;
         }
 
-        // Center crop
         const x = (img.width - size) / 2;
         const y = (img.height - size) / 2;
         ctx.drawImage(img, x, y, size, size, 0, 0, size, size);
@@ -261,7 +259,7 @@ export class ProfilePage implements OnInit {
   private updateEditAvatar(avatarPath: string) {
     this.editProfile = { ...this.editProfile, avatar: avatarPath };
     
-    const toast = this.toastController.create({
+    this.toastController.create({
       message: 'Avatar updated! Tap save to confirm.',
       duration: 2000,
       color: 'success'
@@ -278,8 +276,7 @@ export class ProfilePage implements OnInit {
 
   getAchievementProgress(progression: UserProgression | null): number {
     if (!progression || !progression.achievements) return 0;
-    // Calculate progress based on total possible achievements vs earned
-    const totalPossible = 10; // Total possible achievements in the system
+    const totalPossible = 10;
     const earned = progression.achievements.length;
     return Math.round((earned / totalPossible) * 100);
   }
@@ -295,28 +292,27 @@ export class ProfilePage implements OnInit {
 
   getWeeklyGoalProgress(progression: UserProgression | null): number {
     if (!progression) return 0;
-    // This would need to be calculated based on current week's progress
     return Math.min(100, (progression.totalSpeakingTime / progression.weeklyGoal) * 100);
   }
 
   getMonthlyGoalProgress(progression: UserProgression | null): number {
     if (!progression) return 0;
-    // This would need to be calculated based on current month's progress
     return Math.min(100, (progression.totalPracticeSessions / progression.monthlyGoal) * 100);
   }
 
   getRecentAchievements(progression: UserProgression | null): Achievement[] {
     if (!progression) return [];
     return progression.achievements
-      .sort((a, b) => b.unlockedAt.getTime() - a.unlockedAt.getTime())
+      .sort((a, b) => {
+        const aTime = a.unlockedAt instanceof Date ? 
+          a.unlockedAt.getTime() : 
+          (a.unlockedAt as any).toDate ? (a.unlockedAt as any).toDate().getTime() : new Date(a.unlockedAt).getTime();
+        const bTime = b.unlockedAt instanceof Date ? 
+          b.unlockedAt.getTime() : 
+          (b.unlockedAt as any).toDate ? (b.unlockedAt as any).toDate().getTime() : new Date(b.unlockedAt).getTime();
+        return bTime - aTime;
+      })
       .slice(0, 3);
-  }
-
-  getAccuracyTrend(progression: UserProgression | null): number[] {
-    if (!progression) return [];
-    return progression.accuracyHistory
-      .slice(-7) // Last 7 records
-      .map(record => record.accuracy);
   }
 
   getPracticeTypeStats(progression: UserProgression | null) {
@@ -363,7 +359,6 @@ export class ProfilePage implements OnInit {
             try {
               await this.authService.signOut();
               console.log('Logout completed successfully');
-              // Navigate to signin page after successful logout
               this.router.navigate(['/auth/signin']);
             } catch (error) {
               console.error('Logout error:', error);
