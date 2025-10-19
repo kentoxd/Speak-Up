@@ -10,29 +10,24 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Profile</ion-title>
-    </ion-toolbar>
-  </ion-header>
 
   <div class="profile-container" *ngIf="userProfile">
 
     <!-- Profile Header -->
     <div class="profile-header">
-      <div class="avatar-section" (click)="changeAvatar()">
-        <div class="avatar-container">
+      <div class="avatar-section" [class.editing]="isEditing" (click)="isEditing && changeAvatar()">
+        <div class="avatar-container" [class.clickable]="isEditing">
           <img 
-            *ngIf="userProfile.avatar" 
-            [src]="userProfile.avatar" 
+            *ngIf="editProfile.avatar || userProfile.avatar" 
+            [src]="editProfile.avatar || userProfile.avatar" 
             [alt]="userProfile.name"
             class="avatar-image">
           <ion-icon 
-            *ngIf="!userProfile.avatar" 
+            *ngIf="!editProfile.avatar && !userProfile.avatar" 
             name="person-circle" 
             class="avatar-icon">
           </ion-icon>
-          <div class="avatar-overlay">
+          <div class="avatar-overlay" *ngIf="isEditing">
             <ion-icon name="camera"></ion-icon>
           </div>
         </div>

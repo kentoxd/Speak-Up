@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { AlertController, ActionSheetController, ToastController } from '@ionic/angular';
+import { AlertController, ActionSheetController, ToastController, ModalController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { StorageService, UserProfile } from '../../services/storage.service';
 import { UserProgressionService } from '../../services/user-progression.service';
@@ -8,6 +8,7 @@ import { DataService } from '../../services/data.service';
 import { UserProgression, Achievement } from '../../models/user-progression.model';
 import { Observable } from 'rxjs';
 import { take } from 'rxjs/operators';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 @Component({
   selector: 'app-profile',
@@ -33,7 +34,8 @@ export class ProfilePage implements OnInit {
     private router: Router,
     private alertController: AlertController,
     private actionSheetController: ActionSheetController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private modalController: ModalController
   ) { }
 
   async ngOnInit() {
@@ -154,51 +156,117 @@ export class ProfilePage implements OnInit {
   }
 
   async changeAvatar() {
+    // Only show this action sheet if we're in edit mode
+    if (!this.isEditing) return;
+
     const actionSheet = await this.actionSheetController.create({
       header: 'Select Avatar',
       buttons: [
         {
+          text: 'Choose from Gallery',
+          handler: () => {
+            this.selectImageFromGallery();
+          },
+        },
+        {
           text: 'Default Avatar',
           handler: () => {
-            this.updateAvatar('');
-          }
-        },
-        {
-          text: 'Avatar 1',
-          handler: () => {
-            this.updateAvatar('assets/avatars/avatar1.png');
-          }
-        },
-        {
-          text: 'Avatar 2',
-          handler: () => {
-            this.updateAvatar('assets/avatars/avatar2.png');
-          }
+            this.updateEditAvatar('');
+          },
         },
         {
           text: 'Cancel',
-          role: 'cancel'
-        }
-      ]
+          role: 'cancel',
+        },
+      ],
     });
     await actionSheet.present();
   }
 
-  private async updateAvatar(avatarPath: string) {
-    if (this.userProfile) {
-      this.userProfile.avatar = avatarPath;
-      await this.storageService.setUserProfile(this.userProfile);
-      
+  async selectImageFromGallery() {
+    try {
+      const image = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: false, // Disable default camera editing
+        resultType: CameraResultType.Uri,
+        source: CameraSource.Photos,
+      });
+
+      if (image && image.webPath) {
+        // Open image cropper modal
+        await this.openImageCropper(image.webPath);
+      }
+    } catch (error) {
+      console.error('Error selecting image:', error);
       const toast = await this.toastController.create({
-        message: 'Avatar updated!',
-        duration: 1500,
-        color: 'success'
+        message: 'Error selecting image. Please try again.',
+        duration: 3000,
+        color: 'danger',
       });
       await toast.present();
     }
   }
 
- 
+  private async openImageCropper(imagePath: string) {
+    // Create a simple cropper using canvas
+    const croppedDataUrl = await this.createSquareCrop(imagePath);
+    if (croppedDataUrl) {
+      this.updateEditAvatar(croppedDataUrl);
+    }
+  }
+
+  private createSquareCrop(imagePath: string): Promise<string> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const size = Math.min(img.width, img.height);
+        canvas.width = size;
+        canvas.height = size;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve('');
+          return;
+        }
+
+        // Center crop
+        const x = (img.width - size) / 2;
+        const y = (img.height - size) / 2;
+        ctx.drawImage(img, x, y, size, size, 0, 0, size, size);
+
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            resolve('');
+            return;
+          }
+          
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            resolve(e.target?.result as string);
+          };
+          reader.readAsDataURL(blob);
+        }, 'image/jpeg', 0.9);
+      };
+
+      img.onerror = () => {
+        console.error('Failed to load image');
+        resolve('');
+      };
+
+      img.src = imagePath;
+    });
+  }
+
+  private updateEditAvatar(avatarPath: string) {
+    this.editProfile = { ...this.editProfile, avatar: avatarPath };
+    
+    const toast = this.toastController.create({
+      message: 'Avatar updated! Tap save to confirm.',
+      duration: 2000,
+      color: 'success'
+    }).then(t => t.present());
+  }
 
   getJoinedDaysAgo(): number {
     if (!this.userProfile?.joinDate) return 0;
@@ -215,8 +283,6 @@ export class ProfilePage implements OnInit {
     const earned = progression.achievements.length;
     return Math.round((earned / totalPossible) * 100);
   }
-
-
 
   getLevelProgress(progression: UserProgression | null): number {
     if (!progression) return 0;
@@ -315,5 +381,4 @@ export class ProfilePage implements OnInit {
 
     await alert.present();
   }
-
 }
