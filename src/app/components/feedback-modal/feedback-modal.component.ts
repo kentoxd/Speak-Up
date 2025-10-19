@@ -70,6 +70,61 @@ import { ModalController } from '@ionic/angular';
           </ul>
         </div>
 
+        <!-- Filler Words Analysis Section -->
+        <div class="filler-words-section" *ngIf="fillerAnalysis">
+          <h3 class="section-title">🗣️ Filler Words Analysis</h3>
+          
+          <div class="stat-card">
+            <span class="label">Filler Words Found</span>
+            <span class="value">{{ fillerAnalysis.fillerCount }}</span>
+          </div>
+          
+          <div class="stat-card">
+            <span class="label">Percentage of Speech</span>
+            <span class="value">{{ fillerAnalysis.fillerPercentage }}%</span>
+          </div>
+          
+          <div class="feedback-text" [ngClass]="getFeedbackClass(fillerAnalysis.fillerPercentage)">
+            {{ fillerAnalysis.fillerFeedback }}
+          </div>
+          
+          <div class="breakdown" *ngIf="fillerAnalysis.fillerBreakdown.length > 0">
+            <p class="label">Breakdown:</p>
+            <div *ngFor="let item of fillerAnalysis.fillerBreakdown" class="breakdown-item">
+              {{ item }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Clarity Analysis Section -->
+        <div class="clarity-section" *ngIf="clarityAnalysis">
+          <h3 class="section-title">🎯 Clarity Analysis</h3>
+          
+          <div class="clarity-score">
+            <div class="score-circle" [ngClass]="getClarityClass(clarityAnalysis.clarityScore)">
+              <span class="score-value">{{ clarityAnalysis.clarityScore }}</span>
+              <span class="score-label">/ 100</span>
+            </div>
+          </div>
+          
+          <div class="metric-breakdown">
+            <div class="metric" *ngFor="let metric of getMetrics(clarityAnalysis.breakdown)">
+              <span class="metric-name">{{ metric.name }}</span>
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="metric.value"></div>
+              </div>
+              <span class="metric-value">{{ metric.value }}%</span>
+            </div>
+          </div>
+          
+          <div class="feedback-items">
+            <div *ngFor="let feedback of clarityAnalysis.feedbackArray" class="feedback-item">
+              <ion-icon name="checkmark-circle-outline"></ion-icon>
+              <span>{{ feedback }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Recommendations Section -->
         <div class="recommendations-section">
           <h3 class="section-title">🎯 Recommendations</h3>
@@ -215,6 +270,184 @@ import { ModalController } from '@ionic/angular';
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+
+    .filler-words-section {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      
+      h3 {
+        margin-top: 0;
+        color: #333;
+      }
+      
+      .stat-card {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #ddd;
+        
+        .label {
+          font-size: 14px;
+          color: #666;
+        }
+        
+        .value {
+          font-weight: bold;
+          font-size: 16px;
+          color: #333;
+        }
+      }
+      
+      .feedback-text {
+        margin: 15px 0;
+        padding: 12px;
+        border-left: 4px solid #ffc107;
+        border-radius: 4px;
+        font-size: 14px;
+        
+        &.excellent {
+          border-left-color: #28a745;
+          background-color: #d4edda;
+        }
+        
+        &.good {
+          border-left-color: #ffc107;
+          background-color: #fff3cd;
+        }
+        
+        &.warning {
+          border-left-color: #dc3545;
+          background-color: #f8d7da;
+        }
+      }
+      
+      .breakdown {
+        margin-top: 12px;
+        font-size: 13px;
+        
+        .label {
+          font-weight: bold;
+          color: #666;
+          margin-bottom: 8px;
+        }
+        
+        .breakdown-item {
+          padding: 5px 0;
+          color: #555;
+        }
+      }
+    }
+
+    .clarity-section {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      
+      h3 {
+        margin-top: 0;
+        color: #333;
+      }
+      
+      .clarity-score {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        
+        .score-circle {
+          width: 120px;
+          height: 120px;
+          border-radius: 50%;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          font-weight: bold;
+          color: white;
+          
+          &.excellent {
+            background-color: #28a745;
+          }
+          
+          &.good {
+            background-color: #ffc107;
+          }
+          
+          &.poor {
+            background-color: #dc3545;
+          }
+          
+          .score-value {
+            font-size: 36px;
+            line-height: 1;
+          }
+          
+          .score-label {
+            font-size: 14px;
+            opacity: 0.9;
+          }
+        }
+      }
+      
+      .metric-breakdown {
+        margin: 20px 0;
+        
+        .metric {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 15px;
+          
+          .metric-name {
+            min-width: 80px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #666;
+          }
+          
+          .progress-bar {
+            flex: 1;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            
+            .progress-fill {
+              height: 100%;
+              background-color: #007bff;
+              transition: width 0.3s ease;
+            }
+          }
+          
+          .metric-value {
+            min-width: 30px;
+            text-align: right;
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+          }
+        }
+      }
+      
+      .feedback-items {
+        margin-top: 15px;
+        
+        .feedback-item {
+          display: flex;
+          gap: 10px;
+          padding: 8px 0;
+          font-size: 13px;
+          color: #555;
+          
+          ion-icon {
+            min-width: 20px;
+            color: #28a745;
+          }
+        }
+      }
+    }
   `]
 })
 export class FeedbackModalComponent {
@@ -227,6 +460,17 @@ export class FeedbackModalComponent {
   @Input() punctuationColor: string = 'red';
   @Input() targetText: string = '';
   @Input() userSpeech: string = '';
+  @Input() fillerAnalysis: {
+    fillerCount: number;
+    fillerPercentage: number;
+    fillerBreakdown: string[];
+    fillerFeedback: string;
+  } | null = null;
+  @Input() clarityAnalysis: {
+    clarityScore: number;
+    breakdown: { accuracy: number; pace: number; repetition: number; rhythm: number };
+    feedbackArray: string[];
+  } | null = null;
 
   constructor(private modalController: ModalController) {}
 
@@ -268,5 +512,26 @@ export class FeedbackModalComponent {
     } else {
       return Math.abs(this.wordDifference) + ' fewer';
     }
+  }
+
+  getFeedbackClass(percentage: number): string {
+    if (percentage === 0) return 'excellent';
+    if (percentage >= 5) return 'warning';
+    return 'good';
+  }
+
+  getClarityClass(score: number): string {
+    if (score >= 80) return 'excellent';
+    if (score >= 60) return 'good';
+    return 'poor';
+  }
+
+  getMetrics(breakdown: any) {
+    return [
+      { name: 'Accuracy', value: breakdown.accuracy },
+      { name: 'Pace', value: breakdown.pace },
+      { name: 'Repetition', value: breakdown.repetition },
+      { name: 'Rhythm', value: breakdown.rhythm }
+    ];
   }
 }

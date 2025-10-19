@@ -368,4 +368,247 @@ export class SpeechService {
 
     return suggestions;
   }
+
+  /**
+   * Detect filler words in a transcript
+   * @param transcript The speech transcript to analyze
+   * @returns Object with count, words breakdown, and percentage
+   */
+  detectFillerWords(transcript: string): { count: number; words: string[]; percentage: number } {
+    if (!transcript || transcript.trim() === '') {
+      return { count: 0, words: [], percentage: 0 };
+    }
+
+    // Define filler words to detect
+    const fillerWords = [
+      'um', 'uh', 'er', 'like', 'you know', 'so', 'basically', 'literally', 'actually'
+    ];
+
+    const totalWords = transcript.trim().split(/\s+/).filter((w: string) => w.length > 0).length;
+    const foundFillers: { [key: string]: number } = {};
+    let totalFillerCount = 0;
+
+    // Check each filler word
+    fillerWords.forEach(filler => {
+      // Use word boundaries to avoid partial matches
+      const regex = new RegExp(`\\b${filler.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+      const matches = transcript.match(regex);
+      
+      if (matches) {
+        const count = matches.length;
+        foundFillers[filler] = count;
+        totalFillerCount += count;
+      }
+    });
+
+    // Convert to array format for display
+    const wordsBreakdown = Object.entries(foundFillers).map(([word, count]) => `${word}: ${count}`);
+
+    // Calculate percentage
+    const percentage = totalWords > 0 ? (totalFillerCount / totalWords) * 100 : 0;
+
+    return {
+      count: totalFillerCount,
+      words: wordsBreakdown,
+      percentage: Math.round(percentage * 10) / 10 // Round to 1 decimal place
+    };
+  }
+
+  /**
+   * Get user-friendly feedback based on filler word usage
+   * @param fillerCount Number of filler words found
+   * @param percentage Percentage of speech that is filler words
+   * @returns Feedback string
+   */
+  getFillerWordFeedback(fillerCount: number, percentage: number): string {
+    if (fillerCount === 0) {
+      return "Excellent! No filler words detected.";
+    } else if (percentage < 2) {
+      return `Good job! Only ${fillerCount} filler word${fillerCount > 1 ? 's' : ''} detected (${percentage}%).`;
+    } else if (percentage < 5) {
+      return `You used ${fillerCount} filler word${fillerCount > 1 ? 's' : ''} (${percentage}%). Try to reduce them.`;
+    } else {
+      return `You used ${fillerCount} filler word${fillerCount > 1 ? 's' : ''} (${percentage}%). Practice speaking more deliberately to eliminate filler words.`;
+    }
+  }
+
+  /**
+   * Analyze filler words in a transcript and return comprehensive results
+   * @param transcript The speech transcript to analyze
+   * @returns Object with filler analysis results
+   */
+  analyzeFillerWords(transcript: string): {
+    fillerCount: number;
+    fillerPercentage: number;
+    fillerBreakdown: string[];
+    fillerFeedback: string;
+  } {
+    const detection = this.detectFillerWords(transcript);
+    const feedback = this.getFillerWordFeedback(detection.count, detection.percentage);
+
+    return {
+      fillerCount: detection.count,
+      fillerPercentage: detection.percentage,
+      fillerBreakdown: detection.words,
+      fillerFeedback: feedback
+    };
+  }
+
+  /**
+   * Detect repeated words in a transcript
+   * @param transcript The speech transcript to analyze
+   * @returns Object with count and examples of repeated words
+   */
+  detectRepeatedWords(transcript: string): { count: number; examples: string[] } {
+    if (!transcript || transcript.trim() === '') {
+      return { count: 0, examples: [] };
+    }
+
+    const words = transcript.trim().split(/\s+/).filter((w: string) => w.length > 0);
+    const repeatedWords: { [key: string]: number } = {};
+    let totalRepeats = 0;
+
+    // Check for consecutive duplicates
+    for (let i = 0; i < words.length - 1; i++) {
+      const currentWord = words[i].toLowerCase().replace(/[.,!?;:]/g, '');
+      const nextWord = words[i + 1].toLowerCase().replace(/[.,!?;:]/g, '');
+
+      // Only count words longer than 2 characters
+      if (currentWord === nextWord && currentWord.length > 2) {
+        if (repeatedWords[currentWord]) {
+          repeatedWords[currentWord]++;
+        } else {
+          repeatedWords[currentWord] = 1;
+        }
+        totalRepeats++;
+        i++; // Skip the next word since we've already counted it
+      }
+    }
+
+    // Convert to examples array (max 3 examples)
+    const examples = Object.entries(repeatedWords)
+      .slice(0, 3)
+      .map(([word, count]) => `"${word}" repeated ${count} time${count > 1 ? 's' : ''}`);
+
+    return {
+      count: totalRepeats,
+      examples
+    };
+  }
+
+  /**
+   * Analyze speaking rhythm based on sentence length variation
+   * @param transcript The speech transcript to analyze
+   * @returns Object with rhythm score and feedback
+   */
+  analyzeSpeakingRhythm(transcript: string): { rhythmScore: number; feedback: string } {
+    if (!transcript || transcript.trim() === '') {
+      return { rhythmScore: 0.5, feedback: 'Not enough content to analyze rhythm.' };
+    }
+
+    // Split into sentences using punctuation
+    const sentences = transcript.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    
+    if (sentences.length < 2) {
+      return { rhythmScore: 0.5, feedback: 'Not enough sentences to analyze rhythm.' };
+    }
+
+    // Calculate word count for each sentence
+    const sentenceLengths = sentences.map(sentence => 
+      sentence.trim().split(/\s+/).filter(w => w.length > 0).length
+    );
+
+    // Calculate average and standard deviation
+    const average = sentenceLengths.reduce((sum, len) => sum + len, 0) / sentenceLengths.length;
+    const variance = sentenceLengths.reduce((sum, len) => sum + Math.pow(len - average, 2), 0) / sentenceLengths.length;
+    const stdDev = Math.sqrt(variance);
+
+    // Normalize rhythm score (0-1 scale)
+    const rhythmScore = Math.min(stdDev / 10, 1);
+
+    // Generate feedback based on score
+    let feedback: string;
+    if (rhythmScore < 0.3) {
+      feedback = 'Your sentences are very similar in length. Try varying sentence length for better rhythm.';
+    } else if (rhythmScore <= 0.7) {
+      feedback = 'Your rhythm is decent. You could add more variation for better engagement.';
+    } else {
+      feedback = 'Great! Your speaking has good rhythm and variation.';
+    }
+
+    return { rhythmScore, feedback };
+  }
+
+  /**
+   * Calculate comprehensive clarity score based on multiple metrics
+   * @param transcript The speech transcript
+   * @param accuracy Accuracy score (0-100)
+   * @param pace Words per minute
+   * @returns Object with clarity score and breakdown
+   */
+  calculateClarityScore(transcript: string, accuracy: number, pace: number): {
+    clarityScore: number;
+    breakdown: { accuracy: number; pace: number; repetition: number; rhythm: number };
+  } {
+    // Get repeated words count
+    const repeatedWords = this.detectRepeatedWords(transcript);
+    const repeatCount = repeatedWords.count;
+
+    // Get rhythm analysis
+    const rhythmAnalysis = this.analyzeSpeakingRhythm(transcript);
+    const rhythmScore = rhythmAnalysis.rhythmScore;
+
+    // Normalize all scores to 0-1 scale
+    const accuracyScore = accuracy / 100;
+    const paceScore = Math.min(pace / 150, 1); // Ideal WPM = 150
+    const repetitionScore = Math.max(1 - (repeatCount * 0.05), 0.5); // Penalty per repeat, min 0.5
+
+    // Apply weights (must add to 100%)
+    // Accuracy: 35%, Pace: 25%, Repetition: 20%, Rhythm: 20%
+    const clarityScore = (accuracyScore * 0.35) + (paceScore * 0.25) + (repetitionScore * 0.2) + (rhythmScore * 0.2);
+
+    // Convert to 0-100 scale and round to 2 decimals
+    const finalClarityScore = Math.round(clarityScore * 100 * 100) / 100;
+
+    // Return all individual scores also scaled to 0-100
+    return {
+      clarityScore: finalClarityScore,
+      breakdown: {
+        accuracy: Math.round(accuracyScore * 100),
+        pace: Math.round(paceScore * 100),
+        repetition: Math.round(repetitionScore * 100),
+        rhythm: Math.round(rhythmScore * 100)
+      }
+    };
+  }
+
+  /**
+   * Get clarity feedback based on analysis results
+   * @param clarityScore Overall clarity score (0-100)
+   * @param repeatedCount Number of repeated words
+   * @param rhythmFeedback Rhythm feedback text
+   * @returns Array of feedback strings
+   */
+  getClarityFeedback(clarityScore: number, repeatedCount: number, rhythmFeedback: string): string[] {
+    const feedback: string[] = [];
+
+    // Add opening feedback based on score
+    if (clarityScore >= 80) {
+      feedback.push('Excellent clarity! Your speech was clear and well-delivered.');
+    } else if (clarityScore >= 60) {
+      feedback.push('Good clarity overall. Minor improvements could help.');
+    } else {
+      feedback.push('Focus on improving clarity in your next session.');
+    }
+
+    // Add repetition feedback if needed
+    if (repeatedCount > 2) {
+      feedback.push(`Avoid repeating words - detected ${repeatedCount} instances.`);
+    }
+
+    // Always add rhythm feedback
+    feedback.push(rhythmFeedback);
+
+    return feedback;
+  }
 }

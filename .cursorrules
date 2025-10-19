@@ -1,0 +1,185 @@
+# SpeakUp Feature Implementation Rules
+
+## Project Context
+- App: SpeakUp (public speaking practice)
+- Framework: Angular + Ionic
+- Backend: Firebase (Firestore, Auth)
+- Current Task: Implement 3 analytics features
+
+## Feature 1: Filler Word Detection
+
+### Files to Modify
+- `src/services/speech.service.ts` - Add detection functions
+- `src/pages/practice/feedback.component.ts` - Display results
+- `src/pages/practice/feedback.component.html` - Show filler word breakdown
+
+### Implementation Rules
+1. Add `detectFillerWords()` function to SpeechService
+2. Function should return: count, words breakdown, percentage
+3. Common filler words: 'um', 'uh', 'er', 'like', 'you know', 'so', 'basically', 'literally', 'actually'
+4. Use regex word boundaries `\b` to avoid matching inside words
+5. Case-insensitive matching
+6. Store results in session object before saving to Firestore
+7. Provide user-friendly feedback based on filler count
+
+### Testing Checklist
+- Test with transcript containing no fillers
+- Test with transcript with 5+ fillers
+- Verify percentage calculation
+- Check feedback message varies by severity
+
+---
+
+## Feature 2: Enhanced Clarity Assessment
+
+### Files to Modify
+- `src/services/speech.service.ts` - Add clarity functions
+- `src/pages/practice/feedback.component.ts` - Calculate scores
+- `src/pages/practice/feedback.component.html` - Display breakdown
+
+### Implementation Rules
+1. Add `detectRepeatedWords()` - find consecutive duplicates
+2. Add `analyzeSpeakingRhythm()` - calculate sentence variation
+3. Add `calculateClarityScore()` - weighted average of 4 metrics:
+   - Accuracy: 35%
+   - Pace: 25%
+   - Repetition: 20%
+   - Rhythm: 20%
+4. Normalize all scores to 0-100 scale
+5. Ideal pace: 130 words per minute
+6. Return breakdown object with individual scores
+7. Generate actionable feedback for each metric
+
+### Testing Checklist
+- Test with monotonous transcript (same sentence length)
+- Test with repeated words
+- Verify weighting adds to 100%
+- Ensure score is 0-100
+- Check feedback is specific and actionable
+
+---
+
+## Feature 3: Visual Analytics Charts
+
+### Files to Modify
+- Create `src/pages/profile/analytics-dashboard.component.ts`
+- Create `src/pages/profile/analytics-dashboard.component.html`
+- Update `src/services/user-progression.service.ts` - Add query methods
+- Update profile page to include analytics component
+
+### Implementation Rules
+1. Create separate functions for each chart:
+   - `loadWeeklyData()` - last 7 days
+   - `loadMonthlyData()` - last 30 days
+   - `loadAccuracyTrend()` - 14 sessions
+   - `loadPaceTrend()` - 14 sessions
+   - `loadClarityTrend()` - 14 sessions
+2. Query Firestore with date filtering
+3. Format data for chart consumption
+4. Provide average calculations
+5. Generate improvement suggestions based on trends
+6. Use simple visual indicators (cards) first, add recharts later
+
+### Testing Checklist
+- Test with no historical data
+- Test with partial week (3 sessions)
+- Verify date calculations correct
+- Check trend calculations
+- Ensure suggestions vary by performance
+
+---
+
+## Database Schema (Firestore)
+
+Session objects should include:
+```
+{
+  userId: string,
+  transcript: string,
+  accuracy: number (0-100),
+  pace: number (words per minute),
+  clarity: number (0-100),
+  fillerCount: number,
+  fillerPercentage: number,
+  duration: number (seconds),
+  points: number,
+  createdAt: timestamp,
+  feedback: string[]
+}
+```
+
+---
+
+## General Implementation Rules
+
+### Code Organization
+1. Keep functions pure (no side effects)
+2. Return objects with descriptive property names
+3. Use meaningful variable names
+4. Add JSDoc comments for complex functions
+5. Keep functions < 30 lines when possible
+
+### Error Handling
+1. Handle empty transcript gracefully
+2. Check array lengths before accessing
+3. Return default values for missing data
+4. Log errors to console for debugging
+
+### Performance
+1. Don't recalculate on every render
+2. Debounce chart data loading
+3. Cache Firestore queries when possible
+4. Lazy load analytics if on slow connection
+
+### Testing
+1. Test with real transcript samples
+2. Verify edge cases (1 word, no data, etc)
+3. Check calculations with manual examples
+4. Ensure UI updates when data changes
+
+---
+
+## Integration Order
+
+1. **Week 1**: Implement Feature 1 (Filler Words)
+   - Add to SpeechService
+   - Display in existing feedback modal
+   - No major refactoring needed
+
+2. **Week 2**: Implement Feature 2 (Clarity)
+   - Add to SpeechService
+   - Refactor feedback modal to show breakdown
+   - Update session storage
+
+3. **Week 3**: Implement Feature 3 (Analytics)
+   - Create analytics component
+   - Add to profile page
+   - Query Firestore for historical data
+
+---
+
+## File Structure
+```
+src/
+├── services/
+│   ├── speech.service.ts (ADD: filler + clarity functions)
+│   └── user-progression.service.ts (ADD: query methods)
+├── pages/
+│   ├── practice/
+│   │   ├── feedback.component.ts (UPDATE: integrate functions)
+│   │   └── feedback.component.html (UPDATE: show results)
+│   └── profile/
+│       ├── analytics-dashboard.component.ts (NEW)
+│       ├── analytics-dashboard.component.html (NEW)
+│       └── profile.page.html (UPDATE: include analytics)
+```
+
+---
+
+## Debugging Tips
+
+1. Log intermediate calculations
+2. Check Firestore queries in browser DevTools
+3. Test functions in isolation with sample data
+4. Verify timestamps are consistent
+5. Check for null/undefined in data transformations

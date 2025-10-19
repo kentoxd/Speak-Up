@@ -528,6 +528,31 @@ export class PracticePage implements OnInit, OnDestroy {
   const wordColor = getAccuracyColor(wordAccuracy);
   const punctuationColor = getAccuracyColor(punctuationAccuracy);
 
+  // Analyze filler words
+  const fillerAnalysis = this.speechService.analyzeFillerWords(userTranscript);
+
+  // Calculate clarity score
+  const clarityScore = this.speechService.calculateClarityScore(
+    userTranscript,
+    overallAccuracy,
+    analysis.wordsPerMinute
+  );
+
+  // Get repeated words count and rhythm feedback for clarity feedback
+  const repeatedWords = this.speechService.detectRepeatedWords(userTranscript);
+  const rhythmAnalysis = this.speechService.analyzeSpeakingRhythm(userTranscript);
+  
+  const clarityFeedbackArray = this.speechService.getClarityFeedback(
+    clarityScore.clarityScore,
+    repeatedWords.count,
+    rhythmAnalysis.feedback
+  );
+
+  const clarityAnalysis = {
+    ...clarityScore,
+    feedbackArray: clarityFeedbackArray
+  };
+
   const modal = await this.modalController.create({
     component: FeedbackModalComponent,
     componentProps: {
@@ -540,7 +565,9 @@ export class PracticePage implements OnInit, OnDestroy {
       punctuationColor,
       targetText: targetText,
       userSpeech: userTranscript,  // Now uses punctuation-enhanced transcript
-      analysis: analysis
+      analysis: analysis,
+      fillerAnalysis: fillerAnalysis,
+      clarityAnalysis: clarityAnalysis
     },
     cssClass: 'feedback-modal'
   });
