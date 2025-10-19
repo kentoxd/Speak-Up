@@ -1,16 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LoadingController, ToastController } from '@ionic/angular';
-import { EmailJSService } from '../../../services/emailjs.service';
-import { FirebaseAuthService } from '../../../services/firebase-auth.service';
+import { AngularFireAuth } from '@angular/fire/compat/auth';
 
 @Component({
   selector: 'app-forgot-password-page',
   templateUrl: './forgot-password-page.component.html',
   styleUrls: ['./forgot-password-page.component.scss'],
 })
-export class ForgotPasswordPageComponent implements OnInit {
+export class ForgotPasswordPageComponent {
   forgotPasswordForm: FormGroup;
   isLoading = false;
 
@@ -19,15 +18,11 @@ export class ForgotPasswordPageComponent implements OnInit {
     private formBuilder: FormBuilder,
     private loadingController: LoadingController,
     private toastController: ToastController,
-    private emailJSService: EmailJSService,
-    private firebaseAuthService: FirebaseAuthService
+    private afAuth: AngularFireAuth
   ) {
     this.forgotPasswordForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]]
     });
-  }
-
-  ngOnInit() {
   }
 
   goBack() {
@@ -39,7 +34,7 @@ export class ForgotPasswordPageComponent implements OnInit {
       this.isLoading = true;
       
       const loading = await this.loadingController.create({
-        message: 'Verifying email...',
+        message: 'Sending password reset email...',
         spinner: 'crescent'
       });
       await loading.present();
@@ -47,57 +42,44 @@ export class ForgotPasswordPageComponent implements OnInit {
       try {
         const { email } = this.forgotPasswordForm.value;
         
-        // First, check if the email exists in Firebase
-        const emailExists = await this.checkEmailExists(email);
-        
-        if (!emailExists) {
-          await loading.dismiss();
-          this.isLoading = false;
-
-          const toast = await this.toastController.create({
-            message: 'No account found with this email address.',
-            duration: 3000,
-            color: 'warning',
-            position: 'top'
-          });
-          await toast.present();
-          return;
-        }
-
-        // Clear any existing OTP data for this email to start fresh
-        this.emailJSService.clearOTP(email);
-        
-        // Update loading message
-        loading.message = 'Sending OTP...';
-        
-        // Send OTP only if email exists
-        await this.emailJSService.sendPasswordResetOTP(email);
+        // Send Firebase password reset email
+        await this.afAuth.sendPasswordResetEmail(email, {
+          url: `${window.location.origin}/?mode=resetPassword&email=${email}`
+        });
         
         await loading.dismiss();
         this.isLoading = false;
 
-        const toast = await this.toastController.create({
-          message: 'OTP sent successfully! Check your email.',
-          duration: 3000,
+        const successToast = await this.toastController.create({
+          message: 'Password reset email sent! Check your inbox. Please check your spam folder if you do not see it.',
           color: 'success',
+          duration: 5000,
           position: 'top'
         });
-        await toast.present();
+        await successToast.present();
 
-        // Redirect to OTP page with email in state
+        // Navigate back to signin after delay
         setTimeout(() => {
-          this.router.navigate(['/auth/otp'], { 
-            state: { email: email } 
-          });
-        }, 1000);
+          this.router.navigate(['/auth/signin']);
+        }, 3000);
 
       } catch (error: any) {
         await loading.dismiss();
         this.isLoading = false;
 
+        let message = 'Failed to send password reset email. Please try again.';
+
+        if (error.code === 'auth/user-not-found') {
+          message = 'No account found with this email address.';
+        } else if (error.code === 'auth/invalid-email') {
+          message = 'Invalid email address.';
+        } else if (error.code === 'auth/too-many-requests') {
+          message = 'Too many requests. Please try again later.';
+        }
+
         const toast = await this.toastController.create({
-          message: error.message || 'Failed to send OTP. Please try again.',
-          duration: 3000,
+          message: message,
+          duration: 4000,
           color: 'danger',
           position: 'top'
         });
@@ -106,26 +88,11 @@ export class ForgotPasswordPageComponent implements OnInit {
     }
   }
 
-  private async checkEmailExists(email: string): Promise<boolean> {
-    try {
-      // Use Firebase Auth to check if email exists
-      // This will throw an error if the email doesn't exist
-      await this.firebaseAuthService.sendPasswordResetEmail(email);
-      return true;
-    } catch (error: any) {
-      if (error.code === 'auth/user-not-found') {
-        return false;
-      }
-      // For other errors, assume email exists to avoid blocking legitimate users
-      return true;
-    }
-  }
-
   getFieldError(fieldName: string): string {
     const field = this.forgotPasswordForm.get(fieldName);
     if (field?.errors && field.touched) {
       if (field.errors['required']) {
-        return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
+        return 'Email is required';
       }
       if (field.errors['email']) {
         return 'Please enter a valid email address';

@@ -13,7 +13,12 @@
   min-height: 100vh;
   padding-bottom: 2rem;
 }
-
+.logo-image {
+  width: 150px;
+  height: auto;
+  vertical-align: middle;
+  object-fit: contain;
+}
 // Slides Container
 .slides-container {
   flex: 1;
@@ -200,4 +205,6 @@
     font-size: 18px;
     height: 56px;
   }
+
+
 }

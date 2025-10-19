@@ -115,9 +115,18 @@ export class FirebaseAuthService {
   async sendPasswordResetEmail(email: string): Promise<void> {
     try {
       await this.afAuth.sendPasswordResetEmail(email);
+      console.log('Password reset email sent to:', email);
     } catch (error: any) {
       console.error('Password reset email error:', error);
-      throw error; // Re-throw to let caller handle the error
+      
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('No account found with this email address');
+      }
+      if (error.code === 'auth/too-many-requests') {
+        throw new Error('Too many reset requests. Please wait before trying again.');
+      }
+      
+      throw new Error(this.getErrorMessage(error.code) || error.message);
     }
   }
 
@@ -139,28 +148,7 @@ export class FirebaseAuthService {
     }
   }
 
-  // Update password for unauthenticated user (after OTP verification)
-  async updatePasswordWithOTP(email: string, newPassword: string): Promise<void> {
-    try {
-      // For a simplified flow, we'll use Firebase's password reset email
-      // but handle it more gracefully to avoid rate limiting issues
-      
-      // First, try to send password reset email
-      await this.sendPasswordResetEmail(email);
-      
-      console.log('Password reset email sent successfully');
-      
-    } catch (error: any) {
-      console.error('Password update error:', error);
-      
-      // If it's a rate limiting error, provide a helpful message
-      if (error.code === 'auth/too-many-requests') {
-        throw new Error('Firebase has temporarily blocked requests from this device due to unusual activity. Please wait 15-30 minutes, clear your browser cache, and try again. You can also try using a different browser or incognito mode.');
-      }
-      
-      throw new Error(this.getErrorMessage(error.code));
-    }
-  }
+
 
   // Complete password reset using the reset code from email
   async confirmPasswordReset(code: string, newPassword: string): Promise<void> {
@@ -175,55 +163,58 @@ export class FirebaseAuthService {
   }
 
   // Handle password reset completion from email link
-  async handlePasswordResetFromEmail(code: string): Promise<string | null> {
+  async handlePasswordResetFromEmail(code: string, newPassword: string): Promise<void> {
     try {
-      // Verify the reset code
+      // Verify the reset code is valid
       const email = await this.afAuth.verifyPasswordResetCode(code);
       
-      // Check if we have a pending password reset for this email
-      const pendingReset = localStorage.getItem('pendingPasswordReset');
-      if (pendingReset) {
-        const resetData = JSON.parse(pendingReset);
-        
-        // Check if the email matches and the reset is not expired
-        if (resetData.email === email && Date.now() < resetData.expiresAt) {
-          // Use the stored new password
-          await this.confirmPasswordReset(code, resetData.newPassword);
-          
-          // Clear the pending reset data
-          localStorage.removeItem('pendingPasswordReset');
-          
-          console.log('Password reset completed with stored password');
-          return email;
-        }
+      // Confirm the password reset with the new password
+      await this.afAuth.confirmPasswordReset(code, newPassword);
+      
+      console.log('Password reset completed successfully for:', email);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      
+      if (error.code === 'auth/invalid-action-code') {
+        throw new Error('The reset link has expired or is invalid. Please request a new password reset.');
+      }
+      if (error.code === 'auth/expired-action-code') {
+        throw new Error('The reset link has expired. Please request a new password reset.');
+      }
+      if (error.code === 'auth/too-many-requests') {
+        throw new Error('Too many reset attempts. Please wait before trying again.');
       }
       
-      // If no pending reset found, return the email for manual password entry
-      return email;
-      
-    } catch (error: any) {
-      console.error('Password reset verification error:', error);
-      throw new Error(this.getErrorMessage(error.code));
+      throw new Error(this.getErrorMessage(error.code) || error.message);
     }
   }
 
   // Alternative method: Update password using temporary authentication
-  async updatePasswordWithTemporaryAuth(email: string, oldPassword: string, newPassword: string): Promise<void> {
+ async updatePasswordWithOTP(email: string, newPassword: string, otp: string): Promise<void> {
     try {
-      // Sign in with old password
-      const result = await this.afAuth.signInWithEmailAndPassword(email, oldPassword);
+      // Use Firebase's confirmPasswordReset with the OTP code
+      await this.afAuth.confirmPasswordReset(otp, newPassword);
       
-      if (result.user) {
-        // Update password
-        await result.user.updatePassword(newPassword);
-        console.log('Password updated successfully');
-        
-        // Sign out the user
-        await this.afAuth.signOut();
-      }
+      console.log('Password updated successfully for:', email);
+      
     } catch (error: any) {
       console.error('Password update error:', error);
-      throw new Error(this.getErrorMessage(error.code));
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      
+      // If it's a rate limiting error, provide a helpful message
+      if (error.code === 'auth/too-many-requests') {
+        throw new Error('Firebase has temporarily blocked requests from this device due to unusual activity. Please wait 15-30 minutes, clear your browser cache, and try again.');
+      }
+      
+      // Handle invalid code error
+      if (error.code === 'auth/invalid-action-code') {
+        throw new Error('The reset code has expired or is invalid. Please request a new password reset.');
+      }
+      
+      throw new Error(this.getErrorMessage(error.code) || error.message);
     }
   }
 

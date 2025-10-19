@@ -16,7 +16,6 @@ export class PracticePage implements OnInit, OnDestroy {
   exercises: PracticeExercise[] = [];
   selectedExercise?: PracticeExercise;
   
-  // New Structured Practice Properties
   practiceTypes = [
     { value: 'monologue', label: 'Monologue' },
     { value: 'public-speaking', label: 'Public Speaking' },
@@ -42,6 +41,7 @@ export class PracticePage implements OnInit, OnDestroy {
   practiceHistory: any[] = [];
   userSpeechText = '';
   showFeedback = false;
+  recordingTimer: any = null;
 
   constructor(
     private dataService: DataService,
@@ -60,7 +60,15 @@ export class PracticePage implements OnInit, OnDestroy {
     await this.loadPracticeHistory();
     this.loadStructuredPractice();
     
-    // Initialize user progression for authenticated users
+    if (!this.speechService.isSpeechRecognitionSupported()) {
+      const toast = await this.toastController.create({
+        message: 'Speech Recognition not supported in this browser. Please use Chrome, Edge, or Safari.',
+        duration: 5000,
+        color: 'warning'
+      });
+      await toast.present();
+    }
+    
     this.authService.getCurrentUser().subscribe(async user => {
       if (user) {
         await this.userProgressionService.initializeUserProgression(user);
@@ -79,7 +87,7 @@ export class PracticePage implements OnInit, OnDestroy {
   async startExercise(exercise: PracticeExercise) {
     this.selectedExercise = exercise;
     this.currentPrompt = this.getRandomPrompt(exercise);
-    this.timeRemaining = exercise.timeLimit * 60; // Convert to seconds
+    this.timeRemaining = exercise.timeLimit * 60;
     this.isPracticing = true;
     this.sessionResults = null;
 
@@ -112,7 +120,6 @@ export class PracticePage implements OnInit, OnDestroy {
   }
 
   private startPracticeSession() {
-    // Start countdown timer
     const timer = setInterval(() => {
       this.timeRemaining--;
       if (this.timeRemaining <= 0) {
@@ -125,28 +132,30 @@ export class PracticePage implements OnInit, OnDestroy {
   async startRecording() {
     if (!this.speechService.isSpeechRecognitionSupported()) {
       const toast = await this.toastController.create({
-        message: 'Speech recognition not supported in this browser. Recording simulation will start.',
+        message: 'Speech Recognition not supported. Please use Chrome, Edge, or Safari.',
         duration: 3000,
-        color: 'warning'
+        color: 'danger'
       });
       await toast.present();
+      return;
     }
 
     try {
       this.isRecording = true;
+      this.userSpeechText = '🎤 Listening...';
       this.speechService.startRecording();
       
-      // Start real-time transcript updates
       const transcriptInterval = setInterval(() => {
         if (this.isRecording) {
           const currentTranscript = this.speechService.getCurrentTranscript();
           if (currentTranscript) {
             this.userSpeechText = currentTranscript;
+            this.cdr.detectChanges();
           }
         } else {
           clearInterval(transcriptInterval);
         }
-      }, 100);
+      }, 500);
       
     } catch (error) {
       console.error('Recording error:', error);
@@ -165,7 +174,6 @@ export class PracticePage implements OnInit, OnDestroy {
     this.speechService.stopRecording();
     this.isRecording = false;
     
-    // Get the final result
     const result = this.speechService.getRecordingResult();
     this.userSpeechText = result.transcript;
     this.handleRecordingResult(result);
@@ -174,7 +182,6 @@ export class PracticePage implements OnInit, OnDestroy {
   private handleRecordingResult(result: SpeechRecognitionResult) {
     this.isRecording = false;
     
-    // Analyze the speech
     const analysis = this.speechService.analyzeSpeech(result.transcript, result.duration);
     
     this.sessionResults = {
@@ -190,7 +197,6 @@ export class PracticePage implements OnInit, OnDestroy {
 
   private async endPracticeSession() {
     if (this.sessionResults) {
-      // Save to practice history
       await this.storageService.addPracticeSession(this.sessionResults);
       await this.loadPracticeHistory();
     }
@@ -248,11 +254,10 @@ export class PracticePage implements OnInit, OnDestroy {
 
   getTotalPracticeTime(): number {
     return this.practiceHistory.reduce((total, session) => {
-      return total + Math.round(session.duration / 1000 / 60); // Convert to minutes
+      return total + Math.round(session.duration / 1000 / 60);
     }, 0);
   }
 
-  // New Structured Practice Methods
   loadStructuredPractice() {
     this.currentStructuredPractice = this.dataService.getStructuredPractice(
       this.selectedPracticeType, 
@@ -302,13 +307,17 @@ export class PracticePage implements OnInit, OnDestroy {
   startStructuredPractice() {
     if (!this.currentStructuredPractice) return;
     
+    if (!this.speechService.isSpeechRecognitionSupported()) {
+      this.showSpeechRecognitionError();
+      return;
+    }
+    
     this.isPracticing = true;
     this.timeRemaining = this.currentStructuredPractice.timeLimit * 60;
     this.userSpeechText = '';
     this.sessionResults = null;
     this.showFeedback = false;
     
-    // Start countdown timer
     const timer = setInterval(() => {
       this.timeRemaining--;
       if (this.timeRemaining <= 0) {
@@ -318,58 +327,55 @@ export class PracticePage implements OnInit, OnDestroy {
     }, 1000);
   }
 
+  private async showSpeechRecognitionError() {
+    const alert = await this.alertController.create({
+      header: 'Speech Recognition Not Supported',
+      message: 'Your browser does not support speech recognition. Please use: Chrome, Edge, or Safari.',
+      buttons: ['OK']
+    });
+    await alert.present();
+  }
+
   async startStructuredRecording() {
-    
     if (!this.speechService.isSpeechRecognitionSupported()) {
-      const toast = await this.toastController.create({
-        message: 'Speech recognition not supported. Using simulation mode.',
-        duration: 3000,
-        color: 'warning'
-      });
-      await toast.present();
+      await this.showSpeechRecognitionError();
+      return;
     }
 
     try {
-      this.userSpeechText = 'Listening...';
+      this.userSpeechText = '';
+      this.sessionResults = null;
+      this.speechService.clearTranscript();
       
-      // Only clear transcript if not using mock mode
-      if (this.speechService.isSpeechRecognitionSupported()) {
-        this.speechService.clearTranscript();
+      if (this.currentStructuredPractice?.targetText) {
+        this.speechService.setTargetText(this.currentStructuredPractice.targetText);
+        console.log('Target text set:', this.currentStructuredPractice.targetText);
       }
       
-      // Start recording (non-blocking)
       this.speechService.startRecording();
-      
-      // Set recording flag AFTER starting the speech service
       this.isRecording = true;
       
-      // Set target text for intelligent punctuation handling
-      if (this.currentStructuredPractice?.targetText) {
-        (this.speechService as any).targetText = this.currentStructuredPractice.targetText;
-      }
-      
-      // Start real-time transcript updates with more frequent polling
       const transcriptInterval = setInterval(() => {
         if (this.isRecording) {
           const currentTranscript = this.speechService.getCurrentTranscript();
-          // Always update the display, even if transcript is empty
+          
           if (currentTranscript && currentTranscript.trim() !== '') {
-            this.userSpeechText = currentTranscript;
-            // Trigger change detection to ensure UI updates
+            const capitalized = this.capitalizeFirstLetter(currentTranscript);
+            console.log('%cDirect assignment:', 'color: cyan; font-weight: bold', capitalized);
+            this.userSpeechText = capitalized;
+            console.log('%cAfter assignment userSpeechText:', 'color: magenta; font-weight: bold', this.userSpeechText);
             this.cdr.detectChanges();
           }
         } else {
           clearInterval(transcriptInterval);
         }
-      }, 1000); // Increased frequency for more responsive updates
+      }, 100);
       
-      // Store interval ID for cleanup
       (this as any).transcriptInterval = transcriptInterval;
       
     } catch (error) {
       console.error('Recording error:', error);
       this.isRecording = false;
-      this.userSpeechText = '';
       
       const toast = await this.toastController.create({
         message: 'Recording failed. Please try again.',
@@ -384,36 +390,33 @@ export class PracticePage implements OnInit, OnDestroy {
     this.speechService.stopRecording();
     this.isRecording = false;
     
-    // Clear the transcript update interval
     if ((this as any).transcriptInterval) {
       clearInterval((this as any).transcriptInterval);
       (this as any).transcriptInterval = null;
     }
     
-    // Get the current transcript (what was being displayed in real-time)
-    const currentTranscript = this.speechService.getCurrentTranscript();
-    
-    // Get the final result for analysis
-    const result = this.speechService.getRecordingResult();
-    
-    // Use the current transcript for display, not just the final result
-    this.userSpeechText = currentTranscript || result.transcript;
-    
-    this.handleStructuredRecordingResult({
-      ...result,
-      transcript: this.userSpeechText
-    });
-    
-    // Trigger change detection to ensure feedback button appears
-    this.cdr.detectChanges();
+    // Add a small delay to ensure final punctuation is processed
+    setTimeout(() => {
+      const result = this.speechService.getRecordingResult();
+      // Force get the latest transcript with punctuation
+      const finalTranscript = this.speechService.getCurrentTranscript();
+      console.log('%cFinal transcript with punctuation:', 'color: lime; font-weight: bold', finalTranscript);
+      
+      this.userSpeechText = this.capitalizeFirstLetter(finalTranscript);
+      console.log('%cFinal userSpeechText:', 'color: lime; font-weight: bold', this.userSpeechText);
+      
+      this.handleStructuredRecordingResult(result);
+      this.cdr.detectChanges();
+    }, 100);
   }
 
   private async handleStructuredRecordingResult(result: SpeechRecognitionResult) {
     this.isRecording = false;
-    this.userSpeechText = result.transcript;
+    
+    const finalTranscript = this.userSpeechText || result.transcript;
     
     this.sessionResults = {
-      transcript: result.transcript,
+      transcript: finalTranscript,
       confidence: result.confidence,
       duration: result.duration,
       practiceType: this.selectedPracticeType,
@@ -421,18 +424,16 @@ export class PracticePage implements OnInit, OnDestroy {
       timestamp: new Date().toISOString()
     };
 
-    // Update user progression in Firebase
     if (this.sessionResults && this.currentStructuredPractice) {
       const accuracy = this.calculateOverallAccuracy({
-        wordAccuracy: this.calculateWordAccuracy(result.transcript, this.currentStructuredPractice.targetText),
-        punctuationAccuracy: this.calculatePunctuationAccuracy(result.transcript, this.currentStructuredPractice.targetText),
+        wordAccuracy: this.calculateWordAccuracy(finalTranscript, this.currentStructuredPractice.targetText),
+        punctuationAccuracy: this.calculatePunctuationAccuracy(finalTranscript, this.currentStructuredPractice.targetText),
         confidence: result.confidence,
         duration: result.duration
       });
 
-      const durationMinutes = result.duration / 60; // Convert seconds to minutes
+      const durationMinutes = result.duration / 60000;
       
-      // Map practice types to match the service
       const practiceType = this.selectedPracticeType === 'public-speaking' ? 'publicSpeaking' : 
                           this.selectedPracticeType === 'debate-speech' ? 'debate' : 'monologue';
       
@@ -473,38 +474,54 @@ export class PracticePage implements OnInit, OnDestroy {
     this.sessionResults = null;
   }
 
-
   ngOnDestroy() {
-    // Clean up any running intervals
     if ((this as any).transcriptInterval) {
       clearInterval((this as any).transcriptInterval);
     }
   }
 
   async showDetailedFeedback() {
-    if (!this.sessionResults || !this.currentStructuredPractice) return;
+    if (!this.sessionResults || !this.currentStructuredPractice) {
+      const toast = await this.toastController.create({
+        message: 'No speech recorded. Please record first.',
+        duration: 2000,
+        color: 'warning'
+      });
+      await toast.present();
+      return;
+    }
+
+    const userTranscript = this.sessionResults.transcript;
+    const targetText = this.currentStructuredPractice.targetText;
+
+    if (!userTranscript || userTranscript.trim() === '') {
+      const toast = await this.toastController.create({
+        message: 'No speech text found. Please record again.',
+        duration: 2000,
+        color: 'warning'
+      });
+      await toast.present();
+      return;
+    }
 
     const analysis = this.speechService.analyzeSpeech(
-      this.sessionResults.transcript, 
+      userTranscript, 
       this.sessionResults.duration
     );
 
-    // Calculate detailed accuracy metrics
-    const targetWords = this.currentStructuredPractice.targetText.split(' ').length;
-    const userWords = this.sessionResults.transcript.split(' ').length;
+    const targetWords = targetText.split(/\s+/).filter((w: string) => w.length > 0).length;
+    const userWords = userTranscript.split(/\s+/).filter((w: string) => w.length > 0).length;
     const wordDifference = userWords - targetWords;
     
     const overallAccuracy = this.calculateOverallAccuracy(analysis);
-    const wordAccuracy = this.calculateWordAccuracy(this.sessionResults.transcript, this.currentStructuredPractice.targetText);
-    const punctuationAccuracy = this.calculatePunctuationAccuracy(this.sessionResults.transcript, this.currentStructuredPractice.targetText);
+    const wordAccuracy = this.calculateWordAccuracy(userTranscript, targetText);
+    const punctuationAccuracy = this.calculatePunctuationAccuracy(userTranscript, targetText);
 
-    // Determine color based on accuracy (red < 50%, green >= 50%)
     const getAccuracyColor = (accuracy: number) => accuracy < 50 ? 'red' : 'green';
     const overallColor = getAccuracyColor(overallAccuracy);
     const wordColor = getAccuracyColor(wordAccuracy);
     const punctuationColor = getAccuracyColor(punctuationAccuracy);
 
-    // Create custom modal for better formatting and color control
     const modal = await this.modalController.create({
       component: FeedbackModalComponent,
       componentProps: {
@@ -515,8 +532,9 @@ export class PracticePage implements OnInit, OnDestroy {
         overallColor,
         wordColor,
         punctuationColor,
-        targetText: this.currentStructuredPractice.targetText,
-        userSpeech: this.sessionResults.transcript
+        targetText: targetText,
+        userSpeech: userTranscript,
+        analysis: analysis
       },
       cssClass: 'feedback-modal'
     });
@@ -525,53 +543,7 @@ export class PracticePage implements OnInit, OnDestroy {
     this.showFeedback = true;
   }
 
-  private generateContextualFeedback(type: string, difficulty: string, analysis: any, transcript: string): string[] {
-    const feedback: string[] = [];
-    
-    // Base feedback from speech analysis
-    if (analysis.wordsPerMinute < 120) {
-      feedback.push('Try speaking a bit faster to maintain audience engagement');
-    } else if (analysis.wordsPerMinute > 180) {
-      feedback.push('Slow down slightly to ensure clarity and comprehension');
-    } else {
-      feedback.push('Great pacing! Your speech rate is well-balanced');
-    }
-
-    // Type-specific feedback
-    if (type === 'monologue') {
-      if (transcript.includes('I') || transcript.includes('my')) {
-        feedback.push('Good use of personal perspective in your monologue');
-      } else {
-        feedback.push('Consider adding more personal elements to make your monologue more engaging');
-      }
-    } else if (type === 'public-speaking') {
-      if (transcript.length > 50) {
-        feedback.push('Good content length for a public speech');
-      } else {
-        feedback.push('Try to elaborate more on your points for better impact');
-      }
-    } else if (type === 'debate-speech') {
-      if (transcript.includes('because') || transcript.includes('therefore') || transcript.includes('however')) {
-        feedback.push('Excellent use of logical connectors in your argument');
-      } else {
-        feedback.push('Consider using more logical connectors to strengthen your argument');
-      }
-    }
-
-    // Difficulty-specific feedback
-    if (difficulty === 'beginner') {
-      feedback.push('Focus on speaking clearly and maintaining good posture');
-    } else if (difficulty === 'intermediate') {
-      feedback.push('Work on varying your vocal tone and using purposeful gestures');
-    } else if (difficulty === 'advanced') {
-      feedback.push('Challenge yourself with more complex arguments and sophisticated delivery');
-    }
-
-    return feedback;
-  }
-
   private calculateOverallAccuracy(analysis: any): number {
-    // Calculate based on word accuracy (70%) and punctuation accuracy (30%)
     const wordAccuracy = this.calculateWordAccuracy(this.sessionResults?.transcript || '', this.currentStructuredPractice?.targetText || '');
     const punctuationAccuracy = this.calculatePunctuationAccuracy(this.sessionResults?.transcript || '', this.currentStructuredPractice?.targetText || '');
     
@@ -581,13 +553,12 @@ export class PracticePage implements OnInit, OnDestroy {
   private calculateWordAccuracy(userText: string, targetText: string): number {
     if (!userText || !targetText) return 0;
     
-    // Normalize text: remove extra spaces but preserve punctuation
     const normalizeText = (text: string) => {
       return text.toLowerCase()
         .replace(/\s+/g, ' ')
         .trim()
         .split(/\s+/)
-        .filter(word => word.length > 0);
+        .filter((word: string) => word.length > 0);
     };
     
     const userWords = normalizeText(userText);
@@ -599,20 +570,17 @@ export class PracticePage implements OnInit, OnDestroy {
     const minLength = Math.min(userWords.length, targetWords.length);
     
     for (let i = 0; i < minLength; i++) {
-      // Compare words exactly, including punctuation marks
       if (userWords[i] === targetWords[i]) {
         correctWords++;
       }
     }
     
-    // Calculate accuracy based on the target text length
     return (correctWords / targetWords.length) * 100;
   }
 
   private calculatePunctuationAccuracy(userText: string, targetText: string): number {
     if (!userText || !targetText) return 0;
     
-    // Extract punctuation marks with their positions
     const getPunctuationWithPositions = (text: string) => {
       const punctuation: { char: string; pos: number }[] = [];
       for (let i = 0; i < text.length; i++) {
@@ -629,9 +597,8 @@ export class PracticePage implements OnInit, OnDestroy {
     if (targetPunctuation.length === 0) return 100;
     
     let correctPunctuation = 0;
-    
-    // Check if punctuation marks match in sequence
     const minLength = Math.min(userPunctuation.length, targetPunctuation.length);
+    
     for (let i = 0; i < minLength; i++) {
       if (userPunctuation[i].char === targetPunctuation[i].char) {
         correctPunctuation++;
@@ -641,4 +608,14 @@ export class PracticePage implements OnInit, OnDestroy {
     return (correctPunctuation / targetPunctuation.length) * 100;
   }
 
+  private capitalizeFirstLetter(text: string): string {
+    if (!text) return text;
+    const result = text.charAt(0).toUpperCase() + text.slice(1);
+    console.log('%cCapitalize result:', 'color: orange', result);
+    return result;
+  }
+
+  getSafeUserSpeech(): string {
+    return this.userSpeechText || '';
+  }
 }

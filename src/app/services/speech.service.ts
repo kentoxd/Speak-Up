@@ -38,13 +38,17 @@ export class SpeechService {
       this.recognition.continuous = true;
       this.recognition.interimResults = true;
       this.recognition.lang = 'en-US';
+      this.recognition.maxAlternatives = 1;
     }
   }
 
-  // Speech Recognition (Speech-to-Text) - Returns immediately, doesn't wait for completion
   startRecording(): void {
-    // Don't start if already recording
     if (this.isRecording) {
+      return;
+    }
+
+    if (!this.isSpeechRecognitionSupported()) {
+      console.error('Speech Recognition not supported');
       return;
     }
 
@@ -53,87 +57,48 @@ export class SpeechService {
     this.interimTranscript = '';
     this.recordingStartTime = Date.now();
 
-    if (!this.recognition) {
-      // Mock implementation for browsers that don't support speech recognition
-      // Simulate real-time transcript updates with proper punctuation
-      const mockText = "Practice makes perfect when it comes to delivering effective presentations.";
-      const words = mockText.split(' ');
-      let wordIndex = 0;
-      
-      // Start immediately with first word (capitalize first letter)
-      this.currentTranscript = this.capitalizeFirstLetter(words[0]);
-      wordIndex = 1;
-      
-      // Use a simpler approach - add words one by one with setTimeout
-      const addNextWord = () => {
-        if (this.isRecording && wordIndex < words.length) {
-          // Add word directly to current transcript for immediate display
-          this.currentTranscript += ' ' + words[wordIndex];
-          wordIndex++;
-          
-          // Schedule next word
-          setTimeout(addNextWord, 400);
-        }
-      };
-      
-      // Start adding words after a short delay
-      setTimeout(addNextWord, 400);
-      
-      return;
-    }
+    this.recognition.onstart = () => {
+      console.log('Speech recognition started');
+    };
 
     this.recognition.onresult = (event: any) => {
-      console.log('Speech recognition result received:', event);
-      let newInterimTranscript = '';
-      let finalTranscript = '';
-      
+      let interimText = '';
+
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        let transcript = result[0].transcript;
-        console.log('Transcript result:', transcript, 'isFinal:', result.isFinal);
-        
-        // Add intelligent punctuation based on target text
-        if (result.isFinal) {
-          // Use target text for better punctuation matching
-          if (this.targetText) {
-            transcript = this.addPunctuationIfNeeded(transcript, this.targetText);
-          } else {
-            // Fallback: Add period at end of sentences if missing
-            if (transcript && !transcript.match(/[.!?]$/)) {
-              transcript += '.';
-            }
-          }
+        let transcript = event.results[i][0].transcript.trim();
+        const isFinal = event.results[i].isFinal;
+
+        console.log(`%cResult ${i}:`, 'color: blue', `"${transcript}" | isFinal: ${isFinal}`);
+
+        if (isFinal) {
+          // Add punctuation to final results
+          transcript = this.addSmartPunctuation(transcript);
+          console.log(`%cAfter punctuation:`, 'color: green', `"${transcript}"`);
           
-          // Add space before final transcript if current transcript doesn't end with space
-          if (this.currentTranscript && !this.currentTranscript.match(/\s$/)) {
-            transcript = ' ' + transcript;
+          // Append to current transcript with space
+          if (this.currentTranscript && !this.currentTranscript.endsWith(' ')) {
+            this.currentTranscript += ' ';
           }
-          finalTranscript += transcript;
+          this.currentTranscript += transcript;
+          
+          console.log(`%cUpdated currentTranscript:`, 'color: red', `"${this.currentTranscript}"`);
         } else {
-          newInterimTranscript += transcript;
+          // Also add punctuation to interim results for display (but only if matches found)
+          const enhancedInterim = this.addSmartPunctuation(transcript, true);
+          interimText += enhancedInterim + ' ';
         }
       }
-      
-      // Update the current transcript for real-time display
-      // Add final results to the permanent transcript
-      this.currentTranscript += finalTranscript;
-      
-      // Update interim transcript for real-time display
-      this.interimTranscript = newInterimTranscript;
-      
-      console.log('Updated currentTranscript:', this.currentTranscript);
-      console.log('Updated interimTranscript:', this.interimTranscript);
+
+      // Set interim for real-time preview
+      this.interimTranscript = interimText.trim();
     };
 
     this.recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
-      this.isRecording = false;
     };
 
     this.recognition.onend = () => {
-      // Don't stop recording automatically - let user control it
       if (this.isRecording) {
-        // Restart recognition if it ended unexpectedly
         try {
           this.recognition.start();
         } catch (error) {
@@ -151,12 +116,11 @@ export class SpeechService {
     }
   }
 
-  // Get the final result when user stops recording
   getRecordingResult(): SpeechRecognitionResult {
     const duration = this.getRecordingDuration();
     return {
-      transcript: this.currentTranscript, // Only final transcript, no interim results
-      confidence: 0.8, // Default confidence
+      transcript: this.currentTranscript,
+      confidence: this.calculateConfidence(this.currentTranscript),
       duration
     };
   }
@@ -168,10 +132,7 @@ export class SpeechService {
   stopRecording(): void {
     if (this.recognition && this.isRecording) {
       this.recognition.stop();
-      this.isRecording = false;
     }
-    
-    // Stop mock recording
     this.isRecording = false;
   }
 
@@ -180,9 +141,8 @@ export class SpeechService {
   }
 
   getCurrentTranscript(): string {
-    // Combine final transcript with interim results for real-time display
-    const combined = this.currentTranscript + this.interimTranscript;
-    return combined;
+    const combined = this.currentTranscript + (this.interimTranscript ? ' ' + this.interimTranscript : '');
+    return combined.trim();
   }
 
   clearTranscript(): void {
@@ -191,31 +151,102 @@ export class SpeechService {
     this.targetText = '';
   }
 
-  // Helper method to intelligently add punctuation based on target text
-  private addPunctuationIfNeeded(transcript: string, targetText: string): string {
-    if (!transcript || !targetText) return transcript;
-    
-    // Get the current word count in transcript
-    const transcriptWords = transcript.trim().split(/\s+/).length;
-    const targetWords = targetText.trim().split(/\s+/);
-    
-    // If we have words, try to match punctuation from target text
-    if (transcriptWords > 0 && transcriptWords <= targetWords.length) {
-      const targetWord = targetWords[transcriptWords - 1];
-      
-      // Check if target word ends with punctuation
-      const punctuationMatch = targetWord.match(/[.,!?;:]$/);
-      if (punctuationMatch && !transcript.match(/[.,!?;:]$/)) {
-        return transcript + punctuationMatch[0];
-      }
-    }
-    
-    return transcript;
+  setTargetText(text: string): void {
+    this.targetText = text;
   }
 
-  private capitalizeFirstLetter(text: string): string {
+  private addSmartPunctuation(text: string, isInterim: boolean = false): string {
     if (!text) return text;
-    return text.charAt(0).toUpperCase() + text.slice(1);
+
+    // Don't reprocess text that already has punctuation marks throughout
+    // Only enhance the last word
+    const words = text.split(/\s+/);
+    if (words.length === 0) return text;
+
+    const lastWord = words[words.length - 1];
+    const precedingText = words.slice(0, -1).join(' ');
+
+    // Check if last word already ends with punctuation
+    if (lastWord.match(/[.!?;:]$/)) {
+      return text;
+    }
+
+    // Match the last word against target text for punctuation
+    if (this.targetText) {
+      const lastWordClean = lastWord.toLowerCase();
+      const targetWords = this.targetText.toLowerCase().split(/\s+/);
+
+      console.log(`%cLast user word: "${lastWordClean}"`, 'color: purple');
+
+      // Find matching word in target to get its punctuation
+      for (let j = 0; j < targetWords.length; j++) {
+        const targetWord = targetWords[j];
+        const cleanTargetWord = targetWord.replace(/[.,!?;:]/g, '');
+
+        if (lastWordClean === cleanTargetWord) {
+          // Extract punctuation from target word
+          const punctuation = targetWord.match(/[.,!?;:]+$/);
+          console.log(`%cMATCH FOUND! Target word: "${targetWord}", Punctuation: "${punctuation ? punctuation[0] : 'none'}"`, 'color: lime; font-weight: bold');
+          
+          if (punctuation) {
+            const result = precedingText ? precedingText + ' ' + lastWord + punctuation[0] : lastWord + punctuation[0];
+            return result;
+          }
+          // If word matches but has no punctuation, don't add anything
+          return text;
+        }
+      }
+    }
+
+    // Only add default period if this is a FINAL result, not interim
+    if (!isInterim) {
+      console.log(`%cNo target match, adding default period`, 'color: orange');
+      return text + '.';
+    }
+    
+    // For interim results, don't add punctuation if no match found
+    return text;
+  }
+
+  private normalizeCommonPatterns(text: string): string {
+    let result = text;
+
+    // Fix common contractions
+    result = result.replace(/\b(dont)\b/gi, "don't");
+    result = result.replace(/\b(cant)\b/gi, "can't");
+    result = result.replace(/\b(wont)\b/gi, "won't");
+    result = result.replace(/\b(isnt)\b/gi, "isn't");
+    result = result.replace(/\b(doesnt)\b/gi, "doesn't");
+    result = result.replace(/\b(havent)\b/gi, "haven't");
+    result = result.replace(/\b(hasnt)\b/gi, "hasn't");
+    result = result.replace(/\b(im)\b/gi, "I'm");
+    result = result.replace(/\b(youre)\b/gi, "you're");
+    result = result.replace(/\b(theres)\b/gi, "there's");
+    result = result.replace(/\b(lets)\b/gi, "let's");
+
+    // Capitalize "I"
+    result = result.replace(/\b(i)\b/g, 'I');
+
+    // Remove extra spaces
+    result = result.replace(/\s+/g, ' ').trim();
+
+    return result;
+  }
+
+  private calculateConfidence(transcript: string): number {
+    if (!transcript) return 0;
+
+    const length = transcript.length;
+    const words = transcript.split(' ').length;
+    const hasPunctuation = /[.!?;:]/.test(transcript);
+
+    let confidence = 0.7;
+
+    if (length > 50) confidence += 0.15;
+    if (words > 10) confidence += 0.1;
+    if (hasPunctuation) confidence += 0.05;
+
+    return Math.min(0.99, confidence);
   }
 
   // Text-to-Speech
@@ -226,17 +257,13 @@ export class SpeechService {
         return;
       }
 
-      // Cancel any ongoing speech
       this.synthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(options.text);
-      
-      // Set voice properties
       utterance.rate = options.rate || 1;
       utterance.pitch = options.pitch || 1;
       utterance.volume = options.volume || 1;
 
-      // Set voice if specified
       if (options.voice) {
         const voices = this.synthesis.getVoices();
         const selectedVoice = voices.find(voice => voice.name === options.voice);
@@ -258,24 +285,19 @@ export class SpeechService {
     }
   }
 
-  // Get available voices
   getAvailableVoices(): SpeechSynthesisVoice[] {
     if (!this.synthesis) return [];
     return this.synthesis.getVoices();
   }
 
-  // Check if speech services are supported
   isSpeechRecognitionSupported(): boolean {
-    // Force mock mode for testing
-    return false;
-    // return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+    return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
   }
 
   isTextToSpeechSupported(): boolean {
     return 'speechSynthesis' in window;
   }
 
-  // Mock recording timer for practice sessions
   async startPracticeTimer(durationMinutes: number): Promise<void> {
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -284,15 +306,15 @@ export class SpeechService {
     });
   }
 
-  // Analyze speech for feedback (mock implementation)
   analyzeSpeech(transcript: string, duration: number) {
-    const words = transcript.split(' ').length;
-    const wordsPerMinute = Math.round((words / duration) * 60000);
-    
+    const words = transcript.trim().split(/\s+/).filter((w: string) => w.length > 0).length;
+    const durationSeconds = duration / 1000;
+    const wordsPerMinute = durationSeconds > 0 ? Math.round((words / durationSeconds) * 60) : 0;
+
     const feedback = {
       wordsPerMinute,
       totalWords: words,
-      duration: Math.round(duration / 1000),
+      duration: Math.round(durationSeconds),
       suggestions: this.generateSuggestions(wordsPerMinute, words, transcript)
     };
 
@@ -303,26 +325,35 @@ export class SpeechService {
     const suggestions: string[] = [];
 
     if (wpm < 120) {
-      suggestions.push("Try speaking a bit faster to maintain audience engagement.");
+      suggestions.push('Try speaking a bit faster to maintain audience engagement (aim for 120-150 WPM).');
     } else if (wpm > 180) {
-      suggestions.push("Slow down slightly to ensure clarity and comprehension.");
+      suggestions.push('Slow down slightly to ensure clarity and comprehension (aim for 120-150 WPM).');
+    } else {
+      suggestions.push('Excellent pacing! Your speech rate is well-balanced.');
     }
 
-    if (wordCount < 10) {
-      suggestions.push("Try to elaborate more on your points for better impact.");
+    if (wordCount < 20) {
+      suggestions.push('Try to elaborate more on your points for better impact.');
+    } else if (wordCount > 500) {
+      suggestions.push('Consider breaking down your speech into shorter, more digestible segments.');
     }
 
-    const fillerWords = ['um', 'uh', 'like', 'you know'];
-    const hasFillers = fillerWords.some(filler => 
-      transcript.toLowerCase().includes(filler)
-    );
-    
-    if (hasFillers) {
-      suggestions.push("Work on reducing filler words for more confident delivery.");
+    const fillerWords = ['um', 'uh', 'like', 'you know', 'basically', 'literally'];
+    const fillerCount = fillerWords.filter((filler: string) => 
+      new RegExp(`\\b${filler}\\b`, 'gi').test(transcript)
+    ).length;
+
+    if (fillerCount > 2) {
+      suggestions.push('Work on reducing filler words for more confident delivery.');
+    }
+
+    const punctuationMarks = (transcript.match(/[.!?]/g) || []).length;
+    if (punctuationMarks === 0) {
+      suggestions.push('Add more sentence variation with proper punctuation.');
     }
 
     if (suggestions.length === 0) {
-      suggestions.push("Great job! Your pacing and content length are well-balanced.");
+      suggestions.push('Great job overall! Your speech demonstrates good delivery fundamentals.');
     }
 
     return suggestions;

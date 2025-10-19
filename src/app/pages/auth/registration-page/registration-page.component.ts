@@ -27,7 +27,7 @@ export class RegistrationPageComponent implements OnInit {
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(8), this.passwordStrengthValidator]]
     });
   }
 
@@ -83,7 +83,7 @@ export class RegistrationPageComponent implements OnInit {
           this.router.navigate(['/auth/otp'], {
             state: { 
               email: email,
-              type: 'verification' // To distinguish from password reset
+              type: 'verification'
             }
           });
         }, 1000);
@@ -107,16 +107,53 @@ export class RegistrationPageComponent implements OnInit {
     const field = this.registrationForm.get(fieldName);
     if (field?.errors && field.touched) {
       if (field.errors['required']) {
-        return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
+        return `${this.formatFieldName(fieldName)} is required`;
       }
       if (field.errors['email']) {
         return 'Please enter a valid email address';
       }
       if (field.errors['minlength']) {
         const minLength = field.errors['minlength'].requiredLength;
-        return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must be at least ${minLength} characters`;
+        return `${this.formatFieldName(fieldName)} must be at least ${minLength} characters`;
       }
     }
     return '';
+  }
+
+  private formatFieldName(fieldName: string): string {
+    return fieldName.charAt(0).toUpperCase() + fieldName.slice(1).replace(/([A-Z])/g, ' $1');
+  }
+
+  passwordStrengthValidator(control: any): any {
+    const password = control.value;
+    if (!password) return null;
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    const isStrong = hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
+
+    return !isStrong ? { weakPassword: true } : null;
+  }
+
+  isPasswordRequirementMet(requirement: string): boolean {
+    const password = this.registrationForm.get('password')?.value || '';
+
+    switch (requirement) {
+      case 'uppercase':
+        return /[A-Z]/.test(password);
+      case 'lowercase':
+        return /[a-z]/.test(password);
+      case 'number':
+        return /[0-9]/.test(password);
+      case 'special':
+        return /[!@#$%^&*(),.?":{}|<>]/.test(password);
+      case 'length':
+        return password.length >= 8;
+      default:
+        return false;
+    }
   }
 }

@@ -162,12 +162,17 @@
         </ion-card-header>
         <ion-card-content>
           <div class="speech-display">
+            <!-- Show placeholder only when no recording and no text -->
             <p *ngIf="!userSpeechText && !isRecording" class="placeholder-text">
               Your speech will appear here when you start recording...
             </p>
+            
+            <!-- Show listening indicator while recording but before text appears -->
             <p *ngIf="isRecording && !userSpeechText" class="recording-text">
               🎤 Listening... Speak now!
             </p>
+            
+            <!-- Show actual speech text when it exists -->
             <p *ngIf="userSpeechText" class="user-speech">
               {{ userSpeechText }}
             </p>
@@ -208,6 +213,7 @@
           </div>
         </ion-card-content>
       </ion-card>
+
 
       <!-- Tips Card -->
       <ion-card class="tips-card" *ngIf="currentStructuredPractice?.tips">

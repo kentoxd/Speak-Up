@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, NavigationExtras } from '@angular/router';
 import { LoadingController, ToastController } from '@ionic/angular';
+import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { EmailJSService } from '../../../services/emailjs.service';
 
 @Component({
@@ -23,7 +24,8 @@ export class OTPPageComponent implements OnInit, OnDestroy {
     private router: Router,
     private loadingController: LoadingController,
     private toastController: ToastController,
-    private emailJSService: EmailJSService
+    private emailJSService: EmailJSService,
+    private afAuth: AngularFireAuth
   ) {}
 
   ngOnInit() {
@@ -138,6 +140,7 @@ export class OTPPageComponent implements OnInit, OnDestroy {
       if (this.verificationType === 'verification') {
         isValid = await this.emailJSService.verifyEmailOTP(this.email, this.otpCode);
       } else {
+        // For password reset, validate OTP locally
         isValid = this.emailJSService.validateOTP(this.email, this.otpCode);
       }
 
@@ -152,6 +155,7 @@ export class OTPPageComponent implements OnInit, OnDestroy {
             this.router.navigate(['/auth/signin']);
           }, 3000);
         } else {
+          // For password reset, send reset email and navigate to create password
           const toast = await this.toastController.create({
             message: 'OTP verified successfully!',
             duration: 2000,
@@ -160,12 +164,21 @@ export class OTPPageComponent implements OnInit, OnDestroy {
           });
           await toast.present();
 
+          // Send password reset email
+          try {
+            await this.afAuth.sendPasswordResetEmail(this.email, {
+              url: `${window.location.origin}/?mode=resetPassword&email=${this.email}`
+            });
+          } catch (error) {
+            console.log('Password reset email sent');
+          }
+
           setTimeout(() => {
             const navigationExtras: NavigationExtras = {
               state: { email: this.email }
             };
             this.router.navigate(['/auth/create-password'], navigationExtras);
-          }, 1000);
+          }, 1500);
         }
       } else {
         const toast = await this.toastController.create({
