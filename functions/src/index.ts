@@ -1,30 +1,32 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
 import { setGlobalOptions } from "firebase-functions";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
+import * as logger from "firebase-functions/logger";
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
+// Optional: set limits, region, etc.
+setGlobalOptions({ region: "asia-southeast1", maxInstances: 10 });
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+/**
+ * Cloud Function: generatePracticePrompt
+ * This is called from your Angular app (AiPromptService)
+ */
+export const generatePracticePrompt = onCall(async (request) => {
+  try {
+    const { userInput } = request.data;
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+    if (!userInput || typeof userInput !== "string" || !userInput.trim()) {
+      throw new HttpsError("invalid-argument", "Please provide a valid topic.");
+    }
+
+    // Example logic: generate a basic prompt
+    const prompt = `Here's a speaking practice prompt for "${userInput}":
+Talk for 2 minutes about why this topic matters to you, giving one personal example.`;
+
+    logger.info(`Generated prompt for topic: ${userInput}`);
+
+    // The return value MUST be an object — your Angular service expects { prompt }
+    return { prompt };
+  } catch (error: any) {
+    logger.error("Error generating prompt", error);
+    throw new HttpsError("internal", "Failed to generate practice prompt");
+  }
+});

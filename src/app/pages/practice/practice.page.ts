@@ -6,13 +6,14 @@ import { StorageService } from '../../services/storage.service';
 import { UserProgressionService } from '../../services/user-progression.service';
 import { AuthService } from '../../services/auth.service';
 import { FeedbackModalComponent } from '../../components/feedback-modal/feedback-modal.component';
-
+import { AiPromptService } from 'src/app/services/ai-prompt.service';
 @Component({
   selector: 'app-practice',
   templateUrl: './practice.page.html',
   styleUrls: ['./practice.page.scss'],
 })
 export class PracticePage implements OnInit, OnDestroy {
+  
   exercises: PracticeExercise[] = [];
   selectedExercise?: PracticeExercise;
   
@@ -32,6 +33,11 @@ export class PracticePage implements OnInit, OnDestroy {
   selectedDifficulty = 'beginner';
   currentStructuredPractice?: StructuredPractice;
   
+  showCustomPromptInput = false;
+  customPromptText = '';
+  isGeneratingPrompt = false;
+  generatedPrompt = '';
+  selectedPrompt = '';
   isRecording = false;
   isPracticing = false;
   isListeningToText = false;
@@ -52,9 +58,35 @@ export class PracticePage implements OnInit, OnDestroy {
     private alertController: AlertController,
     private toastController: ToastController,
     private modalController: ModalController,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private aiPromptService: AiPromptService
   ) { }
+  toggleCustomPromptInput() {
+    this.showCustomPromptInput = !this.showCustomPromptInput;
+  }
 
+  async generateCustomPrompt() {
+  if (!this.customPromptText.trim()) return;
+  
+  this.isGeneratingPrompt = true;
+  try {
+    this.generatedPrompt = await this.aiPromptService.generatePracticePrompt(
+      this.customPromptText
+    );
+    this.selectedPrompt = this.generatedPrompt;
+    this.customPromptText = '';
+    this.showCustomPromptInput = false;
+  } catch (error: any) {
+    const toast = await this.toastController.create({
+      message: error.message || 'Failed to generate prompt',
+      color: 'danger',
+      duration: 3000
+    });
+    await toast.present();
+  } finally {
+    this.isGeneratingPrompt = false;
+  }
+}
   async ngOnInit() {
     this.exercises = this.dataService.getPracticeExercises();
     await this.loadPracticeHistory();
@@ -652,4 +684,6 @@ private calculateOverallAccuracy(analysis: any): number {
   getSafeUserSpeech(): string {
     return this.userSpeechText || '';
   }
+
+  
 }

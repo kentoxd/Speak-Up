@@ -391,28 +391,42 @@ ion-card {
   }
   
   .history-summary {
-    .history-stats {
-      display: flex;
-      justify-content: space-around;
-      margin-bottom: 1rem;
-      
-      .stat {
-        text-align: center;
-        
-        .stat-number {
-          display: block;
-          font-size: 1.5rem;
-          font-weight: bold;
-          color: var(--ion-color-primary);
-        }
-        
-        .stat-label {
-          font-size: 0.9rem;
-          color: var(--ion-color-medium);
-        }
+  margin-top: 20px; 
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  ion-card-header {
+    padding-top: 12px;
+  }
+
+  .history-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 1rem;
+    margin-top: 0.5rem;
+
+    .stat {
+      text-align: center;
+
+      .stat-number {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--ion-color-primary);
+      }
+
+      .stat-label {
+        font-size: 0.9rem;
+        color: var(--ion-color-medium);
       }
     }
   }
+
+  ion-button {
+    margin-top: 4px;
+  }
+}
 }
 
 /* Animation for recording indicator */
@@ -666,3 +680,52 @@ ion-card {
   }
 }
 
+.custom-prompt-section {
+  margin-top: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  .custom-input {
+    margin-top: 12px;
+    padding: 12px;
+    background: #f9f9f9;
+    border-radius: 8px;
+
+    ion-item {
+      --padding-start: 0;
+      --padding-end: 0;
+      --inner-padding-end: 0;
+    }
+
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+  }
+
+  .generated-prompt {
+    margin-top: 12px;
+    padding: 12px;
+    background: #f0f7ff;
+    border-left: 4px solid #007bff;
+    border-radius: 8px;
+
+    .label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+      margin: 0 0 8px 0;
+    }
+
+    .prompt-box {
+      font-size: 16px;
+      color: #333;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+  }
+}
