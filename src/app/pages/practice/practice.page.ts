@@ -182,7 +182,7 @@ async showDetailedFeedback() {
       wordColor,
       punctuationColor,
       targetText: targetText,
-      userSpeech: userTranscript,  // Now uses punctuation-enhanced transcript
+      userSpeech: userTranscript, 
       analysis: analysis,
       fillerAnalysis: fillerAnalysis,
       clarityAnalysis: clarityAnalysis
