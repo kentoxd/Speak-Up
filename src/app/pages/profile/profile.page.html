@@ -51,16 +51,25 @@
             <ion-input [(ngModel)]="editProfile.name" placeholder="Enter your name"></ion-input>
           </ion-item>
           
-          <ion-item>
-            <ion-label position="stacked">Email</ion-label>
-            <ion-input [(ngModel)]="editProfile.email" type="email" placeholder="Enter your email"></ion-input>
-          </ion-item>
           
           <ion-item>
             <ion-label position="stacked">Bio</ion-label>
             <ion-textarea [(ngModel)]="editProfile.bio" placeholder="Tell us about yourself" rows="3"></ion-textarea>
           </ion-item>
-          
+          <div class="avatar-edit-section" (click)="changeAvatar()">
+          <div class="avatar-container">
+            <img 
+              *ngIf="editProfile.avatar; else defaultAvatar"
+              [src]="editProfile.avatar"
+              alt="Avatar"
+              class="avatar-image editable-avatar">
+            <ng-template #defaultAvatar>
+              <ion-icon name="person-circle" class="avatar-icon editable-avatar"></ion-icon>
+            </ng-template>
+          </div>
+          <ion-text color="primary" class="edit-avatar-text">Tap to change avatar</ion-text>
+          </div>
+
           <div class="edit-buttons">
             <ion-button fill="outline" color="medium" (click)="cancelEdit()">
               Cancel

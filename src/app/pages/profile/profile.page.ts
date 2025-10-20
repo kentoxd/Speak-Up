@@ -9,7 +9,9 @@ import { UserProgression, Achievement } from '../../models/user-progression.mode
 import { Observable } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-
+import { AngularFireStorage } from '@angular/fire/compat/storage';
+import { AngularFirestore } from '@angular/fire/compat/firestore';
+import { AngularFireAuth } from '@angular/fire/compat/auth';
 @Component({
   selector: 'app-profile',
   templateUrl: './profile.page.html',
@@ -37,8 +39,12 @@ export class ProfilePage implements OnInit {
     private alertController: AlertController,
     private actionSheetController: ActionSheetController,
     private toastController: ToastController,
-    private modalController: ModalController
+    private modalController: ModalController,
+    private afStorage: AngularFireStorage,
+    private afStore: AngularFirestore,
+    private afAuth: AngularFireAuth
   ) { }
+
 
   async ngOnInit() {
     // Load user data from Firebase Auth instead of local storage
@@ -155,6 +161,8 @@ export class ProfilePage implements OnInit {
     this.isEditing = false;
     this.editProfile = {};
   }
+
+
 
   async changeAvatar() {
     // Only show this action sheet if we're in edit mode
