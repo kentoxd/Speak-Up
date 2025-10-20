@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist",
+    "public": "dist", // Pointing to your Angular build output folder
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -8,28 +8,12 @@
     ],
     "rewrites": [
       {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ],
-    "headers": [
-      {
-        "source": "/**",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache, no-store, must-revalidate"
-          }
-        ]
+        "source": "/api/**", // API calls will be rewritten to Firebase Functions
+        "function": "yourFunction" // Name of your Firebase Function
       },
       {
-        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|js|css|eot|otf|ttf|ttc|woff|woff2|font.css)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=604800"
-          }
-        ]
+        "source": "**", // All other requests will be directed to index.html (for Angular app)
+        "destination": "/index.html"
       }
     ]
   }

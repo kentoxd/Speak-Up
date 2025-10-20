@@ -2,9 +2,7 @@
   <ion-toolbar>
     <ion-title>Practice</ion-title>
     <ion-buttons slot="end">
-      <ion-button fill="clear" (click)="viewHistory()">
-        <ion-icon name="time" slot="icon-only"></ion-icon>
-      </ion-button>
+
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -13,7 +11,7 @@
   
   <div class="practice-container">
 
-    <!-- New Structured Practice Selection -->
+    <!-- Structured Practice Selection -->
     <div *ngIf="!isPracticing" class="structured-practice-selection">
       
       <!-- Header -->
@@ -22,112 +20,157 @@
         <p>Select practice type and difficulty to get targeted speaking exercises with personalized feedback.</p>
       </div>
 
-      <!-- Practice Type Selector -->
-      <div class="selector-section">
-        <ion-item>
-          <ion-select 
-            label="Select Practice Type"
-            [value]="selectedPracticeType" 
-            (ionChange)="onPracticeTypeChange($event)"
-            interface="popover">
-            <ion-select-option 
-              *ngFor="let type of practiceTypes" 
-              [value]="type.value">
-              {{ type.label }}
-            </ion-select-option>
-          </ion-select>
-        </ion-item>
-
-        <!-- Difficulty Selector -->
-        <ion-item>
-          <ion-select 
-            label="Select Difficulty"
-            [value]="selectedDifficulty" 
-            (ionChange)="onDifficultyChange($event)"
-            interface="popover">
-            <ion-select-option 
-              *ngFor="let level of difficultyLevels" 
-              [value]="level.value">
-              {{ level.label }}
-            </ion-select-option>
-          </ion-select>
-        </ion-item>
+      <!-- Toggle between preset and custom -->
+      <div class="practice-mode-selector">
+        <ion-segment 
+          [value]="useCustomText ? 'custom' : 'preset'" 
+          (ionChange)="useCustomText = $event.detail.value === 'custom'; loadStructuredPractice()">
+          <ion-segment-button value="preset">
+            <ion-label>Preset Exercises</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="custom">
+            <ion-label>Custom Text</ion-label>
+          </ion-segment-button>
+        </ion-segment>
       </div>
 
-      <!-- Current Practice Preview -->
-      <ion-card class="practice-preview" *ngIf="currentStructuredPractice">
-        <ion-card-header>
-          <ion-card-title>{{ currentStructuredPractice.title }}</ion-card-title>
-          <ion-card-subtitle>{{ currentStructuredPractice.description }}</ion-card-subtitle>
-        </ion-card-header>
-        <ion-card-content>
-          <div class="practice-meta">
-            <ion-chip [color]="selectedDifficulty === 'beginner' ? 'success' : selectedDifficulty === 'intermediate' ? 'warning' : 'danger'" outline>
-              {{ selectedDifficulty | titlecase }}
-            </ion-chip>
-            <span class="duration">
-              <ion-icon name="timer-outline"></ion-icon>
-              {{ currentStructuredPractice.timeLimit }} min
-            </span>
-          </div>
-          
-          <ion-button 
-            expand="block" 
-            fill="solid" 
-            color="primary"
-            size="large"
-            (click)="startStructuredPractice()">
-            <ion-icon name="play" slot="start"></ion-icon>
-            START PRACTICE
-          </ion-button>
-        </ion-card-content>
-      </ion-card>
-        <div class="custom-prompt-section">
-          <ion-button 
-            fill="outline" 
-            (click)="toggleCustomPromptInput()"
-            expand="block">
-            <ion-icon name="sparkles" slot="start"></ion-icon>
-            Create Custom Prompt
-          </ion-button>
+      <!-- Preset Practice Section -->
+      <div *ngIf="!useCustomText">
+        <!-- Practice Type Selector -->
+        <div class="selector-section">
+          <ion-item>
+            <ion-select 
+              label="Select Practice Type"
+              [value]="selectedPracticeType" 
+              (ionChange)="onPracticeTypeChange($event)"
+              interface="popover">
+              <ion-select-option 
+                *ngFor="let type of practiceTypes" 
+                [value]="type.value">
+                {{ type.label }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
 
-          <div class="custom-input" *ngIf="showCustomPromptInput">
-            <ion-item>
-              <ion-label position="floating">What do you want to practice?</ion-label>
-              <ion-input
-                [(ngModel)]="customPromptText"
-                placeholder="e.g., job interview, wedding speech, presentation"
-                (keyup.enter)="generateCustomPrompt()">
-              </ion-input>
+          <!-- Difficulty Selector -->
+          <ion-item>
+            <ion-select 
+              label="Select Difficulty"
+              [value]="selectedDifficulty" 
+              (ionChange)="onDifficultyChange($event)"
+              interface="popover">
+              <ion-select-option 
+                *ngFor="let level of difficultyLevels" 
+                [value]="level.value">
+                {{ level.label }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+
+        <!-- Current Practice Preview -->
+        <ion-card class="practice-preview" *ngIf="currentStructuredPractice">
+          <ion-card-header>
+            <ion-card-title>{{ currentStructuredPractice.title }}</ion-card-title>
+            <ion-card-subtitle>{{ currentStructuredPractice.description }}</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="practice-meta">
+              <ion-chip [color]="selectedDifficulty === 'beginner' ? 'success' : selectedDifficulty === 'intermediate' ? 'warning' : 'danger'" outline>
+                {{ selectedDifficulty | titlecase }}
+              </ion-chip>
+              <span class="duration">
+                <ion-icon name="timer-outline"></ion-icon>
+                {{ currentStructuredPractice.timeLimit }} min
+              </span>
+            </div>
+            
+            <ion-button 
+              expand="block" 
+              fill="solid" 
+              color="primary"
+              size="large"
+              (click)="startStructuredPractice()">
+              <ion-icon name="play" slot="start"></ion-icon>
+              START PRACTICE
+            </ion-button>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- Custom Text Section -->
+      <div *ngIf="useCustomText">
+        <ion-card class="custom-text-card">
+          <ion-card-header>
+            <ion-card-title>Create Custom Practice Text</ion-card-title>
+            <ion-card-subtitle>Enter the text you want to practice speaking</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            
+            <!-- Custom Text Form -->
+            <label class="custom-textarea-label">Enter your practice text</label>
+            <ion-item class="custom-textarea-item">
+              <ion-textarea 
+                placeholder="Type or paste text here... (minimum 10 characters)"
+                [(ngModel)]="customTargetText"
+                rows="6"
+                maxlength="1000"
+                class="custom-input-field">
+              </ion-textarea>
             </ion-item>
 
-            <div class="button-group">
-              <ion-button 
-                (click)="generateCustomPrompt()"
-                [disabled]="!customPromptText.trim() || isGeneratingPrompt"
-                expand="block"
-                color="primary">
-                <ion-spinner *ngIf="isGeneratingPrompt" name="crescent" slot="start"></ion-spinner>
-                <span *ngIf="!isGeneratingPrompt">Generate Prompt</span>
-              </ion-button>
-              <ion-button 
-                fill="outline"
-                (click)="toggleCustomPromptInput()"
-                expand="block">
-                Cancel
-              </ion-button>
+            <div class="text-count">
+              <small>{{ customTargetText.length }}/1000 characters</small>
             </div>
-          </div>
 
-          <!-- Show Generated Prompt -->
-          <div class="generated-prompt" *ngIf="generatedPrompt">
-            <p class="label">AI-Generated Prompt:</p>
-            <div class="prompt-box">
-              {{ generatedPrompt }}
+            <ion-button 
+              expand="block" 
+              fill="solid" 
+              color="success"
+              size="large"
+              [disabled]="customTargetText.trim().length < 10"
+              (click)="setupCustomText()">
+              <ion-icon name="checkmark" slot="start"></ion-icon>
+              SET AS PRACTICE TEXT
+            </ion-button>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Custom Practice Preview -->
+        <ion-card class="practice-preview" *ngIf="useCustomText && currentStructuredPractice?.targetText">
+          <ion-card-header>
+            <ion-card-title>{{ currentStructuredPractice?.title }}</ion-card-title>
+            <ion-card-subtitle>{{ currentStructuredPractice?.description }}</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="practice-meta">
+              <ion-chip color="primary" outline>
+                Custom Text
+              </ion-chip>
+              <span class="duration">
+                <ion-icon name="timer-outline"></ion-icon>
+                {{ currentStructuredPractice?.timeLimit }} min
+              </span>
             </div>
-          </div>
-        </div>  
-        
+            
+            <div class="custom-preview-text">
+              {{ currentStructuredPractice?.targetText }}
+            </div>
+            
+            <ion-button 
+              expand="block" 
+              fill="solid" 
+              color="primary"
+              size="large"
+              (click)="startStructuredPractice()">
+              <ion-icon name="play" slot="start"></ion-icon>
+              START PRACTICE
+            </ion-button>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      
       <!-- Practice History Summary -->
       <ion-card class="history-summary" *ngIf="practiceHistory.length > 0">
         <ion-card-header>
@@ -137,14 +180,14 @@
           <div class="history-stats">
             <div class="stat">
               <span class="stat-number">{{ practiceHistory.length }}</span>
-              <span class="stat-label">Sessions</span>
+              <span class="stat-label"> Sessions</span>
             </div>
             <div class="stat">
               <span class="stat-number">{{ getTotalPracticeTime() }}</span>
-              <span class="stat-label">Minutes</span>
+              <span class="stat-label"></span>
             </div>
           </div>
-          <ion-button fill="clear" size="small" (click)="viewHistory()">
+          <ion-button fill="clear" (click)="viewHistoryWithFeedback()">
             View All History
             <ion-icon name="chevron-forward" slot="end"></ion-icon>
           </ion-button>
@@ -152,7 +195,7 @@
       </ion-card>
     </div>
   
-    <!-- New Structured Practice Session -->
+    <!-- Structured Practice Session -->
     <div *ngIf="isPracticing" class="structured-practice-session">
       
       <!-- Session Header -->
@@ -214,7 +257,7 @@
             
             <!-- Show listening indicator while recording but before text appears -->
             <p *ngIf="isRecording && !userSpeechText" class="recording-text">
-              🎤 Listening... Speak now!
+              Listening... Speak now!
             </p>
             
             <!-- Show actual speech text when it exists -->
@@ -258,7 +301,6 @@
           </div>
         </ion-card-content>
       </ion-card>
-
 
       <!-- Tips Card -->
       <ion-card class="tips-card" *ngIf="currentStructuredPractice?.tips">
@@ -311,4 +353,4 @@
     </div>
 
   </div>
-</ion-content>
+</ion-content> 

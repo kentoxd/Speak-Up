@@ -135,27 +135,51 @@ export class ProfilePage implements OnInit {
   }
 
   async saveProfile() {
-    if (!this.userProfile || !this.editProfile.name?.trim()) {
-      const toast = await this.toastController.create({
-        message: 'Name is required',
-        duration: 2000,
-        color: 'danger'
-      });
-      await toast.present();
-      return;
-    }
-
-    this.userProfile = { ...this.userProfile, ...this.editProfile };
-    await this.storageService.setUserProfile(this.userProfile);
-    this.isEditing = false;
-
+  if (!this.userProfile || !this.editProfile.name?.trim()) {
     const toast = await this.toastController.create({
-      message: 'Profile updated successfully!',
+      message: 'Name is required',
       duration: 2000,
-      color: 'success'
+      color: 'danger'
     });
     await toast.present();
+    return;
   }
+
+  this.userProfile = { ...this.userProfile, ...this.editProfile };
+
+  // Update Firestore user document
+  const user = await this.afAuth.currentUser;
+  if (user) {
+    await this.afStore.collection('users').doc(user.uid).set({
+      name: this.userProfile.name,
+      avatar: this.userProfile.avatar,
+      email: this.userProfile.email,
+      bio: this.userProfile.bio,
+      joinDate: this.userProfile.joinDate,
+      totalLessons: this.userProfile.totalLessons,
+      streakDays: this.userProfile.streakDays,
+      achievements: this.userProfile.achievements
+    }, { merge: true });
+
+    // Update Firebase Auth profile photo URL
+    await user.updateProfile({
+      displayName: this.userProfile.name,
+      photoURL: this.userProfile.avatar
+    });
+  }
+
+  // Save locally as well
+  await this.storageService.setUserProfile(this.userProfile);
+  this.isEditing = false;
+
+  const toast = await this.toastController.create({
+    message: 'Profile updated successfully!',
+    duration: 2000,
+    color: 'success'
+  });
+  await toast.present();
+}
+
 
   cancelEdit() {
     this.isEditing = false;
@@ -222,6 +246,24 @@ export class ProfilePage implements OnInit {
     }
   }
 
+  private async uploadAvatarImage(base64Image: string, userId: string): Promise<string> {
+  // Convert base64 string to Blob
+  const response = await fetch(base64Image);
+  const blob = await response.blob();
+
+  // Define a storage path for the user's avatar
+  const filePath = `avatars/${userId}.jpg`;
+  const fileRef = this.afStorage.ref(filePath);
+
+  // Upload the blob
+  await this.afStorage.upload(filePath, blob);
+
+  // Get the download URL
+  const downloadURL = await fileRef.getDownloadURL().toPromise();
+
+  return downloadURL;
+  }
+
   private createSquareCrop(imagePath: string): Promise<string> {
     return new Promise((resolve) => {
       const img = new Image();
@@ -264,15 +306,48 @@ export class ProfilePage implements OnInit {
     });
   }
 
-  private updateEditAvatar(avatarPath: string) {
-    this.editProfile = { ...this.editProfile, avatar: avatarPath };
-    
+  private async updateEditAvatar(avatarPath: string) {
+    if (!this.userProfile) return;
+
+    if (!avatarPath) {
+      // User selected default avatar (empty string)
+      this.editProfile = { ...this.editProfile, avatar: '' };
+    } else {
+      // Upload the base64 image and get URL
+      const user = await this.afAuth.currentUser;
+      const userId = user ? user.uid : null;
+      if (!userId) {
+        const toast = await this.toastController.create({
+          message: 'User not authenticated.',
+          duration: 2000,
+          color: 'danger'
+        });
+        await toast.present();
+        return;
+      }
+      
+      try {
+        const uploadedUrl = await this.uploadAvatarImage(avatarPath, userId);
+        this.editProfile = { ...this.editProfile, avatar: uploadedUrl };
+      } catch (error) {
+        console.error('Avatar upload failed:', error);
+        const toast = await this.toastController.create({
+          message: 'Failed to upload avatar. Please try again.',
+          duration: 3000,
+          color: 'danger'
+        });
+        await toast.present();
+        return;
+      }
+    }
+
     this.toastController.create({
       message: 'Avatar updated! Tap save to confirm.',
       duration: 2000,
       color: 'success'
     }).then(t => t.present());
   }
+
 
   getJoinedDaysAgo(): number {
     if (!this.userProfile?.joinDate) return 0;

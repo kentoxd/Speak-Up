@@ -3,21 +3,11 @@ import * as admin from "firebase-admin";
 
 admin.initializeApp();
 
-export const generatePracticePrompt = functions.https.onCall(
-  async (request, context) => {
-    const { userInput } = request.data;
+// Example HTTP function (without CORS handling)
+exports.yourFunction = functions.https.onRequest((req, res): void => {
+  // Direct response without CORS headers
+  res.send("Hello from Firebase Functions!");
+});
 
-    if (!userInput || typeof userInput !== "string" || !userInput.trim()) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Please provide a valid topic."
-      );
-    }
+// Example Callable function to generate a practice prompt
 
-    // Basic offline logic — no paid API calls
-    const prompt = `Here's a speaking practice prompt for "${userInput}":
-Talk for 2 minutes about why this topic matters to you.`;
-
-    return { prompt };
-  }
-);
