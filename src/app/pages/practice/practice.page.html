@@ -14,17 +14,51 @@
     <!-- Structured Practice Selection -->
     <div *ngIf="!isPracticing" class="structured-practice-selection">
       
-      <!-- Header -->
+      <!-- Header with Info Button -->
       <div class="intro-section">
-        <h2>Structured Practice</h2>
+        <div class="header-with-info">
+          <h2>Structured Practice</h2>
+          <ion-button 
+            class="info-button"
+            fill="clear" 
+            color="primary"
+            (click)="toggleInstructions()">
+            <ion-icon 
+              slot="icon-only" 
+              [name]="showInstructions ? 'chevron-up-circle' : 'information-circle'">
+            </ion-icon>
+          </ion-button>
+        </div>
         <p>Select practice type and difficulty to get targeted speaking exercises with personalized feedback.</p>
+        
+        <!-- Instructions Dropdown -->
+        <div class="instructions-dropdown" *ngIf="showInstructions">
+          <div class="instructions-container">
+            <div class="instructions-header">
+              <h3>
+                <ion-icon name="bulb"></ion-icon>
+                How to Use Structured Practice
+              </h3>
+            </div>
+            <div class="instructions-body">
+              <ol>
+                <li><strong>Choose Mode:</strong> Select between preset exercises or create your own custom text</li>
+                <li><strong>Set Parameters:</strong> For presets, pick a practice type and difficulty level. For custom, enter your own text (minimum 10 characters)</li>
+                <li><strong>Review Preview:</strong> Click "SET PRACTICE" or "SET AS PRACTICE TEXT" to preview your selection</li>
+                <li><strong>Start Practice:</strong> Click "START PRACTICE" when you're ready to begin</li>
+                <li><strong>Record Speech:</strong> Read the target text aloud and record your speech</li>
+                <li><strong>Get Feedback:</strong> Click "FEEDBACK" to see detailed analysis of your performance including accuracy, clarity, and speaking patterns</li>
+              </ol>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Toggle between preset and custom -->
       <div class="practice-mode-selector">
         <ion-segment 
           [value]="useCustomText ? 'custom' : 'preset'" 
-          (ionChange)="useCustomText = $event.detail.value === 'custom'; loadStructuredPractice()">
+          (ionChange)="useCustomText = $event.detail.value === 'custom'; loadStructuredPractice(); isPracticeReady = false;">
           <ion-segment-button value="preset">
             <ion-label>Preset Exercises</ion-label>
           </ion-segment-button>
@@ -42,7 +76,7 @@
             <ion-select 
               label="Select Practice Type"
               [value]="selectedPracticeType" 
-              (ionChange)="onPracticeTypeChange($event)"
+              (ionChange)="onPracticeTypeChange($event); isPracticeReady = false;"
               interface="popover">
               <ion-select-option 
                 *ngFor="let type of practiceTypes" 
@@ -57,7 +91,7 @@
             <ion-select 
               label="Select Difficulty"
               [value]="selectedDifficulty" 
-              (ionChange)="onDifficultyChange($event)"
+              (ionChange)="onDifficultyChange($event); isPracticeReady = false;"
               interface="popover">
               <ion-select-option 
                 *ngFor="let level of difficultyLevels" 
@@ -66,10 +100,22 @@
               </ion-select-option>
             </ion-select>
           </ion-item>
+
+          <!-- SET Button for Preset -->
+          <ion-button 
+            expand="block" 
+            fill="solid" 
+            color="primary"
+            size="large"
+            (click)="setPracticeReady()"
+            class="set-button">
+            <ion-icon name="checkmark-circle" slot="start"></ion-icon>
+            SET PRACTICE
+          </ion-button>
         </div>
 
-        <!-- Current Practice Preview -->
-        <ion-card class="practice-preview" *ngIf="currentStructuredPractice">
+        <!-- Current Practice Preview - Now shows only after SET button is clicked -->
+        <ion-card class="practice-preview" *ngIf="currentStructuredPractice && isPracticeReady">
           <ion-card-header>
             <ion-card-title>{{ currentStructuredPractice.title }}</ion-card-title>
             <ion-card-subtitle>{{ currentStructuredPractice.description }}</ion-card-subtitle>
@@ -79,16 +125,12 @@
               <ion-chip [color]="selectedDifficulty === 'beginner' ? 'success' : selectedDifficulty === 'intermediate' ? 'warning' : 'danger'" outline>
                 {{ selectedDifficulty | titlecase }}
               </ion-chip>
-              <span class="duration">
-                <ion-icon name="timer-outline"></ion-icon>
-                {{ currentStructuredPractice.timeLimit }} min
-              </span>
             </div>
             
             <ion-button 
               expand="block" 
               fill="solid" 
-              color="primary"
+              color="success"
               size="large"
               (click)="startStructuredPractice()">
               <ion-icon name="play" slot="start"></ion-icon>
@@ -126,18 +168,18 @@
             <ion-button 
               expand="block" 
               fill="solid" 
-              color="success"
+              color="primary"
               size="large"
               [disabled]="customTargetText.trim().length < 10"
               (click)="setupCustomText()">
-              <ion-icon name="checkmark" slot="start"></ion-icon>
+              <ion-icon name="checkmark-circle" slot="start"></ion-icon>
               SET AS PRACTICE TEXT
             </ion-button>
           </ion-card-content>
         </ion-card>
 
-        <!-- Custom Practice Preview -->
-        <ion-card class="practice-preview" *ngIf="useCustomText && currentStructuredPractice?.targetText">
+        <!-- Custom Practice Preview - Shows after SET AS PRACTICE TEXT is clicked -->
+        <ion-card class="practice-preview" *ngIf="useCustomText && currentStructuredPractice?.targetText && isPracticeReady">
           <ion-card-header>
             <ion-card-title>{{ currentStructuredPractice?.title }}</ion-card-title>
             <ion-card-subtitle>{{ currentStructuredPractice?.description }}</ion-card-subtitle>
@@ -147,10 +189,6 @@
               <ion-chip color="primary" outline>
                 Custom Text
               </ion-chip>
-              <span class="duration">
-                <ion-icon name="timer-outline"></ion-icon>
-                {{ currentStructuredPractice?.timeLimit }} min
-              </span>
             </div>
             
             <div class="custom-preview-text">
@@ -160,7 +198,7 @@
             <ion-button 
               expand="block" 
               fill="solid" 
-              color="primary"
+              color="success"
               size="large"
               (click)="startStructuredPractice()">
               <ion-icon name="play" slot="start"></ion-icon>
@@ -201,10 +239,6 @@
       <!-- Session Header -->
       <div class="session-header">
         <h2>{{ currentStructuredPractice?.title }}</h2>
-        <div class="timer">
-          <ion-icon name="timer" color="primary"></ion-icon>
-          <span [class.warning]="timeRemaining < 60">{{ formatTime(timeRemaining) }}</span>
-        </div>
       </div>
 
       <!-- Target Text Container -->
@@ -353,4 +387,4 @@
     </div>
 
   </div>
-</ion-content> 
+</ion-content>

@@ -38,16 +38,112 @@ ion-card {
   .intro-section {
     text-align: center;
     margin-bottom: 2rem;
+    position: relative;
     
-    h2 {
-      color: var(--ion-color-primary);
+    .header-with-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
       margin-bottom: 0.5rem;
-      font-family: 'Playfair Display', serif;
+      
+      h2 {
+        color: var(--ion-color-primary);
+        margin: 0;
+        font-family: 'Playfair Display', serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+      
+      .info-button {
+        --padding-start: 0.5rem;
+        --padding-end: 0.5rem;
+        --padding-top: 0.5rem;
+        --padding-bottom: 0.5rem;
+        height: 36px;
+        width: 36px;
+        margin: 0;
+        
+        ion-icon {
+          font-size: 1.4rem;
+        }
+      }
     }
     
     p {
       color: var(--ion-color-medium);
-      margin: 0;
+      margin: 0 0 1rem 0;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    
+    .instructions-dropdown {
+      margin-top: 1.5rem;
+      padding: 0;
+      animation: slideDown 0.3s ease-out;
+      
+      .instructions-container {
+        background: white;
+        border-radius: 16px;
+        border: 2px solid var(--ion-color-primary);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        overflow: hidden;
+        
+        .instructions-header {
+          background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-primary-shade));
+          padding: 1rem 1.5rem;
+          
+          h3 {
+            color: white;
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            
+            ion-icon {
+              font-size: 1.5rem;
+              color: #ffc107;
+            }
+          }
+        }
+        
+        .instructions-body {
+          padding: 1.5rem;
+          background: linear-gradient(135deg, #f8f9fa, #ffffff);
+          
+          ol {
+            margin: 0;
+            padding-left: 1.75rem;
+            color: var(--ion-color-dark);
+            counter-reset: item;
+            
+            li {
+              margin-bottom: 1rem;
+              line-height: 1.7;
+              font-size: 0.95rem;
+              position: relative;
+              padding-left: 0.5rem;
+              
+              &:last-child {
+                margin-bottom: 0;
+              }
+              
+              strong {
+                color: var(--ion-color-primary);
+                font-weight: 700;
+                font-size: 1rem;
+              }
+              
+              &::marker {
+                color: var(--ion-color-primary);
+                font-weight: 700;
+              }
+            }
+          }
+        }
+      }
     }
   }
   
@@ -56,8 +152,29 @@ ion-card {
     
     ion-item {
       --border-radius: 12px;
-      --background: var(--ion-color-light);
+      --background: white;
+      --border-color: #e0e0e0;
+      --border-width: 1px;
+      --border-style: solid;
       margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      
+      ion-select {
+        font-weight: 500;
+        --placeholder-color: var(--ion-color-medium);
+      }
+    }
+    
+    .set-button {
+      margin-top: 0.5rem;
+      --border-radius: 25px;
+      --padding-start: 2rem;
+      --padding-end: 2rem;
+      --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
     }
   }
   
@@ -88,6 +205,8 @@ ion-card {
 
 /* Structured Practice Session Styles */
 .structured-practice-session {
+  padding: 0.5rem;
+
   .session-header {
     display: flex;
     justify-content: space-between;
@@ -97,8 +216,8 @@ ion-card {
     background: linear-gradient(135deg, var(--ion-color-primary-tint), var(--ion-color-primary));
     border-radius: 16px;
     color: white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
     h2 {
       color: white;
       margin: 0;
@@ -106,25 +225,25 @@ ion-card {
       font-size: 1.3rem;
       font-weight: 600;
     }
-    
+
     .timer {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      background: rgba(255,255,255,0.2);
+      background: rgba(255, 255, 255, 0.2);
       padding: 0.5rem 1rem;
       border-radius: 20px;
-      
+
       ion-icon {
         color: white;
         font-size: 1.2rem;
       }
-      
+
       span {
         font-size: 1.1rem;
         font-weight: bold;
         color: white;
-        
+
         &.warning {
           color: #ffeb3b;
           animation: pulse 1s infinite;
@@ -132,12 +251,17 @@ ion-card {
       }
     }
   }
-  
+
   .target-text-card {
     margin-bottom: 1rem;
     border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+
+    ion-card-header {
+      padding-bottom: 0.5rem;
+    }
+
     ion-card-title {
       display: flex;
       align-items: center;
@@ -146,7 +270,11 @@ ion-card {
       font-weight: 600;
       color: var(--ion-color-primary);
     }
-    
+
+    ion-card-content {
+      padding-top: 0.5rem;
+    }
+
     .target-text {
       background: linear-gradient(135deg, var(--ion-color-light), var(--ion-color-light-tint));
       padding: 1.25rem;
@@ -159,33 +287,38 @@ ion-card {
       font-style: italic;
       max-height: 140px;
       overflow-y: auto;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
     }
-    
+
     .listen-controls {
       display: flex;
       justify-content: center;
-      
+      gap: 0.5rem;
+
       ion-button {
         --border-radius: 25px;
         --padding-start: 2rem;
         --padding-end: 2rem;
-        --padding-top: 0.75rem;
-        --padding-bottom: 0.75rem;
         font-weight: 600;
         font-size: 0.95rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        box-shadow: none;
+        margin: 0;
       }
     }
   }
-  
+
   .speech-input-card {
     margin-bottom: 1rem;
     border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+
+    ion-card-header {
+      padding-bottom: 0.5rem;
+    }
+
     ion-card-title {
       display: flex;
       align-items: center;
@@ -194,7 +327,11 @@ ion-card {
       font-weight: 600;
       color: var(--ion-color-danger);
     }
-    
+
+    ion-card-content {
+      padding-top: 0.5rem;
+    }
+
     .speech-display {
       background: linear-gradient(135deg, var(--ion-color-light), var(--ion-color-light-tint));
       border: 2px dashed var(--ion-color-medium);
@@ -208,8 +345,8 @@ ion-card {
       align-items: center;
       justify-content: center;
       overflow-y: auto;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-      
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+
       .placeholder-text {
         color: var(--ion-color-medium);
         font-style: italic;
@@ -217,7 +354,7 @@ ion-card {
         font-size: 1rem;
         line-height: 1.5;
       }
-      
+
       .recording-text {
         color: var(--ion-color-danger);
         font-weight: 600;
@@ -227,13 +364,13 @@ ion-card {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        
+
         &::before {
           content: "🎤";
           font-size: 1.2rem;
         }
       }
-      
+
       .user-speech {
         color: var(--ion-color-dark);
         line-height: 1.6;
@@ -244,75 +381,493 @@ ion-card {
         font-weight: 500;
       }
     }
-    
+
     .recording-controls {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      
+
       ion-button {
         --border-radius: 25px;
-        --padding-top: 0.75rem;
-        --padding-bottom: 0.75rem;
         font-weight: 600;
         font-size: 0.95rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        
+        box-shadow: none;
+        margin: 0;
+
         &[color="danger"] {
           --background: linear-gradient(135deg, var(--ion-color-danger), var(--ion-color-danger-shade));
         }
-        
+
         &[color="medium"] {
           --background: linear-gradient(135deg, var(--ion-color-medium), var(--ion-color-medium-shade));
         }
       }
     }
   }
-  
+
+  .tips-card {
+    margin-bottom: 1rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--ion-color-warning-tint), var(--ion-color-warning));
+    color: white;
+
+    ion-card-header {
+      padding-bottom: 0.5rem;
+    }
+
+    ion-card-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: white;
+    }
+
+    ion-card-content {
+      padding-top: 0.5rem;
+
+      ul {
+        margin: 0;
+        padding-left: 1.5rem;
+
+        li {
+          margin-bottom: 0.5rem;
+          line-height: 1.5;
+          color: white;
+          font-weight: 500;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+          
+          &::marker {
+            color: white;
+          }
+        }
+      }
+    }
+  }
+
   .feedback-section {
     margin: 1.5rem 0;
-    
+
     ion-button {
       --border-radius: 25px;
       --padding-start: 2rem;
       --padding-end: 2rem;
-      --padding-top: 0.75rem;
-      --padding-bottom: 0.75rem;
       font-weight: 600;
       font-size: 1rem;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      box-shadow: none;
+      margin: 0;
       --background: linear-gradient(135deg, var(--ion-color-success), var(--ion-color-success-shade));
     }
   }
-  
+
   .practice-controls {
     display: flex;
     gap: 1rem;
     margin-top: 1.5rem;
-    
+    margin-bottom: 1rem;
+
     ion-button {
       flex: 1;
       --border-radius: 15px;
-      --padding-top: 0.75rem;
-      --padding-bottom: 0.75rem;
       font-size: 0.95rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      
+      box-shadow: none;
+      margin: 0;
+
       &[color="medium"] {
         --background: linear-gradient(135deg, var(--ion-color-medium), var(--ion-color-medium-shade));
       }
-      
+
       &[color="primary"] {
         --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-primary-shade));
       }
     }
+  }
+}
+
+/* Practice Mode Selector */
+.practice-mode-selector {
+  margin-bottom: 1.5rem;
+  
+  ion-segment {
+    --background: var(--ion-color-light);
+    border-radius: 12px;
+    padding: 0.25rem;
+    
+    ion-segment-button {
+      --border-radius: 10px;
+      --padding-start: 1rem;
+      --padding-end: 1rem;
+      --padding-top: 0.75rem;
+      --padding-bottom: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+      
+      &.segment-button-checked {
+        --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-primary-shade));
+        --color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+      
+      &:not(.segment-button-checked) {
+        --color: var(--ion-color-medium);
+      }
+    }
+  }
+}
+
+/* Custom Text Card Styles */
+.custom-text-card {
+  margin-bottom: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: white;
+  overflow: hidden;
+  
+  ion-card-header {
+    background: linear-gradient(135deg, var(--ion-color-success-tint), var(--ion-color-success));
+    color: white;
+    
+    ion-card-title {
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    
+    ion-card-subtitle {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.9rem;
+    }
+  }
+  
+  ion-card-content {
+    padding: 1.25rem;
+  }
+}
+
+.custom-textarea-label {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ion-color-dark);
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+.custom-textarea-item {
+  --background: var(--ion-color-light);
+  --border-radius: 12px;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  
+  ion-textarea {
+    --padding-start: 0;
+    --padding-end: 0;
+    
+    &::part(native) {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: var(--ion-color-dark);
+      
+      &::placeholder {
+        color: var(--ion-color-medium);
+        opacity: 0.7;
+      }
+    }
+  }
+}
+
+.text-count {
+  text-align: right;
+  margin-bottom: 1rem;
+  
+  small {
+    color: var(--ion-color-medium);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+}
+
+.custom-preview-text {
+  background: linear-gradient(135deg, var(--ion-color-light), var(--ion-color-light-tint));
+  padding: 1.25rem;
+  border-radius: 12px;
+  line-height: 1.6;
+  font-size: 1rem;
+  color: var(--ion-color-dark);
+  margin: 1rem 0;
+  border-left: 4px solid var(--ion-color-success);
+  font-style: italic;
+  max-height: 140px;
+  overflow-y: auto;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* History Summary */
+.history-summary {
+  margin-top: 20px; 
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  ion-card-header {
+    padding-top: 12px;
+  }
+
+  .history-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 1rem;
+    margin-top: 0.5rem;
+
+    .stat {
+      text-align: center;
+
+      .stat-number {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--ion-color-primary);
+      }
+
+      .stat-label {
+        font-size: 0.9rem;
+        color: var(--ion-color-medium);
+      }
+    }
+  }
+
+  ion-button {
+    margin-top: 4px;
+  }
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 500px;
+  }
+}
+  .speech-input-card {
+    margin-bottom: 1rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+
+    ion-card-header {
+      padding-bottom: 0.5rem;
+    }
+
+    ion-card-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--ion-color-danger);
+    }
+
+    ion-card-content {
+      padding-top: 0.5rem;
+    }
+
+    .speech-display {
+      background: linear-gradient(135deg, var(--ion-color-light), var(--ion-color-light-tint));
+      border: 2px dashed var(--ion-color-medium);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      min-height: 100px;
+      max-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+
+      .placeholder-text {
+        color: var(--ion-color-medium);
+        font-style: italic;
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1.5;
+      }
+
+      .recording-text {
+        color: var(--ion-color-danger);
+        font-weight: 600;
+        margin: 0;
+        animation: pulse 1.5s infinite;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        &::before {
+          content: "🎤";
+          font-size: 1.2rem;
+        }
+      }
+
+      .user-speech {
+        color: var(--ion-color-dark);
+        line-height: 1.6;
+        margin: 0;
+        text-align: left;
+        width: 100%;
+        font-size: 1rem;
+        font-weight: 500;
+      }
+    }
+
+    .recording-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+
+      ion-button {
+        --border-radius: 25px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: none;
+        margin: 0;
+
+        &[color="danger"] {
+          --background: linear-gradient(135deg, var(--ion-color-danger), var(--ion-color-danger-shade));
+        }
+
+        &[color="medium"] {
+          --background: linear-gradient(135deg, var(--ion-color-medium), var(--ion-color-medium-shade));
+        }
+      }
+    }
+  }
+
+  .tips-card {
+    margin-bottom: 1rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+
+    ion-card-header {
+      padding-bottom: 0.5rem;
+    }
+
+    ion-card-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--ion-color-warning);
+    }
+
+    ion-card-content {
+      padding-top: 0.5rem;
+
+      ul {
+        margin: 0;
+        padding-left: 1.5rem;
+
+        li {
+          margin-bottom: 0.5rem;
+          line-height: 1.5;
+          color: var(--ion-color-dark);
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+        }
+      }
+    }
+  }
+
+  .feedback-section {
+    margin: 1.5rem 0;
+
+    ion-button {
+      --border-radius: 25px;
+      --padding-start: 2rem;
+      --padding-end: 2rem;
+      font-weight: 600;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: none;
+      margin: 0;
+      --background: linear-gradient(135deg, var(--ion-color-success), var(--ion-color-success-shade));
+    }
+  }
+
+  .practice-controls {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+
+    ion-button {
+      flex: 1;
+      --border-radius: 15px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: none;
+      margin: 0;
+
+      &[color="medium"] {
+        --background: linear-gradient(135deg, var(--ion-color-medium), var(--ion-color-medium-shade));
+      }
+
+      &[color="primary"] {
+        --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-primary-shade));
+      }
+    }
+  }
+
+
+// Pulse animation
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
   }
 }
 
@@ -321,6 +876,10 @@ ion-card {
     text-align: center;
     margin-bottom: 2rem;
     
+    .instruction-dropdown {
+      margin-top: 1rem;
+      color:white;
+    }
     h2 {
       color: var(--ion-color-primary);
       margin-bottom: 0.5rem;
@@ -751,7 +1310,7 @@ ion-card {
       
       &.segment-button-checked {
         --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-primary-shade));
-        --color: white;
+        --color: black;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
       
