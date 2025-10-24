@@ -3,7 +3,7 @@
 A comprehensive Ionic Angular application for speech learning and practice, featuring real-time speech recognition, progress tracking, and gamified learning experiences.
 
 ## 🌐 **Live App**
-**https://speakup-32e64.web.app**
+**https://speakup-79807.web.app**
 
 ## 🚀 **Quick Start**
 
