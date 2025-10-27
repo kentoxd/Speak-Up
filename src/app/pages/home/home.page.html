@@ -1,52 +1,69 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-title>Home</ion-title>
-  </ion-toolbar>
-</ion-header>
-
-<ion-content>
-  <div class="home-container">
-    
-    <!-- Daily Progress Section -->
-    <div class="daily-progress-section">
-      <h2>Daily Progress</h2>
-      <div class="welcome-card">
-        <h3>Welcome To Speak Up.</h3>
-      </div>
-      <div class="lessons-cards">
-        <div class="lesson-card" (click)="navigateToLessons()">
-          <ion-icon name="book"></ion-icon>
-          <span>1/1 Lessons</span>
-        </div>
-        <div class="lesson-card" (click)="navigateToLessons()">
-          <ion-icon name="book"></ion-icon>
-          <span>1/1 Lessons</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Practice Sections -->
-    <div class="practice-sections">
-      <div class="practice-card" (click)="navigateToLessons()">
-        <div class="card-media">
-          <img src="assets/images/practice-impromptu.jpg" alt="Practice Impromptu Speech" />
-        </div>
-        <div class="card-body">
-          <h3>Practice Impromptu Speech</h3>
-          <p>Craft a compelling speech spontaneously on the given topic.</p>
-        </div>
-      </div>
+<ion-header> 
+  <ion-toolbar> 
+    <ion-title>Home</ion-title> 
+  </ion-toolbar> 
+</ion-header> 
+ 
+<ion-content> 
+  <div class="home-container"> 
+     
+    <!-- Daily Progress Section --> 
+    <div class="daily-progress-section"> 
+      <h2>Daily Progress</h2> 
       
-      <div class="practice-card" (click)="navigateToPractice()">
-        <div class="card-media">
-          <img src="assets/images/practice-informative.jpg" alt="Practice Informative Speech" />
-        </div>
-        <div class="card-body">
-          <h3>Practice Informative Speech</h3>
-          <p>Craft a compelling speech spontaneously on the given topic.</p>
-        </div>
+      <!-- Daily Motivation Quote -->
+      <ion-card class="quote-card">
+        <ion-card-content>
+          <div class="quote-content">
+            <ion-icon name="chatbox-ellipses" color="primary" class="quote-icon"></ion-icon>
+            <p class="quote-text">"{{ dailyQuote }}"</p>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Quick Stats -->
+      <div class="quick-stats" *ngIf="userProgression$ | async as progression">
+        <ion-card class="stat-card" *ngFor="let stat of [
+          { icon: 'book', color: 'primary', label: 'Lessons', value: localCompletedLessons },
+          { icon: 'star', color: 'success', label: 'Points', value: progression.totalPoints || 0 }
+        ]">
+          <ion-card-content>
+            <div class="stat-content">
+              <ion-icon [name]="stat.icon" [color]="stat.color"></ion-icon>
+              <div class="stat-info">
+                <h4>{{ stat.value }}</h4>
+                <p>{{ stat.label }}</p>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
       </div>
     </div>
-
-  </div>
+ 
+    <!-- Practice Sections --> 
+    <div class="practice-sections"> 
+      <h2>Get Started</h2>
+      
+      <div class="practice-card" (click)="navigateToLessons()"> 
+        <div class="card-media"> 
+          <img src="assets/images/practice-impromptu.jpg" alt="Practice Impromptu Speech" /> 
+        </div> 
+        <div class="card-body"> 
+          <h3>Understand how Public Speakers do it</h3> 
+          <p>Learn Lessons from Public Speakers.</p> 
+        </div> 
+      </div> 
+       
+      <div class="practice-card" (click)="navigateToPractice()"> 
+        <div class="card-media"> 
+          <img src="assets/images/practice-informative.jpg" alt="Practice Informative Speech" /> 
+        </div> 
+        <div class="card-body"> 
+          <h3>Practice your Speech</h3> 
+          <p>Enter your speech and practice it</p> 
+        </div> 
+      </div> 
+    </div> 
+ 
+  </div> 
 </ion-content>

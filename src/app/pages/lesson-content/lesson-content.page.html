@@ -92,41 +92,53 @@
 
     <!-- Navigation Controls -->
     <div class="navigation-controls">
-      <ion-button 
-        [disabled]="!canGoPrev()" 
-        fill="outline" 
-        (click)="prevContent()">
-        <ion-icon name="chevron-back" slot="start"></ion-icon>
-        Previous
-      </ion-button>
-      
-      <ion-button 
-        *ngIf="!showQuiz || !canGoNext()"
-        [disabled]="!canGoNext()" 
-        fill="solid" 
-        (click)="nextContent()">
-        Next
-        <ion-icon name="chevron-forward" slot="end"></ion-icon>
-      </ion-button>
-      
-      <ion-button 
-        *ngIf="showQuiz && canGoNext()"
-        fill="solid" 
-        color="success"
-        (click)="submitQuiz()">
-        Submit Quiz
-        <ion-icon name="checkmark" slot="end"></ion-icon>
-      </ion-button>
-      
-      <ion-button 
-        *ngIf="!showQuiz && !lesson?.quiz && canGoNext()"
-        fill="solid" 
-        color="success"
-        (click)="completeLesson()">
-        Complete Lesson
-        <ion-icon name="checkmark" slot="end"></ion-icon>
-      </ion-button>
-    </div>
+  <ion-button 
+    [disabled]="!canGoPrev()" 
+    fill="outline" 
+    (click)="prevContent()">
+    <ion-icon name="chevron-back" slot="start"></ion-icon>
+    Previous
+  </ion-button>
+
+  <!-- Normal "Next" button -->
+  <ion-button 
+    *ngIf="!showQuiz && currentContentIndex < lesson.content.length - 1"
+    fill="solid" 
+    (click)="nextContent()">
+    Next
+    <ion-icon name="chevron-forward" slot="end"></ion-icon>
+  </ion-button>
+
+  <!-- Quiz Submit button -->
+  <ion-button 
+    *ngIf="showQuiz && canGoNext()"
+    fill="solid" 
+    color="success"
+    (click)="submitQuiz()">
+    Submit Quiz
+    <ion-icon name="checkmark" slot="end"></ion-icon>
+  </ion-button>
+
+  <!-- ✅ Complete Lesson button – only on last content item and no quiz -->
+  <ion-button 
+    *ngIf="!showQuiz && (!lesson.quiz) && currentContentIndex === lesson.content.length - 1"
+    fill="solid" 
+    color="success"
+    (click)="completeLesson()">
+    Complete Lesson
+    <ion-icon name="checkmark" slot="end"></ion-icon>
+  </ion-button>
+
+  <!-- ✅ Or after finishing the quiz -->
+  <ion-button 
+    *ngIf="showQuiz && currentContentIndex === lesson.content.length - 1 && quizCompleted"
+    fill="solid" 
+    color="success"
+    (click)="completeLesson()">
+    Complete Lesson
+    <ion-icon name="checkmark" slot="end"></ion-icon>
+  </ion-button>
+</div>
 
   </div>
 
