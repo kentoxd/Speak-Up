@@ -14,11 +14,11 @@
         <h3>Welcome To Speak Up.</h3>
       </div>
       <div class="lessons-cards">
-        <div class="lesson-card">
+        <div class="lesson-card" (click)="navigateToLessons()">
           <ion-icon name="book"></ion-icon>
           <span>1/1 Lessons</span>
         </div>
-        <div class="lesson-card">
+        <div class="lesson-card" (click)="navigateToLessons()">
           <ion-icon name="book"></ion-icon>
           <span>1/1 Lessons</span>
         </div>
@@ -27,9 +27,8 @@
 
     <!-- Practice Sections -->
     <div class="practice-sections">
-      <div class="practice-card">
+      <div class="practice-card" (click)="navigateToLessons()">
         <div class="card-media">
-          <!-- Replace the src with your image later: e.g. assets/images/practice-impromptu.jpg -->
           <img src="assets/images/practice-impromptu.jpg" alt="Practice Impromptu Speech" />
         </div>
         <div class="card-body">
@@ -38,9 +37,8 @@
         </div>
       </div>
       
-      <div class="practice-card">
+      <div class="practice-card" (click)="navigateToPractice()">
         <div class="card-media">
-          <!-- Replace the src with your image later: e.g. assets/images/practice-informative.jpg -->
           <img src="assets/images/practice-informative.jpg" alt="Practice Informative Speech" />
         </div>
         <div class="card-body">

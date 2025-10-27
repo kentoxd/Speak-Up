@@ -8,6 +8,13 @@ import { AuthService } from '../../services/auth.service';
 import { FeedbackModalComponent } from '../../components/feedback-modal/feedback-modal.component';
 import { PracticeHistoryModalComponent } from './practice-history-modal.component';
 
+export interface SavedCustomText {
+  id: string;
+  name: string;
+  text: string;
+  createdAt: string;
+}
+
 @Component({
   selector: 'app-practice',
   templateUrl: './practice.page.html',
@@ -36,9 +43,11 @@ export class PracticePage implements OnInit, OnDestroy {
   
   useCustomText = false;
   customTargetText = '';
+  customTextName = '';
   isEditingCustomText = false;
   showCustomTextForm = false;
-  isPracticeReady = false; // ✅ New property
+  isPracticeReady = false;
+  savedCustomTexts: SavedCustomText[] = [];
 
   selectedPrompt = '';
   isRecording = false;
@@ -51,29 +60,80 @@ export class PracticePage implements OnInit, OnDestroy {
   userSpeechText = '';
   showFeedback = false;
   recordingTimer: any = null;
-
   showInstructions = false;
+
+  constructor(
+    private dataService: DataService,
+    private speechService: SpeechService,
+    private storageService: StorageService,
+    private userProgressionService: UserProgressionService,
+    private authService: AuthService,
+    private alertController: AlertController,
+    private toastController: ToastController,
+    private modalController: ModalController,
+    private cdr: ChangeDetectorRef,
+  ) { }
+
+  async ngOnInit() {
+    this.exercises = this.dataService.getPracticeExercises();
+    await this.loadPracticeHistory();
+    await this.loadSavedCustomTexts();
+    this.loadStructuredPractice();
+    
+    if (!this.speechService.isSpeechRecognitionSupported()) {
+      const toast = await this.toastController.create({
+        message: 'Speech Recognition not supported in this browser. Please use Chrome, Edge, or Safari.',
+        duration: 5000,
+        color: 'warning'
+      });
+      await toast.present();
+    }
+    
+    this.authService.getCurrentUser().subscribe(async user => {
+      if (user) {
+        await this.userProgressionService.initializeUserProgression(user);
+      }
+    });
+  }
+
+  async ionViewWillEnter() {
+    await this.loadPracticeHistory();
+    await this.loadSavedCustomTexts();
+  }
+
+  ngOnDestroy() {
+    if ((this as any).transcriptInterval) {
+      clearInterval((this as any).transcriptInterval);
+    }
+  }
 
   toggleInstructions() {
     this.showInstructions = !this.showInstructions;
   }
 
-  // ✅ New method to set practice as ready
   setPracticeReady() {
     this.isPracticeReady = true;
   }
 
-  // --- Placeholder handlers for old template bindings ---
   onPracticeTypeChange(event: any) {
     this.selectedPracticeType = event.detail.value;
-    this.isPracticeReady = false; // ✅ Reset when changing practice type
+    this.isPracticeReady = false;
     this.loadStructuredPractice();
   }
 
   onDifficultyChange(event: any) {
     this.selectedDifficulty = event.detail.value;
-    this.isPracticeReady = false; // ✅ Reset when changing difficulty
+    this.isPracticeReady = false;
     this.loadStructuredPractice();
+  }
+
+  loadStructuredPractice() {
+    if (!this.useCustomText) {
+      this.currentStructuredPractice = this.dataService.getStructuredPractice(
+        this.selectedPracticeType, 
+        this.selectedDifficulty
+      );
+    }
   }
 
   startStructuredPractice() {
@@ -91,26 +151,102 @@ export class PracticePage implements OnInit, OnDestroy {
     this.timeRemaining = 0;
   }
 
-setupCustomText() {
-  if (this.customTargetText.trim().length >= 10) {
-    // Create custom practice with all required properties
-    this.currentStructuredPractice = {
-      title: 'Custom Practice Text',
-      description: 'Practice with your own text',
-      targetText: this.customTargetText,
-      timeLimit: 5,
-      tips: [
-        'Read the text carefully before recording',
-        'Speak clearly and at a natural pace',
-        'Try to match the exact wording and punctuation'
-      ],
-      type: this.selectedPracticeType as 'monologue' | 'public-speaking' | 'debate-speech', // ✅ Use selected practice type
-      difficulty: this.selectedDifficulty as 'beginner' | 'intermediate' | 'advanced', // ✅ Type assertion
-      practiceText: this.customTargetText
-    };
-    this.isPracticeReady = true;
+  setupCustomText() {
+    if (this.customTargetText.trim().length >= 10) {
+      const displayName = this.customTextName.trim() || 'Custom Practice Text';
+      
+      this.currentStructuredPractice = {
+        title: displayName,
+        description: 'Practice with your own text',
+        targetText: this.customTargetText,
+        timeLimit: 5,
+        tips: [
+          'Read the text carefully before recording',
+          'Speak clearly and at a natural pace',
+          'Try to match the exact wording and punctuation'
+        ],
+        type: this.selectedPracticeType as 'monologue' | 'public-speaking' | 'debate-speech',
+        difficulty: this.selectedDifficulty as 'beginner' | 'intermediate' | 'advanced',
+        practiceText: this.customTargetText
+      };
+      this.isPracticeReady = true;
+    }
   }
-}
+
+  async saveCustomText() {
+    if (this.customTargetText.trim().length < 10 || this.customTextName.trim().length === 0) {
+      const toast = await this.toastController.create({
+        message: 'Please enter both a name and text (minimum 10 characters)',
+        duration: 2000,
+        color: 'warning'
+      });
+      await toast.present();
+      return;
+    }
+
+    const newCustomText: SavedCustomText = {
+      id: Date.now().toString(),
+      name: this.customTextName.trim(),
+      text: this.customTargetText.trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    await this.storageService.addSavedCustomText(newCustomText);
+    await this.loadSavedCustomTexts();
+
+    // Clear form and setup the practice
+    this.setupCustomText();
+
+    const toast = await this.toastController.create({
+      message: `"${newCustomText.name}" saved successfully!`,
+      duration: 2000,
+      color: 'success'
+    });
+    await toast.present();
+  }
+
+  async loadSavedCustomText(saved: SavedCustomText) {
+    this.customTextName = saved.name;
+    this.customTargetText = saved.text;
+    this.setupCustomText();
+
+    const toast = await this.toastController.create({
+      message: `Loaded "${saved.name}"`,
+      duration: 1500,
+      color: 'success'
+    });
+    await toast.present();
+  }
+
+  async deleteSavedCustomText(id: string) {
+    const alert = await this.alertController.create({
+      header: 'Delete Custom Text',
+      message: 'Are you sure you want to delete this saved text?',
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel'
+        },
+        {
+          text: 'Delete',
+          role: 'destructive',
+          handler: async () => {
+            await this.storageService.deleteSavedCustomText(id);
+            await this.loadSavedCustomTexts();
+            
+            const toast = await this.toastController.create({
+              message: 'Custom text deleted',
+              duration: 2000,
+              color: 'success'
+            });
+            await toast.present();
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
 
   listenToTargetText() {
     // Add logic later (e.g. text-to-speech)
@@ -128,6 +264,14 @@ setupCustomText() {
     const totalMs = this.practiceHistory.reduce((sum, s) => sum + (s.duration || 0), 0);
     const totalMin = Math.round(totalMs / 60000);
     return `${totalMin} min`;
+  }
+
+  private async loadPracticeHistory() {
+    this.practiceHistory = await this.storageService.getPracticeHistory();
+  }
+
+  private async loadSavedCustomTexts() {
+    this.savedCustomTexts = await this.storageService.getSavedCustomTexts();
   }
 
   async showDetailedFeedback() {
@@ -220,47 +364,6 @@ setupCustomText() {
 
     await modal.present();
     this.showFeedback = true;
-  }
-
-  constructor(
-    private dataService: DataService,
-    private speechService: SpeechService,
-    private storageService: StorageService,
-    private userProgressionService: UserProgressionService,
-    private authService: AuthService,
-    private alertController: AlertController,
-    private toastController: ToastController,
-    private modalController: ModalController,
-    private cdr: ChangeDetectorRef,
-  ) { }
-
-  async ngOnInit() {
-    this.exercises = this.dataService.getPracticeExercises();
-    await this.loadPracticeHistory();
-    this.loadStructuredPractice();
-    
-    if (!this.speechService.isSpeechRecognitionSupported()) {
-      const toast = await this.toastController.create({
-        message: 'Speech Recognition not supported in this browser. Please use Chrome, Edge, or Safari.',
-        duration: 5000,
-        color: 'warning'
-      });
-      await toast.present();
-    }
-    
-    this.authService.getCurrentUser().subscribe(async user => {
-      if (user) {
-        await this.userProgressionService.initializeUserProgression(user);
-      }
-    });
-  }
-
-  async ionViewWillEnter() {
-    await this.loadPracticeHistory();
-  }
-
-  private async loadPracticeHistory() {
-    this.practiceHistory = await this.storageService.getPracticeHistory();
   }
 
   async startExercise(exercise: PracticeExercise) {
@@ -418,15 +521,6 @@ setupCustomText() {
     await modal.present();
   }
 
-  loadStructuredPractice() {
-    if (!this.useCustomText) {
-      this.currentStructuredPractice = this.dataService.getStructuredPractice(
-        this.selectedPracticeType, 
-        this.selectedDifficulty
-      );
-    }
-  }
-
   async startStructuredRecording() {
     if (!this.speechService.isSpeechRecognitionSupported()) {
       await this.showSpeechRecognitionError();
@@ -567,11 +661,5 @@ setupCustomText() {
       buttons: ['OK']
     });
     await alert.present();
-  }
-
-  ngOnDestroy() {
-    if ((this as any).transcriptInterval) {
-      clearInterval((this as any).transcriptInterval);
-    }
   }
 }

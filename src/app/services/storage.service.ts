@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Storage } from '@ionic/storage-angular';
 import { DataService } from './data.service';
 import { BehaviorSubject } from 'rxjs';
+import { SavedCustomText } from '../pages/practice/practice.page';
 
 export interface UserProfile {
   name: string;
@@ -37,6 +38,7 @@ export interface TopicProgress {
 })
 export class StorageService {
   private _storage: Storage | null = null;
+  private readonly SAVED_CUSTOM_TEXTS_KEY = 'saved_custom_texts';
   
   // BehaviorSubject to notify of progress changes
   private topicProgressChanged = new BehaviorSubject<string | null>(null);
@@ -170,6 +172,53 @@ export class StorageService {
 
     await this.setTopicProgress(topicId, progress);
     return progress;
+  }
+
+  // Saved Custom Texts methods
+  async getSavedCustomTexts(): Promise<SavedCustomText[]> {
+    try {
+      const texts = await this._storage?.get(this.SAVED_CUSTOM_TEXTS_KEY);
+      return texts || [];
+    } catch (error) {
+      console.error('Error loading saved custom texts:', error);
+      return [];
+    }
+  }
+
+  async addSavedCustomText(customText: SavedCustomText): Promise<void> {
+    try {
+      const texts = await this.getSavedCustomTexts();
+      texts.unshift(customText); // Add to beginning of array
+      await this._storage?.set(this.SAVED_CUSTOM_TEXTS_KEY, texts);
+    } catch (error) {
+      console.error('Error saving custom text:', error);
+      throw error;
+    }
+  }
+
+  async deleteSavedCustomText(id: string): Promise<void> {
+    try {
+      const texts = await this.getSavedCustomTexts();
+      const filteredTexts = texts.filter(text => text.id !== id);
+      await this._storage?.set(this.SAVED_CUSTOM_TEXTS_KEY, filteredTexts);
+    } catch (error) {
+      console.error('Error deleting custom text:', error);
+      throw error;
+    }
+  }
+
+  async updateSavedCustomText(id: string, updatedText: Partial<SavedCustomText>): Promise<void> {
+    try {
+      const texts = await this.getSavedCustomTexts();
+      const index = texts.findIndex(text => text.id === id);
+      if (index !== -1) {
+        texts[index] = { ...texts[index], ...updatedText };
+        await this._storage?.set(this.SAVED_CUSTOM_TEXTS_KEY, texts);
+      }
+    } catch (error) {
+      console.error('Error updating custom text:', error);
+      throw error;
+    }
   }
 
   // Clear all stored data

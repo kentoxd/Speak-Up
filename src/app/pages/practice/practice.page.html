@@ -114,7 +114,7 @@
           </ion-button>
         </div>
 
-        <!-- Current Practice Preview - Now shows only after SET button is clicked -->
+        <!-- Current Practice Preview -->
         <ion-card class="practice-preview" *ngIf="currentStructuredPractice && isPracticeReady">
           <ion-card-header>
             <ion-card-title>{{ currentStructuredPractice.title }}</ion-card-title>
@@ -142,6 +142,42 @@
 
       <!-- Custom Text Section -->
       <div *ngIf="useCustomText">
+        <!-- Saved Custom Texts List -->
+        <ion-card class="saved-texts-card" *ngIf="savedCustomTexts.length > 0">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="bookmarks"></ion-icon>
+              Saved Custom Texts
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <ion-list>
+              <ion-item *ngFor="let saved of savedCustomTexts" lines="full">
+                <ion-label>
+                  <h3>{{ saved.name }}</h3>
+                  <p>{{ saved.text.substring(0, 60) }}{{ saved.text.length > 60 ? '...' : '' }}</p>
+                  <p class="saved-date">Saved: {{ saved.createdAt | date:'short' }}</p>
+                </ion-label>
+                <ion-button 
+                  slot="end" 
+                  fill="clear" 
+                  color="primary"
+                  (click)="loadSavedCustomText(saved)">
+                  <ion-icon name="play-circle" slot="icon-only"></ion-icon>
+                </ion-button>
+                <ion-button 
+                  slot="end" 
+                  fill="clear" 
+                  color="danger"
+                  (click)="deleteSavedCustomText(saved.id)">
+                  <ion-icon name="trash" slot="icon-only"></ion-icon>
+                </ion-button>
+              </ion-item>
+            </ion-list>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Create New Custom Text -->
         <ion-card class="custom-text-card">
           <ion-card-header>
             <ion-card-title>Create Custom Practice Text</ion-card-title>
@@ -149,6 +185,21 @@
           </ion-card-header>
           <ion-card-content>
             
+            <!-- Custom Text Name -->
+            <ion-item>
+              <ion-input
+                label="Practice Name"
+                labelPlacement="floating"
+                placeholder="e.g., Presentation Speech, Sales Pitch"
+                [(ngModel)]="customTextName"
+                maxlength="50">
+              </ion-input>
+            </ion-item>
+
+            <div class="text-count">
+              <small>{{ customTextName.length }}/50 characters</small>
+            </div>
+
             <!-- Custom Text Form -->
             <label class="custom-textarea-label">Enter your practice text</label>
             <ion-item class="custom-textarea-item">
@@ -165,20 +216,33 @@
               <small>{{ customTargetText.length }}/1000 characters</small>
             </div>
 
-            <ion-button 
-              expand="block" 
-              fill="solid" 
-              color="primary"
-              size="large"
-              [disabled]="customTargetText.trim().length < 10"
-              (click)="setupCustomText()">
-              <ion-icon name="checkmark-circle" slot="start"></ion-icon>
-              SET AS PRACTICE TEXT
-            </ion-button>
+            <div class="custom-text-actions">
+              <ion-button 
+                expand="block" 
+                fill="solid" 
+                color="primary"
+                size="large"
+                [disabled]="customTargetText.trim().length < 10 || customTextName.trim().length === 0"
+                (click)="saveCustomText()">
+                <ion-icon name="save" slot="start"></ion-icon>
+                SAVE CUSTOM TEXT
+              </ion-button>
+
+              <ion-button 
+                expand="block" 
+                fill="outline" 
+                color="secondary"
+                size="large"
+                [disabled]="customTargetText.trim().length < 10"
+                (click)="setupCustomText()">
+                <ion-icon name="checkmark-circle" slot="start"></ion-icon>
+                USE WITHOUT SAVING
+              </ion-button>
+            </div>
           </ion-card-content>
         </ion-card>
 
-        <!-- Custom Practice Preview - Shows after SET AS PRACTICE TEXT is clicked -->
+        <!-- Custom Practice Preview -->
         <ion-card class="practice-preview" *ngIf="useCustomText && currentStructuredPractice?.targetText && isPracticeReady">
           <ion-card-header>
             <ion-card-title>{{ currentStructuredPractice?.title }}</ion-card-title>
@@ -284,17 +348,14 @@
         </ion-card-header>
         <ion-card-content>
           <div class="speech-display">
-            <!-- Show placeholder only when no recording and no text -->
             <p *ngIf="!userSpeechText && !isRecording" class="placeholder-text">
               Your speech will appear here when you start recording...
             </p>
             
-            <!-- Show listening indicator while recording but before text appears -->
             <p *ngIf="isRecording && !userSpeechText" class="recording-text">
               Listening... Speak now!
             </p>
             
-            <!-- Show actual speech text when it exists -->
             <p *ngIf="userSpeechText" class="user-speech">
               {{ userSpeechText }}
             </p>

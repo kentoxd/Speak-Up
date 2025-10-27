@@ -1584,3 +1584,122 @@ ion-toast {
     background: var(--ion-color-medium-shade);
   }
 }
+
+.saved-texts-card {
+  margin: 16px 0;
+  
+  ion-card-header {
+    padding-bottom: 8px;
+    
+    ion-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.2rem;
+      
+      ion-icon {
+        font-size: 1.4rem;
+      }
+    }
+  }
+  
+  ion-list {
+    padding: 0;
+    
+    ion-item {
+      --padding-start: 16px;
+      --padding-end: 8px;
+      --inner-padding-end: 0;
+      
+      ion-label {
+        margin: 8px 0;
+        
+        h3 {
+          font-weight: 600;
+          margin-bottom: 4px;
+          color: var(--ion-color-primary);
+        }
+        
+        p {
+          font-size: 0.9rem;
+          color: var(--ion-color-medium);
+          margin: 4px 0;
+        }
+        
+        .saved-date {
+          font-size: 0.75rem;
+          color: var(--ion-color-medium-shade);
+          margin-top: 4px;
+        }
+      }
+      
+      ion-button {
+        margin: 0 4px;
+        
+        ion-icon {
+          font-size: 1.3rem;
+        }
+      }
+    }
+  }
+}
+
+.custom-text-card {
+  margin: 16px 0;
+  
+  .custom-text-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  
+  .text-count {
+    text-align: right;
+    margin: 4px 8px;
+    
+    small {
+      color: var(--ion-color-medium);
+      font-size: 0.85rem;
+    }
+  }
+  
+  ion-item {
+    margin-bottom: 8px;
+  }
+}
+
+.custom-textarea-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--ion-color-step-600);
+}
+
+.custom-textarea-item {
+  --background: var(--ion-color-light);
+  border-radius: 8px;
+  margin-bottom: 4px;
+  
+  ion-textarea {
+    --padding-start: 12px;
+    --padding-end: 12px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+}
+
+.custom-preview-text {
+  background: var(--ion-color-light);
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+  line-height: 1.6;
+  font-size: 1rem;
+  color: var(--ion-color-dark);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
