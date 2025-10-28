@@ -84,11 +84,12 @@
         <ion-radio-group 
           [value]="selectedAnswers[i]" 
           (ionChange)="selectAnswer(i, $event.detail.value)">
-          <!-- Updated: Removed button="true" from ion-item and moved label into ion-radio -->
           <ion-item *ngFor="let option of question.options; let j = index" 
                     lines="full"
-                    detail="false">
-            <ion-radio slot="start" [value]="j">{{ option }}</ion-radio>
+                    detail="false"
+                    class="quiz-option-item">
+            <ion-radio slot="start" [value]="j"></ion-radio>
+            <ion-label class="quiz-option-label">{{ option }}</ion-label>
           </ion-item>
         </ion-radio-group>
       </ion-list>

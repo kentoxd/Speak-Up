@@ -172,19 +172,21 @@ p {
       }
 
       ion-radio-group {
-        ion-item {
+        ion-item.quiz-option-item {
           --background: transparent;
           --border-color: var(--ion-color-medium);
           margin-bottom: 0.5rem;
           border-radius: 8px;
 
-          /* ✅ Override Ionic defaults */
-          ion-label {
+          /* ✅ Override Ionic defaults for label */
+          ion-label.quiz-option-label {
             display: block !important;
             white-space: normal !important;
             overflow: visible !important;
             text-overflow: unset !important;
             word-break: break-word !important;
+            flex: 1;
+            margin: 0;
           }
 
           &:hover {

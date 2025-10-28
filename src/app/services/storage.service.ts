@@ -159,9 +159,21 @@ export class StorageService {
       lastAccessed: new Date().toISOString()
     };
 
+    // If lessonCompleted flag is true, recalculate based on actual completed lessons
     if (lessonCompleted) {
-      if (progress.lessonsCompleted < topic.lessons.length) {
-        progress.lessonsCompleted += 1;
+      // Count how many lessons in this topic are actually completed
+      const allLessonProgress = await this.getAllLessonProgress();
+      let completedCount = 0;
+      
+      topic.lessons.forEach(lesson => {
+        if (allLessonProgress[lesson.id]?.completed) {
+          completedCount++;
+        }
+      });
+      
+      // Only update if the count has changed
+      if (completedCount !== progress.lessonsCompleted) {
+        progress.lessonsCompleted = completedCount;
       }
     }
 

@@ -33,10 +33,26 @@ export class LessonContentPage implements OnInit {
 
   async ngOnInit() {
     const lessonId = this.route.snapshot.paramMap.get('id');
+    const randomize = this.route.snapshot.queryParamMap.get('randomize');
+    const retry = this.route.snapshot.queryParamMap.get('retry');
+    
     if (lessonId) {
       this.lesson = this.dataService.getLesson(lessonId);
       if (this.lesson) {
         await this.loadLessonProgress();
+        
+        // Always randomize quiz questions when lesson is opened
+        if (this.lesson.quiz) {
+          this.shuffleQuizQuestions();
+        }
+        
+        // If retry is requested, go straight to quiz
+        if (retry === 'true' && this.lesson.quiz) {
+          this.showQuiz = true;
+          this.selectedAnswers = new Array(this.lesson.quiz.questions.length).fill(-1);
+          this.currentContentIndex = this.lesson.content.length - 1;
+          this.updateProgress();
+        }
       } else {
         this.router.navigate(['/not-found']);
       }
@@ -127,6 +143,10 @@ export class LessonContentPage implements OnInit {
     const score = correctAnswers;
     const total = this.lesson.quiz.questions.length;
 
+    // Mark lesson as completed before navigating to results
+    this.quizCompleted = true;
+    await this.completeLesson();
+
     // Navigate to results page with params
     this.router.navigate(['/quiz-results', this.lesson.id], {
       queryParams: {
@@ -136,18 +156,30 @@ export class LessonContentPage implements OnInit {
         type: 'lesson'  // Indicate it's a lesson quiz
       }
     });
-
-    // Optionally, mark as completed after viewing results
-    // this.quizCompleted = true;
-    // this.completeLesson();
   }
 
-  async completeLesson() {
+  async completeLesson(showToast: boolean = false) {
     if (!this.lesson || !this.lessonProgress) return;
+    
+    // Check if already completed to prevent double counting
+    if (this.lessonProgress.completed) {
+      console.log('Lesson already completed, skipping duplicate completion');
+      return;
+    }
     
     this.lessonProgress.completed = true;
     this.lessonProgress.progress = 100;
     await this.storageService.setLessonProgress(this.lesson.id, this.lessonProgress);
+    
+    // Update topic progress when lesson is completed
+    if (this.lesson.topicId) {
+      try {
+        const topicProgress = await this.storageService.updateTopicProgress(this.lesson.topicId, true);
+        console.log('Topic progress updated:', topicProgress);
+      } catch (error) {
+        console.error('Error updating topic progress:', error);
+      }
+    }
     
     // Update Firebase user progression
     try {
@@ -162,17 +194,19 @@ export class LessonContentPage implements OnInit {
       console.error('Error updating user progression:', error);
     }
     
-    const toast = await this.toastController.create({
-      message: 'Lesson completed! 🎉',
-      duration: 2000,
-      color: 'success',
-      position: 'top'
-    });
-    await toast.present();
-    
-    setTimeout(() => {
-      this.router.navigate(['/tabs/lessons']);
-    }, 2000);
+    if (showToast) {
+      const toast = await this.toastController.create({
+        message: 'Lesson completed! 🎉',
+        duration: 2000,
+        color: 'success',
+        position: 'top'
+      });
+      await toast.present();
+      
+      setTimeout(() => {
+        this.router.navigate(['/tabs/lessons']);
+      }, 2000);
+    }
   }
 
   goBack() {
@@ -202,5 +236,23 @@ export class LessonContentPage implements OnInit {
   shouldShowStartQuizButton(): boolean {
     if (!this.lesson?.quiz) return false;
     return !this.showQuiz && this.currentContentIndex === this.lesson.content.length - 1;
+  }
+
+  // Shuffle quiz questions for retry
+  private shuffleQuizQuestions() {
+    if (!this.lesson?.quiz) return;
+    
+    // Create a copy of questions array and shuffle it
+    const questions = [...this.lesson.quiz.questions];
+    for (let i = questions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [questions[i], questions[j]] = [questions[j], questions[i]];
+    }
+    
+    // Create shuffled quiz object with original reference to options
+    this.lesson.quiz = {
+      ...this.lesson.quiz,
+      questions: questions
+    };
   }
 }

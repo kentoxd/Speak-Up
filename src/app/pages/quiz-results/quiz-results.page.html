@@ -1,8 +1,5 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button [defaultHref]="isLessonQuiz ? '/tabs/lessons' : (topic ? '/topic-lessons/' + topic.id : '/tabs/lessons')"></ion-back-button>
-    </ion-buttons>
     <ion-title>{{ isLessonQuiz ? 'Lesson Quiz Result' : 'Quiz Result' }}</ion-title>
   </ion-toolbar>
 </ion-header>
@@ -84,15 +81,6 @@
 
     <!-- Action Buttons -->
     <div class="action-buttons">
-      <ion-button 
-        fill="solid" 
-        color="tertiary"
-        expand="block"
-        (click)="tryAgain()">
-        <ion-icon name="refresh" slot="start"></ion-icon>
-        Try Again
-      </ion-button>
-      
       <ion-button 
         fill="outline"
         expand="block"

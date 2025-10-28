@@ -47,8 +47,10 @@ export class TopicLessonsPage implements OnInit {
   private async loadProgress() {
     if (!this.topic) return;
     
-    this.topicProgress = await this.storageService.getTopicProgress(this.topic.id);
     this.lessonProgress = await this.storageService.getAllLessonProgress();
+    
+    // Recalculate topic progress to ensure it's in sync with lesson progress
+    this.topicProgress = await this.storageService.updateTopicProgress(this.topic.id, true);
   }
 
   readLesson(lesson: Lesson) {
@@ -67,6 +69,9 @@ export class TopicLessonsPage implements OnInit {
         color: 'warning'
       });
       await toast.present();
+      // Still recalculate topic progress in case it's out of sync
+      const updatedTopicProgress = await this.storageService.updateTopicProgress(this.topic.id, true);
+      this.topicProgress = updatedTopicProgress;
       return;
     }
 
@@ -82,7 +87,7 @@ export class TopicLessonsPage implements OnInit {
     // Update lesson progress immediately in UI
     this.lessonProgress[lesson.id] = lessonProgress;
 
-    // Update topic progress
+    // Update topic progress (this will recalculate based on actual completed lessons)
     const updatedTopicProgress = await this.storageService.updateTopicProgress(this.topic.id, true);
     this.topicProgress = updatedTopicProgress;
 

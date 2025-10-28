@@ -77,12 +77,13 @@ export class QuizResultsPage implements OnInit {
 
   tryAgain() {
     if (this.isLessonQuiz && this.lesson) {
+      // Navigate to lesson content and signal to randomize quiz
       this.router.navigate(['/lesson-content', this.lesson.id], {
-        queryParams: { retry: 'true' }
+        queryParams: { retry: 'true', randomize: 'true' }
       });
     } else if (this.topic) {
       this.router.navigate(['/topic-quiz', this.topic.id], {
-        queryParams: { retry: 'true' }
+        queryParams: { retry: 'true', randomize: 'true' }
       });
     }
   }
