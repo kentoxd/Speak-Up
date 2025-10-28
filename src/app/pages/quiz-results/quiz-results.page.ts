@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DataService, Topic, QuizQuestion } from '../../services/data.service';
+import { DataService, Topic, Lesson, QuizQuestion } from '../../services/data.service';
 
 @Component({
   selector: 'app-quiz-results',
@@ -9,11 +9,13 @@ import { DataService, Topic, QuizQuestion } from '../../services/data.service';
 })
 export class QuizResultsPage implements OnInit {
   topic: Topic | null = null;
+  lesson: Lesson | null = null;  // Add support for lessons
   questions: QuizQuestion[] = [];
   userAnswers: number[] = [];
   score = 0;
   totalQuestions = 0;
   percentage = 0;
+  isLessonQuiz = false;  // Flag to distinguish lesson vs. topic quiz
 
   constructor(
     private route: ActivatedRoute,
@@ -22,11 +24,15 @@ export class QuizResultsPage implements OnInit {
   ) { }
 
   ngOnInit() {
-    const topicId = this.route.snapshot.paramMap.get('id');
+    const id = this.route.snapshot.paramMap.get('id');  // Could be topicId or lessonId
     const queryParams = this.route.snapshot.queryParams;
+    const type = queryParams['type'];  // Add 'type' param: 'topic' or 'lesson'
     
-    if (topicId) {
-      this.loadTopic(topicId);
+    if (id && type === 'lesson') {
+      this.isLessonQuiz = true;
+      this.loadLesson(id);
+    } else if (id) {
+      this.loadTopic(id);
     }
     
     if (queryParams['score'] && queryParams['total'] && queryParams['answers']) {
@@ -44,6 +50,14 @@ export class QuizResultsPage implements OnInit {
     }
   }
 
+  private loadLesson(lessonId: string) {  // New method for lessons
+    this.lesson = this.dataService.getLesson(lessonId) || null;
+    if (this.lesson && this.lesson.quiz) {
+      this.questions = [...this.lesson.quiz.questions];
+    }
+  }
+
+  // Rest of the methods remain the same...
   isCorrectAnswer(questionIndex: number, answerIndex: number): boolean {
     return this.questions[questionIndex]?.correctAnswer === answerIndex;
   }
@@ -62,7 +76,11 @@ export class QuizResultsPage implements OnInit {
   }
 
   tryAgain() {
-    if (this.topic) {
+    if (this.isLessonQuiz && this.lesson) {
+      this.router.navigate(['/lesson-content', this.lesson.id], {
+        queryParams: { retry: 'true' }
+      });
+    } else if (this.topic) {
       this.router.navigate(['/topic-quiz', this.topic.id], {
         queryParams: { retry: 'true' }
       });
@@ -70,7 +88,9 @@ export class QuizResultsPage implements OnInit {
   }
 
   backToLessons() {
-    if (this.topic) {
+    if (this.isLessonQuiz && this.lesson) {
+      this.router.navigate(['/tabs/lessons']);  // Or specific lesson list
+    } else if (this.topic) {
       this.router.navigate(['/topic-lessons', this.topic.id]);
     }
   }

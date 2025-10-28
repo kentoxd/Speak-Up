@@ -65,14 +65,16 @@ export class LessonContentPage implements OnInit {
     if (!this.lesson) return;
     
     if (this.currentContentIndex < this.lesson.content.length - 1) {
+      // Move to next content section
       this.currentContentIndex++;
       this.updateProgress();
     } else if (this.lesson.quiz && !this.showQuiz) {
+      // Show quiz after last content section
       this.showQuiz = true;
       this.selectedAnswers = new Array(this.lesson.quiz.questions.length).fill(-1);
-    } else {
-      this.completeLesson();
+      this.updateProgress();
     }
+    // If no quiz exists and we're at the last content, the "Complete Lesson" button handles it
   }
 
   prevContent() {
@@ -122,22 +124,22 @@ export class LessonContentPage implements OnInit {
       }
     });
 
-    const score = Math.round((correctAnswers / this.lesson.quiz.questions.length) * 100);
-    
-    const alert = await this.alertController.create({
-      header: 'Quiz Results',
-      message: `You scored ${score}% (${correctAnswers}/${this.lesson.quiz.questions.length} correct)`,
-      buttons: [
-        {
-          text: 'Continue',
-          handler: () => {
-            this.quizCompleted = true;
-            this.completeLesson();
-          }
-        }
-      ]
+    const score = correctAnswers;
+    const total = this.lesson.quiz.questions.length;
+
+    // Navigate to results page with params
+    this.router.navigate(['/quiz-results', this.lesson.id], {
+      queryParams: {
+        score: score,
+        total: total,
+        answers: JSON.stringify(this.selectedAnswers),
+        type: 'lesson'  // Indicate it's a lesson quiz
+      }
     });
-    await alert.present();
+
+    // Optionally, mark as completed after viewing results
+    // this.quizCompleted = true;
+    // this.completeLesson();
   }
 
   async completeLesson() {
@@ -184,16 +186,21 @@ export class LessonContentPage implements OnInit {
   canGoNext(): boolean {
     if (!this.lesson) return false;
     
+    // Can't go next while in quiz - must use Submit Quiz button
     if (this.showQuiz) {
       return !this.selectedAnswers.some(answer => answer === -1);
     }
     
-    return this.currentContentIndex < this.lesson.content.length - 1 || 
-           (!!this.lesson.quiz && !this.showQuiz);
+    // Can go next if not at the last content item
+    return this.currentContentIndex < this.lesson.content.length - 1;
   }
 
   canGoPrev(): boolean {
     return this.currentContentIndex > 0 || this.showQuiz;
   }
 
+  shouldShowStartQuizButton(): boolean {
+    if (!this.lesson?.quiz) return false;
+    return !this.showQuiz && this.currentContentIndex === this.lesson.content.length - 1;
+  }
 }

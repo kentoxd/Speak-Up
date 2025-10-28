@@ -60,22 +60,33 @@ export class LessonsPage implements OnInit, OnDestroy {
   }
 
   private calculateOverallProgress() {
-    const totalLessons = this.topics.reduce((sum, topic) => sum + topic.lessons.length, 0);
-    let completedLessons = 0;
-    this.completedTopics = 0;
+  const totalLessons = this.topics.reduce((sum, topic) => sum + topic.lessons.length, 0);
+  let completedLessons = 0;
+  this.completedTopics = 0;
 
-    this.topics.forEach(topic => {
-      const progress = this.topicProgress[topic.id];
-      if (progress) {
-        completedLessons += progress.lessonsCompleted;
-        if (progress.completed) {
-          this.completedTopics++;
-        }
+  this.topics.forEach(topic => {
+    const progress = this.topicProgress[topic.id];
+    if (progress) {
+      // Only count actually completed lessons
+      completedLessons += progress.lessonsCompleted || 0;
+      if (progress.completed) {
+        this.completedTopics++;
       }
-    });
+    }
+    // If no progress exists, completedLessons stays at 0 for this topic
+  });
 
-    this.overallProgress = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+  // Make sure we don't show 100% when nothing is completed
+  if (totalLessons === 0) {
+    this.overallProgress = 0;
+  } else if (completedLessons === 0) {
+    this.overallProgress = 0;
+  } else {
+    this.overallProgress = (completedLessons / totalLessons) * 100;
   }
+  
+  console.log('Total lessons:', totalLessons, 'Completed:', completedLessons, 'Progress:', this.overallProgress);
+}
 
   getTopicProgress(topicId: string): TopicProgress | null {
     return this.topicProgress[topicId] || null;

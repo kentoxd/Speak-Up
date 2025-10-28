@@ -1,3 +1,28 @@
+/* ==========================================
+   Global Text Overflow Rules
+   ========================================== */
+.progress-header h2,
+.page-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Allow normal wrapping for quiz and content text */
+h2,
+h3,
+ion-label,
+.question-text,
+p {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  word-break: break-word;
+}
+
+/* ==========================================
+   Lesson Container Layout
+   ========================================== */
 .lesson-container {
   padding: 1rem;
   min-height: calc(100vh - 120px);
@@ -5,6 +30,9 @@
   flex-direction: column;
 }
 
+/* ==========================================
+   Progress Header
+   ========================================== */
 .progress-header {
   margin-bottom: 2rem;
   
@@ -26,6 +54,9 @@
   }
 }
 
+/* ==========================================
+   Content Area
+   ========================================== */
 .content-area {
   flex: 1;
   
@@ -94,56 +125,80 @@
   }
 }
 
+/* ==========================================
+   Quiz Area
+   ========================================== */
 .quiz-area {
   flex: 1;
-  
+
   .quiz-header {
     text-align: center;
     margin-bottom: 2rem;
-    
+
     h2 {
       color: var(--ion-color-primary);
       margin-bottom: 0.5rem;
       font-family: 'Playfair Display', serif;
     }
-    
+
     p {
       color: var(--ion-color-medium);
       margin: 0;
     }
   }
-  
+
   .quiz-questions {
     .question-card {
       background: var(--ion-color-light);
       border-radius: 12px;
       padding: 1.5rem;
       margin-bottom: 1.5rem;
-      
+
       h3 {
         color: var(--ion-color-primary);
         margin: 0 0 1rem 0;
         font-size: 1.2rem;
       }
-      
+
       .question-text {
         font-weight: 500;
         margin-bottom: 1.5rem;
         color: var(--ion-color-dark);
+        /* ✅ Force wrapping */
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        word-break: break-word !important;
       }
-      
+
       ion-radio-group {
         ion-item {
           --background: transparent;
           --border-color: var(--ion-color-medium);
           margin-bottom: 0.5rem;
           border-radius: 8px;
+
+          /* ✅ Override Ionic defaults */
+          ion-label {
+            display: block !important;
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: unset !important;
+            word-break: break-word !important;
+          }
+
+          &:hover {
+            --background: rgba(var(--ion-color-primary-rgb), 0.1);
+          }
         }
       }
     }
   }
 }
 
+/* ==========================================
+   Navigation Controls
+   ========================================== */
 .navigation-controls {
   display: flex;
   justify-content: space-between;
@@ -163,6 +218,9 @@
   }
 }
 
+/* ==========================================
+   Loading State
+   ========================================== */
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -174,4 +232,36 @@
   ion-spinner {
     margin-bottom: 1rem;
   }
+}
+
+/* ==========================================
+   🔧 Ionic Deep Overrides for Text Wrapping
+   ========================================== */
+
+/* Ensure question text always wraps */
+.quiz-area .question-card .question-text {
+  display: block !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-break: break-word !important;
+}
+
+/* Fix for ion-label inside ion-item / ion-radio-group */
+.quiz-area .question-card ion-item::part(label),
+.quiz-area .question-card ion-label {
+  display: block !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-break: break-word !important;
+}
+
+/* Optional: let long titles in toolbar truncate gracefully */
+ion-header ion-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }

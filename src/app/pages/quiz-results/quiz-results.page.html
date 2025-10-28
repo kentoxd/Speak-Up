@@ -1,20 +1,20 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button [defaultHref]="topic ? '/topic-lessons/' + topic.id : '/tabs/lessons'"></ion-back-button>
+      <ion-back-button [defaultHref]="isLessonQuiz ? '/tabs/lessons' : (topic ? '/topic-lessons/' + topic.id : '/tabs/lessons')"></ion-back-button>
     </ion-buttons>
-    <ion-title>Quiz Result</ion-title>
+    <ion-title>{{ isLessonQuiz ? 'Lesson Quiz Result' : 'Quiz Result' }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <ion-header collapse="condense">
     <ion-toolbar>
-      <ion-title size="large">Quiz Result</ion-title>
+      <ion-title size="large">{{ isLessonQuiz ? 'Lesson Quiz Result' : 'Quiz Result' }}</ion-title>
     </ion-toolbar>
   </ion-header>
 
-  <div class="quiz-results-container" *ngIf="topic">
+  <div class="quiz-results-container" *ngIf="topic || lesson">  <!-- Updated: Show if topic OR lesson exists -->
     
     <!-- Score Summary -->
     <ion-card class="score-card">
@@ -110,5 +110,11 @@
       </ion-button>
     </div>
 
+  </div>
+
+  <!-- Loading or Error State (if no data) -->
+  <div class="no-data" *ngIf="!topic && !lesson">
+    <ion-icon name="alert-circle" color="warning"></ion-icon>
+    <p>No quiz data found. Please try again.</p>
   </div>
 </ion-content>

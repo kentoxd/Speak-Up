@@ -1,212 +1,87 @@
-// Quiz Results Page Styling
+// Existing styles from your code...
+// (Include your full CSS here, then add the fixes below)
+
+// Fix for text overflow in quiz questions and answers
+.question-card {
+  h2, h4 {  // Question titles
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    hyphens: auto;  // Optional: Adds hyphens for better wrapping
+  }
+  
+  .answer-option, .answer-button {  // Answer buttons/options
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    text-align: left;
+    height: auto;
+    
+    // Ensure Ionic button text wraps
+    ion-label, span {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+      display: block;  // Force block display for wrapping
+    }
+  }
+}
+
+// Additional fixes for quiz results page
 .quiz-results-container {
-  padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-}
-
-.score-card {
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  background: rgba(255, 255, 255, 0.95);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  margin-bottom: 24px;
-  
-  .score-header {
-    text-align: center;
-    margin-bottom: 20px;
-    
-    h2 {
-      margin: 0;
-      color: #2c3e50;
-      font-weight: 700;
-      font-size: 1.5rem;
+  .question-review-card {
+    h4 {  // Question headers in review
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
     }
-  }
-  
-  .score-display {
-    text-align: center;
-    
-    .score-value {
-      display: flex;
-      align-items: baseline;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 12px;
-      
-      .score-number {
-        font-size: 3rem;
-        font-weight: 700;
-        color: #2c3e50;
-      }
-      
-      .score-total {
-        font-size: 1.5rem;
-        color: #7f8c8d;
-        font-weight: 500;
-      }
-    }
-    
-    .score-percentage {
-      font-size: 1.3rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-      
-      &.score-success {
-        color: #27ae60;
-      }
-      
-      &.score-warning {
-        color: #f39c12;
-      }
-      
-      &.score-danger {
-        color: #e74c3c;
-      }
-    }
-    
-    .score-message {
-      font-size: 1.1rem;
-      font-weight: 500;
-      color: #2c3e50;
-    }
-  }
-}
-
-.quiz-review {
-  margin-bottom: 24px;
-  
-  h3 {
-    color: white;
-    font-size: 1.4rem;
-    font-weight: 600;
-    margin: 0 0 16px 0;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-}
-
-.questions-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.question-review-card {
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  
-  .question-header {
-    margin-bottom: 16px;
-    
-    h4 {
-      margin: 0;
-      color: #2c3e50;
-      font-weight: 600;
-      font-size: 1.1rem;
-      line-height: 1.4;
-    }
-  }
-  
-  .answer-options {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 16px;
     
     .answer-option {
-      --border-radius: 12px;
-      font-weight: 500;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
       text-align: left;
-      padding: 12px 16px;
-      min-height: 48px;
-      transition: all 0.3s ease;
       
-      &[color="success"] {
-        --background: #d4edda;
-        --color: #155724;
-        --border-color: #c3e6cb;
+      ion-label {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        display: block;
       }
-      
-      &[color="danger"] {
-        --background: #f8d7da;
-        --color: #721c24;
-        --border-color: #f5c6cb;
-      }
-      
-      &[color="medium"] {
-        --background: #f8f9fa;
-        --color: #6c757d;
-        --border-color: #dee2e6;
-      }
+    }
+    
+    .explanation p {  // Explanations
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
     }
   }
   
-  .explanation {
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border-left: 4px solid #007bff;
-    
-    p {
-      margin: 0;
-      color: #495057;
-      font-size: 0.9rem;
-      line-height: 1.5;
-      
-      strong {
-        color: #2c3e50;
-        font-weight: 600;
-      }
-    }
+  .score-message {  // Score messages
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
   }
 }
 
-.action-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+// General button fixes (for all quiz buttons)
+ion-button {
+  --overflow: visible;  // Allow content to overflow button bounds if needed
+  text-overflow: clip;  // Prevent ellipsis, let text wrap
   
-  ion-button {
-    --border-radius: 12px;
-    font-weight: 500;
-    width: 100%;
-    
-    &[fill="solid"] {
-      --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    &[fill="outline"] {
-      --color: #667eea;
-      --border-color: #667eea;
-    }
-    
-    &[fill="clear"] {
-      --color: white;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    }
+  ion-label {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    display: block;
   }
 }
 
-// Responsive design
+// Responsive adjustments
 @media (max-width: 768px) {
-  .quiz-results-container {
-    padding: 12px;
-  }
-  
-  .score-card {
-    .score-display {
-      .score-value {
-        .score-number {
-          font-size: 2.5rem;
-        }
-        
-        .score-total {
-          font-size: 1.2rem;
-        }
-      }
-    }
+  .question-card .answer-options .answer-button,
+  .quiz-results-container .answer-option {
+    font-size: 0.9rem;  // Slightly smaller text on mobile for better fit
+    padding: 12px;  // Reduce padding if needed
   }
 }

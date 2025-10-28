@@ -131,7 +131,121 @@ export class DataService {
                 title: 'Tips for Beginners',
                 content: '1. Watch famous speeches and notice how speakers use voice and body language\n\n2. Practice speaking in front of a mirror or a small group of friends\n\n3. Start with topics you are passionate about; it\'s easier to speak about something you care for\n\nKey Takeaway: Public speaking is not about perfection but about connection — sharing your message clearly and confidently with others.'
               }
-            ]
+            ],
+            quiz: {
+              questions: [
+                {
+                  question: 'What is the primary purpose of a Persuasive Speech?',
+                  options: [
+                    'To celebrate or honor an individual or an event.',
+                    'To educate the audience on a complex concept.',
+                    'To amuse or engage the audience with humor and storytelling.',
+                    'To encourage the audience to accept a specific viewpoint or take action.'
+                  ],
+                  correctAnswer: 3,
+                  explanation: 'A persuasive speech aims to convince the audience to accept a viewpoint or take action.'
+                },
+                {
+                  question: 'According to the lesson, which of the following is listed as a common misconception about public speaking?',
+                  options: [
+                    'Mistakes are a normal part of the process.',
+                    'A clear message is key to an effective speech.',
+                    'Great speakers are born with a natural ability.',
+                    'Public speaking develops your leadership skills.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'The lesson debunks the myth that great speakers are born—public speaking is a learned skill.'
+                },
+                {
+                  question: 'Which type of speech is primarily focused on sharing a story or making the audience laugh?',
+                  options: [
+                    'Special Occasion Speech',
+                    'Entertaining Speech',
+                    'Informative Speech',
+                    'Persuasive Speech'
+                  ],
+                  correctAnswer: 1,
+                  explanation: 'Entertaining speeches amuse or engage the audience, often using humor or storytelling.'
+                },
+                {
+                  question: 'A speech explaining the steps of the photosynthesis process is an example of which type of speech?',
+                  options: [
+                    'Informative',
+                    'Persuasive',
+                    'Special Occasion',
+                    'Entertaining'
+                  ],
+                  correctAnswer: 0,
+                  explanation: 'An informative speech aims to educate or explain a concept to the audience.'
+                },
+                {
+                  question: 'What does the Key Takeaway of Lesson 1 state about the essence of public speaking?',
+                  options: [
+                    'It is about mastery of voice and body language.',
+                    'It is about connection—sharing your message clearly and confidently.',
+                    'It is about perfect articulation and grammar.',
+                    'It is about critical thinking and organization.'
+                  ],
+                  correctAnswer: 1,
+                  explanation: 'Public speaking is about connection—sharing your message clearly and confidently with others.'
+                },
+                {
+                  question: 'Which of the following is listed as a vital role of public speaking?',
+                  options: [
+                    'Education, business, and leadership.',
+                    'Scientific research and laboratory testing.',
+                    'Manual labor and physical conditioning.',
+                    'Technical writing and data analysis.'
+                  ],
+                  correctAnswer: 0,
+                  explanation: 'Public speaking plays a vital role in education, business, leadership, and daily communication.'
+                },
+                {
+                  question: 'What does the lesson suggest is more powerful than striving for perfection in a speech?',
+                  options: [
+                    'Authenticity in your expression.',
+                    'Ignoring audience feedback.',
+                    'Using highly technical vocabulary.',
+                    'Memorization of the entire script.'
+                  ],
+                  correctAnswer: 0,
+                  explanation: 'Authenticity is more powerful than perfection when connecting with an audience.'
+                },
+                {
+                  question: 'A speaker delivering a toast at a wedding is giving which type of speech?',
+                  options: [
+                    'Special Occasion Speech',
+                    'Entertaining Speech',
+                    'Persuasive Speech',
+                    'Informative Speech'
+                  ],
+                  correctAnswer: 0,
+                  explanation: 'Special occasion speeches celebrate or honor people and events like weddings.'
+                },
+                {
+                  question: 'What is one specific skill that public speaking is said to develop?',
+                  options: [
+                    'Your ability to type faster.',
+                    'Your ability to swim long distances.',
+                    'Your ability to remember phone numbers.',
+                    'Your ability to think critically.'
+                  ],
+                  correctAnswer: 3,
+                  explanation: 'Public speaking develops critical thinking, along with organizing ideas and expressing yourself confidently.'
+                },
+                {
+                  question: 'What is the best tip for a beginner speaker to start with, according to the lesson?',
+                  options: [
+                    'Choose a highly controversial topic to capture attention.',
+                    'Only watch foreign language speeches.',
+                    'Start with topics you are passionate about.',
+                    'Attempt to sound exactly like a famous speaker.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Starting with topics you are passionate about makes it easier to speak confidently and authentically.'
+                }
+              ]
+            }
           },
           {
             id: 'lesson-1-2',
@@ -168,7 +282,121 @@ export class DataService {
                 title: 'Key Takeaway',
                 content: 'Confidence doesn\'t mean you never feel afraid — it means you face fear with preparation, practice, and positive thinking. Remember, every great speaker started exactly where you are now.'
               }
-            ]
+            ],
+            quiz: {
+              questions: [
+                {
+                  question: 'Which one of these is identified as a cause of stage fright?',
+                  options: [
+                    'The feeling of excitement and anticipation.',
+                    'Being overly prepared and rehearsed.',
+                    'Making eye contact with friendly faces.',
+                    'Fear of judgment or criticism from the audience.'
+                  ],
+                  correctAnswer: 3,
+                  explanation: 'Fear of judgment or criticism from the audience is one of the main causes of stage fright listed in the lesson.'
+                },
+                {
+                  question: 'How does the lesson suggest using visualization to manage anxiety?',
+                  options: [
+                    'By imagining yourself speaking clearly, confidently, and receiving applause.',
+                    'By imagining yourself forgetting your lines and recovering.',
+                    'By imagining the audience in silly clothes to make them seem less intimidating.',
+                    'By counting the number of people in the audience.'
+                  ],
+                  correctAnswer: 0,
+                  explanation: 'Visualization involves imagining yourself standing confidently, speaking clearly, and receiving applause to build positive energy.'
+                },
+                {
+                  question: 'What is the recommended timing for the breathing exercise mentioned in the lesson?',
+                  options: [
+                    'Inhaling for 2, holding for 4, and exhaling for 8 seconds.',
+                    'Inhaling for 6, holding for 6, and exhaling for 6 seconds.',
+                    'Inhaling for 4, holding for 2, and exhaling for 6 seconds.',
+                    'Rapid, shallow breaths to increase oxygen flow.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'The lesson recommends inhaling for 4 seconds, holding for 2, and exhaling for 6 seconds to help slow your heartbeat and relax your body.'
+                },
+                {
+                  question: 'According to the Key Takeaway, what does confidence in public speaking not mean?',
+                  options: [
+                    'It means you face fear with positive thinking.',
+                    'It means you are well-prepared.',
+                    'It means you never feel afraid.',
+                    'It means you have rehearsed your speech multiple times.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Confidence doesn\'t mean you never feel afraid—it means you face fear with preparation, practice, and positive thinking.'
+                },
+                {
+                  question: 'The example of professional speakers like TED Talk presenters rehearsing dozens of times illustrates the importance of which anxiety management technique?',
+                  options: [
+                    'Preparation',
+                    'Breathing Exercises',
+                    'Positive Self-Talk',
+                    'Visualization'
+                  ],
+                  correctAnswer: 0,
+                  explanation: 'The TED Talk example demonstrates that preparation is crucial—even professional speakers rehearse extensively before presenting.'
+                },
+                {
+                  question: 'What is a good strategy to replace the negative thought, "I\'ll mess up"?',
+                  options: [
+                    'Focusing intensely on past mistakes.',
+                    'Trying to completely empty your mind of all thoughts.',
+                    'Telling yourself, "I\'m ready and capable."',
+                    'Immediately consuming a caffeinated beverage.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Positive self-talk involves replacing negative thoughts like "I\'ll mess up" with affirming statements like "I\'m ready and capable."'
+                },
+                {
+                  question: 'What is one confidence tip for a speaker when they first arrive at the presentation space?',
+                  options: [
+                    'Arrive early to get comfortable with the environment.',
+                    'Avoid looking at the stage or podium.',
+                    'Immediately start greeting every audience member personally.',
+                    'Only focus on the people you know in the room.'
+                  ],
+                  correctAnswer: 0,
+                  explanation: 'Arriving early allows you to get comfortable with the environment, which helps build confidence before speaking.'
+                },
+                {
+                  question: 'When you are speaking, the lesson suggests you should shift your focus onto:',
+                  options: [
+                    'The message you want to deliver.',
+                    'How your clothes and appearance look.',
+                    'The judgmental faces in the crowd.',
+                    'Your own nervousness and physical feelings.'
+                  ],
+                  correctAnswer: 0,
+                  explanation: 'Focus on your message, not on yourself—this reduces self-consciousness and helps manage anxiety.'
+                },
+                {
+                  question: 'What is the recommended strategy for a beginner to "start small" when building confidence?',
+                  options: [
+                    'Only rehearse the conclusion of the speech.',
+                    'Practice only in front of a mirror.',
+                    'Practice in front of friends or classmates first.',
+                    'Give a speech to an audience of over 100 people immediately.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Starting small means practicing in front of friends or classmates before facing a larger audience—each attempt builds confidence.'
+                },
+                {
+                  question: 'One of the causes of stage fright is pressure to perform perfectly. What does the lesson suggest is more powerful than perfection?',
+                  options: [
+                    'Authenticity in your presentation.',
+                    'Strict adherence to a written script.',
+                    'Avoiding all pauses or silence.',
+                    'Pretending that you are not nervous.'
+                  ],
+                  correctAnswer: 0,
+                  explanation: 'Authenticity is more powerful than perfection—being genuine creates better connection with your audience.'
+                }
+              ]
+            }
           },
           {
             id: 'lesson-1-3',
@@ -205,7 +433,121 @@ export class DataService {
                 title: 'Additional Tips',
                 content: '• Use an outline or cue cards instead of reading a script\n• Keep your ideas simple and focused on one main message\n• Practice transitions for smooth flow\n\nKey Takeaway: A clear and organized speech helps your audience understand your message — and makes you sound more professional and prepared.'
               }
-            ]
+            ],
+            quiz: {
+              questions: [
+                {
+                  question: 'What is the function of giving a brief preview of your main points in the Introduction?',
+                  options: [
+                    'To serve as the call to action.',
+                    'To capture the audience\'s attention with a story.',
+                    'To help the audience follow and anticipate the message\'s structure.',
+                    'To restate the key points of the presentation.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'A brief preview in the introduction helps the audience follow and anticipate the structure of your message, making it easier to understand.'
+                },
+                {
+                  question: 'Which section of the speech is described as using examples, data, or stories for support?',
+                  options: [
+                    'Introduction',
+                    'Conclusion',
+                    'Body',
+                    'Transition'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'The body of the speech presents your main ideas supported by examples, data, or stories.'
+                },
+                {
+                  question: 'What is a specific, recommended way to make the conclusion strong?',
+                  options: [
+                    'Introduce an entirely new, surprising main point.',
+                    'End with a strong closing thought or call to action.',
+                    'Start a long, detailed story to entertain the audience.',
+                    'Ask the audience if they have any questions.'
+                  ],
+                  correctAnswer: 1,
+                  explanation: 'A strong conclusion ends with a memorable closing thought, call to action, or quote—not new information.'
+                },
+                {
+                  question: 'The use of phrases like "Next," "In addition," and "Finally" primarily serves what purpose in the speech structure?',
+                  options: [
+                    'To capture the audience\'s attention.',
+                    'To signal a shift between main points.',
+                    'To introduce the topic and purpose.',
+                    'To expand on supporting data or evidence.'
+                  ],
+                  correctAnswer: 1,
+                  explanation: 'Transition phrases like "Next," "In addition," and "Finally" signal shifts between main points, helping the speech flow smoothly.'
+                },
+                {
+                  question: 'According to the lesson, what is the best alternative to reading a complete script during a speech?',
+                  options: [
+                    'A teleprompter.',
+                    'Memorizing the speech word-for-word.',
+                    'Using an outline or cue cards.',
+                    'Nothing at all, relying only on memory.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Using an outline or cue cards allows you to speak naturally while staying organized, which is better than reading a script.'
+                },
+                {
+                  question: 'A speaker begins their speech by asking, "Have you ever imagined a world without books?" This technique is primarily fulfilling which specific role of the Introduction?',
+                  options: [
+                    'Restating key points.',
+                    'Giving a brief preview of the main points.',
+                    'Presenting the main ideas in a logical order.',
+                    'Capturing the audience\'s attention.'
+                  ],
+                  correctAnswer: 3,
+                  explanation: 'Starting with a question is a technique to capture the audience\'s attention at the beginning of the speech.'
+                },
+                {
+                  question: 'To ensure an effective speech, the lesson advises that you should keep your ideas:',
+                  options: [
+                    'Complex and multi-layered to show expertise.',
+                    'Detailed and focused on every possible sub-topic.',
+                    'Simple and focused on one main message.',
+                    'Open-ended, without a clear purpose or conclusion.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Keeping ideas simple and focused on one main message makes your speech clearer and more effective.'
+                },
+                {
+                  question: 'Which component is NOT listed as a key part of the three-part framework for every effective speech?',
+                  options: [
+                    'Introduction',
+                    'Summary',
+                    'Body',
+                    'Conclusion'
+                  ],
+                  correctAnswer: 1,
+                  explanation: 'The three-part framework consists of Introduction, Body, and Conclusion—not Summary.'
+                },
+                {
+                  question: 'What makes a speech sound confusing, even if the topic is good?',
+                  options: [
+                    'A lack of a clear structure and organization.',
+                    'Using too many humorous stories.',
+                    'Speaking with too much enthusiasm.',
+                    'Reading directly from a script.'
+                  ],
+                  correctAnswer: 0,
+                  explanation: 'Without clear structure and organization, even a good topic can sound confusing to the audience.'
+                },
+                {
+                  question: 'Why is it important to "Practice transitions for smooth flow"?',
+                  options: [
+                    'To keep the audience guessing about the next topic.',
+                    'To ensure the audience understands that you have finished your speech.',
+                    'To make the speaker sound more professional and prepared.',
+                    'To use every piece of data available to you.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Practicing transitions helps you sound more professional and prepared, making your speech flow smoothly.'
+                }
+              ]
+            }
           },
           {
             id: 'lesson-1-4',
@@ -242,7 +584,121 @@ export class DataService {
                 title: 'Common Mistakes to Avoid',
                 content: '• Reading directly from slides or notes\n• Speaking in a monotone voice\n• Ignoring audience reactions\n\nKey Takeaway: Effective delivery transforms words into impact. Confidence, voice control, and body language make your message unforgettable.'
               }
-            ]
+            ],
+            quiz: {
+              questions: [
+                {
+                  question: 'The lesson suggests using pauses during a speech primarily for what effect?',
+                  options: [
+                    'To allow the speaker to quickly read the next line from their notes.',
+                    'To emphasize a key point, allowing the message to be absorbed.',
+                    'To completely break eye contact with the audience.',
+                    'To signal that the speech is about to end.'
+                  ],
+                  correctAnswer: 1,
+                  explanation: 'Pauses emphasize key points and give the audience time to absorb your message—silence can be powerful.'
+                },
+                {
+                  question: 'What is one common mistake that can significantly weaken a speech\'s delivery, according to the lesson?',
+                  options: [
+                    'Speaking with too much passion.',
+                    'Using a variety of gestures.',
+                    'Reading directly from slides or notes.',
+                    'Using a strong, clear volume.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Reading directly from slides or notes breaks connection with your audience and significantly weakens delivery.'
+                },
+                {
+                  question: 'When adjusting your Pace, what is the recommended technique for important points?',
+                  options: [
+                    'Speeding up to create excitement.',
+                    'Slowing down to highlight their significance.',
+                    'Maintaining a constant, rapid speed throughout.',
+                    'Changing your pitch instead of your pace.'
+                  ],
+                  correctAnswer: 1,
+                  explanation: 'Slowing down for important points helps emphasize them and gives the audience time to process the information.'
+                },
+                {
+                  question: 'Which body language action does the lesson advise a speaker to avoid?',
+                  options: [
+                    'Standing tall with good posture.',
+                    'Using hand gestures to highlight points.',
+                    'Fidgeting or crossing your arms.',
+                    'Letting your face reflect the emotion.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Fidgeting or crossing your arms conveys nervousness or defensiveness and should be avoided.'
+                },
+                {
+                  question: 'What is the primary purpose of maintaining eye contact with different parts of the audience?',
+                  options: [
+                    'To help the speaker find their next point on their notes.',
+                    'To build trust and keep the audience engaged.',
+                    'To signal that the speech is moving from the Introduction to the Body.',
+                    'To identify which audience members are easily distracted.'
+                  ],
+                  correctAnswer: 1,
+                  explanation: 'Maintaining eye contact with different parts of the audience builds trust and keeps them engaged throughout your presentation.'
+                },
+                {
+                  question: 'The lesson emphasizes that a great speaker must combine which three elements to bring their words to life?',
+                  options: [
+                    'Storytelling, Humor, and Data.',
+                    'Voice, Body Language, and Facial Expression.',
+                    'Pitch, Pace, and Volume.',
+                    'Outline, Cue Cards, and Script.'
+                  ],
+                  correctAnswer: 1,
+                  explanation: 'Great speakers combine voice, body language, and facial expression to bring their words to life.'
+                },
+                {
+                  question: 'Which technique is a useful tip for a speaker to observe and improve their own gestures and tone?',
+                  options: [
+                    'Asking friends to take notes on every mistake.',
+                    'Only focusing on the tone of a famous speech.',
+                    'Recording your speech or practicing in front of a mirror.',
+                    'Using a very soft volume so you can hear yourself better.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Recording your speech or practicing in front of a mirror helps you observe and improve your gestures and tone.'
+                },
+                {
+                  question: 'To communicate confidence through posture, what does the lesson recommend?',
+                  options: [
+                    'Leaning heavily on the podium for support.',
+                    'Crossing your legs tightly to limit movement.',
+                    'Standing tall with good posture.',
+                    'Keeping your hands hidden in your pockets.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Standing tall with good posture communicates confidence before you even speak.'
+                },
+                {
+                  question: 'Why is it important to use Pitch effectively?',
+                  options: [
+                    'To change your tone to show emotion.',
+                    'To adjust your speed to slow down for important points.',
+                    'To use silence for emphasis.',
+                    'To ensure everyone can hear you clearly.'
+                  ],
+                  correctAnswer: 0,
+                  explanation: 'Pitch variation helps you change your tone to show emotion, making your delivery more expressive and engaging.'
+                },
+                {
+                  question: 'The Key Takeaway of Lesson 4 states that effective delivery transforms words into what?',
+                  options: [
+                    'A perfect memory of every line.',
+                    'An outline for future presentations.',
+                    'Impact.',
+                    'A personal self-critique.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Effective delivery transforms words into impact, making your message unforgettable.'
+                }
+              ]
+            }
           },
           {
             id: 'lesson-1-5',
@@ -279,13 +735,127 @@ export class DataService {
                 title: 'Practical Example',
                 content: 'When discussing "Climate Change Awareness," you could use a short video, a chart of global temperature rise, or a recycled item as a prop to reinforce your message.\n\nKey Takeaway: An engaged audience is an attentive audience. Visuals, stories, and interaction make your message memorable and meaningful.'
               }
-            ]
+            ],
+            quiz: {
+              questions: [
+                {
+                  question: 'Which engagement technique is highlighted as being easier for an audience to remember than facts alone?',
+                  options: [
+                    'Listing complex data points.',
+                    'Using stories and real-life experiences.',
+                    'Speaking in a monotone voice.',
+                    'Avoiding all eye contact.'
+                  ],
+                  correctAnswer: 1,
+                  explanation: 'People remember stories more than facts—relating your message to real-life experiences makes it memorable.'
+                },
+                {
+                  question: 'What is the primary rule for the text content on visual aids like PowerPoint slides?',
+                  options: [
+                    'The slides must contain the entire speech script word-for-word.',
+                    'Keep slides simple, with a maximum of 5–6 lines per slide.',
+                    'Use the smallest font possible to fit more information.',
+                    'Make all text a dark color on a dark background.'
+                  ],
+                  correctAnswer: 1,
+                  explanation: 'Keep slides simple with 5-6 lines maximum to avoid overwhelming the audience and maintain focus.'
+                },
+                {
+                  question: 'What is the recommended strategy if the audience appears bored during your speech?',
+                  options: [
+                    'Pretend you don\'t notice and continue speaking as planned.',
+                    'Stop the speech and ask them why they are bored.',
+                    'Change your tone or add a short anecdote to re-engage them.',
+                    'Immediately read the conclusion to end the speech faster.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Adapt to audience reactions by changing your tone or adding anecdotes to re-engage them and maintain interest.'
+                },
+                {
+                  question: 'What is a critical mistake to avoid when using slides?',
+                  options: [
+                    'Making eye contact with the audience.',
+                    'Using a chart to display data.',
+                    'Reading all the text directly from your slides.',
+                    'Keeping the slides simple and focused.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Avoid reading from slides—talk to the audience, not at the screen, to maintain engagement and connection.'
+                },
+                {
+                  question: 'Which quality is described as being "contagious" and a key way to engage the audience?',
+                  options: [
+                    'Anxiety',
+                    'A complex vocabulary',
+                    'Enthusiasm and sincerity',
+                    'A neutral, detached tone'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Your passion is contagious—speaking with enthusiasm and sincerity engages and energizes your audience.'
+                },
+                {
+                  question: 'During a Q&A session, what should you do if you don\'t know the answer to a question?',
+                  options: [
+                    'Make up a plausible answer to avoid looking unprepared.',
+                    'Ignore the question and move to the next one.',
+                    'Admit it is okay not to know and offer to follow up later.',
+                    'Ask the audience member to answer their own question.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'It\'s okay to admit you don\'t know—offering to follow up later shows honesty and professionalism.'
+                },
+                {
+                  question: 'What should be ensured regarding the font on visual aids?',
+                  options: [
+                    'It should be an elegant, decorative font that is difficult to read.',
+                    'It must be large and clear enough for everyone to read.',
+                    'It should be smaller than the rest of the text on the slide.',
+                    'It should only be the speaker\'s favorite color.'
+                  ],
+                  correctAnswer: 1,
+                  explanation: 'Use large, readable fonts and clear images so everyone in the audience can see and understand your visuals.'
+                },
+                {
+                  question: 'Why does the lesson recommend using rhetorical or direct questions as a way to engage the audience?',
+                  options: [
+                    'To fill time when the speaker forgets their lines.',
+                    'To encourage participation and interaction.',
+                    'To force the audience to leave the room.',
+                    'To introduce new material into the speech body.'
+                  ],
+                  correctAnswer: 1,
+                  explanation: 'Asking questions encourages participation and interaction, keeping the audience actively engaged with your message.'
+                },
+                {
+                  question: 'Which of the following is not a recommended practice for handling questions during a Q&A session?',
+                  options: [
+                    'Listening carefully to the question.',
+                    'Answering briefly and politely.',
+                    'Giving a lengthy, in-depth explanation for every question.',
+                    'Being honest if you don\'t know the answer.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Answer questions briefly and politely—lengthy explanations for every question can lose audience interest.'
+                },
+                {
+                  question: 'The Key Takeaway of Lesson 5 states that visuals, stories, and interaction make your message what?',
+                  options: [
+                    'Longer and more technical.',
+                    'Subjective and difficult to follow.',
+                    'Memorable and meaningful.',
+                    'More focused on the speaker\'s performance.'
+                  ],
+                  correctAnswer: 2,
+                  explanation: 'Visuals, stories, and interaction make your message memorable and meaningful to the audience.'
+                }
+              ]
+            }
           }
         ],
         quiz: {
           questions: [
             {
-              question: 'What is the main purpose of public speaking?',
+              question: 'What is the primary purpose of public speaking?',
               options: [
                 'To inform, influence, or entertain an audience',
                 'To show off your knowledge',
@@ -338,6 +908,61 @@ export class DataService {
               ],
               correctAnswer: 0,
               explanation: 'Simple slides with minimal text (5-6 lines max) are more effective. Talk to your audience, not at the screen.'
+            },
+            {
+              question: 'What does confidence in public speaking mean?',
+              options: [
+                'You never feel afraid',
+                'You face fear with preparation and practice',
+                'You must be perfect',
+                'You ignore your nervousness'
+              ],
+              correctAnswer: 1,
+              explanation: 'Confidence means facing fear with preparation, practice, and positive thinking—not being fearless.'
+            },
+            {
+              question: 'Why is structure important in a speech?',
+              options: [
+                'It makes the speech longer',
+                'It helps the audience follow your message easily',
+                'It impresses the audience',
+                'It makes you sound smarter'
+              ],
+              correctAnswer: 1,
+              explanation: 'A well-organized structure helps your audience follow and understand your message more easily.'
+            },
+            {
+              question: 'What is the purpose of using pauses in delivery?',
+              options: [
+                'To emphasize key points',
+                'To read your notes',
+                'To signal the end',
+                'To hide nervousness'
+              ],
+              correctAnswer: 0,
+              explanation: 'Pauses emphasize important points and give the audience time to absorb your message.'
+            },
+            {
+              question: 'Which engagement technique helps audiences remember your message best?',
+              options: [
+                'Complex data',
+                'Stories and real-life experiences',
+                'Technical jargon',
+                'Long explanations'
+              ],
+              correctAnswer: 1,
+              explanation: 'People remember stories more than facts—stories create emotional connections and make messages memorable.'
+            },
+            {
+              question: 'What is the key takeaway about public speaking from Topic 1?',
+              options: [
+                'It\'s about perfection',
+                'It\'s about connection and sharing your message clearly',
+                'It\'s about using big words',
+                'It\'s about speaking the longest'
+              ],
+              correctAnswer: 1,
+              explanation: 'Public speaking is about connection—sharing your message clearly and confidently with your audience, not about perfection.'
             }
           ]
         }
