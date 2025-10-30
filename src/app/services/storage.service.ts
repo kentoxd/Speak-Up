@@ -3,7 +3,7 @@ import { Storage } from '@ionic/storage-angular';
 import { DataService } from './data.service';
 import { BehaviorSubject } from 'rxjs';
 import { SavedCustomText } from '../pages/practice/practice.page';
-
+import { Lesson } from './data.service';
 export interface UserProfile {
   name: string;
   email: string;

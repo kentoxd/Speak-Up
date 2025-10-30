@@ -45,8 +45,13 @@ export class QuizResultsPage implements OnInit {
 
   private loadTopic(topicId: string) {
     this.topic = this.dataService.getTopic(topicId) || null;
-    if (this.topic && this.topic.quiz) {
-      this.questions = [...this.topic.quiz.questions];
+    if (this.topic) {
+      this.questions = [];
+      this.topic.lessons.forEach((lesson: Lesson) => {
+        if (lesson.quiz && lesson.quiz.questions) {
+          this.questions.push(...lesson.quiz.questions);
+        }
+      });
     }
   }
 

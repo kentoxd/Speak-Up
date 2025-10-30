@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DataService, Topic, QuizQuestion } from '../../services/data.service';
+import { DataService, Topic, Lesson, QuizQuestion } from '../../services/data.service';
 import { StorageService, TopicProgress } from '../../services/storage.service';
 import { ToastController } from '@ionic/angular';
 
@@ -45,14 +45,21 @@ export class TopicQuizPage implements OnInit {
   }
 
   private async resetQuiz() {
-    if (this.topic && this.topic.quiz) {
+    if (this.topic) {
       // Reset all quiz state
       this.currentQuestionIndex = 0;
       this.quizCompleted = false;
       this.score = 0;
       
-      // Randomize questions for retry
-      this.questions = [...this.topic.quiz.questions].sort(() => Math.random() - 0.5);
+      // Collect all questions from lessons and randomize for retry
+      this.questions = [];
+      this.topic.lessons.forEach((lesson: Lesson) => {
+        if (lesson.quiz && lesson.quiz.questions) {
+          this.questions.push(...lesson.quiz.questions);
+        }
+      });
+      this.questions = this.questions.sort(() => Math.random() - 0.5);
+      
       this.totalQuestions = this.questions.length;
       this.selectedAnswers = new Array(this.totalQuestions).fill(-1);
     }
@@ -60,17 +67,23 @@ export class TopicQuizPage implements OnInit {
 
   private async loadTopic(topicId: string, isRetry: boolean = false) {
     this.topic = this.dataService.getTopic(topicId) || null;
-    if (this.topic && this.topic.quiz) {
+    if (this.topic) {
       // Reset quiz state
       this.currentQuestionIndex = 0;
       this.quizCompleted = false;
       this.score = 0;
       
+      // Collect all quiz questions from all lessons in the topic
+      this.questions = [];
+      this.topic.lessons.forEach((lesson: Lesson) => {
+        if (lesson.quiz && lesson.quiz.questions) {
+          this.questions.push(...lesson.quiz.questions);
+        }
+      });
+      
       // Randomize questions if it's a retry
       if (isRetry) {
-        this.questions = [...this.topic.quiz.questions].sort(() => Math.random() - 0.5);
-      } else {
-        this.questions = [...this.topic.quiz.questions];
+        this.questions = this.questions.sort(() => Math.random() - 0.5);
       }
       
       this.totalQuestions = this.questions.length;
@@ -141,7 +154,6 @@ export class TopicQuizPage implements OnInit {
       }
     }
 
-
     // Auto-navigate to results after showing completion briefly
     setTimeout(() => {
       this.goToResults();
@@ -152,6 +164,7 @@ export class TopicQuizPage implements OnInit {
     if (this.topic) {
       this.router.navigate(['/quiz-results', this.topic.id], {
         queryParams: {
+          type: 'topic',
           score: this.score,
           total: this.totalQuestions,
           answers: JSON.stringify(this.selectedAnswers)
@@ -181,5 +194,4 @@ export class TopicQuizPage implements OnInit {
   getProgress(): number {
     return ((this.currentQuestionIndex + 1) / this.totalQuestions) * 100;
   }
-
 }
