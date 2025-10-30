@@ -1,27 +1,30 @@
 .session-details {
-  margin: 0 16px 16px 16px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  padding: 16px;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 20px;
   animation: slideIn 0.3s ease-out;
 
   p {
     margin: 6px 0;
-    color: var(--ion-color-dark);
+    color: #2c3e50;
     font-size: 0.95rem;
+    font-weight: 500;
 
     strong {
       color: var(--ion-color-primary);
+      font-weight: 600;
     }
   }
 
   h3 {
     margin-top: 12px;
     margin-bottom: 8px;
-    color: var(--ion-color-primary);
-    font-weight: 600;
-    font-size: 1rem;
+    color: #2c3e50;
+    font-weight: 700;
+    font-size: 1.1rem;
   }
 
   ul {
@@ -29,59 +32,65 @@
     padding-left: 20px;
 
     li {
-      margin-bottom: 4px;
-      color: var(--ion-color-medium);
+      margin-bottom: 6px;
+      color: #5a6c7d;
       font-size: 0.9rem;
-      line-height: 1.4;
+      line-height: 1.6;
+      font-weight: 500;
     }
   }
 }
 
-/* Style each session card */
+/* Session List Items */
 ion-item {
   --border-radius: 12px;
   margin: 8px 12px;
-  --background: var(--ion-color-light);
-  transition: all 0.2s ease;
+  --background: rgba(237, 242, 250, 0.6);
+  border-radius: 12px;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(8px);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 
   ion-label {
     h2 {
       font-size: 1.05rem;
       font-weight: 600;
-      color: var(--ion-color-dark);
+      color: #2c3e50;
       margin-bottom: 4px;
     }
 
     p {
-      color: var(--ion-color-dark);
+      color: #5a6c7d;
       font-size: 0.9rem;
+      font-weight: 500;
     }
   }
 }
 
-/* Modal Header */
 ion-header {
   ion-toolbar {
-    --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-primary-shade));
-    --color: white;
-    
+    --background: #EDF2FA;  
+    --color: #2c3e50; 
+    border-radius: 12px 12px 0 0;
+
     ion-title {
-      font-weight: 600;
+      font-weight: 700;
       font-size: 1.2rem;
     }
 
     ion-button {
-      --color: white;
+      --color: #2c3e50
     }
   }
 }
 
-/* Slide-in animation for expanding cards */
+
+
+/* Slide-in Animation */
 @keyframes slideIn {
   from {
     opacity: 0;

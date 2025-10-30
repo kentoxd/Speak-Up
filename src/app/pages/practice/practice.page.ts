@@ -184,6 +184,35 @@ export class PracticePage implements OnInit, OnDestroy {
       return;
     }
 
+    const nameExists = this.savedCustomTexts.some(
+      saved => saved.name.toLowerCase() === this.customTextName.trim().toLowerCase()
+    );
+
+    if (nameExists) {
+      const toast = await this.toastController.create({
+        message: 'A custom text with this name already exists. Please use a different name.',
+        duration: 3000,
+        color: 'warning'
+      });
+      await toast.present();
+      return;
+    }
+
+    // Check for duplicate content
+    const contentExists = this.savedCustomTexts.some(
+      saved => saved.text.trim() === this.customTargetText.trim()
+    );
+
+    if (contentExists) {
+      const toast = await this.toastController.create({
+        message: 'This text content has already been saved. Please enter different text.',
+        duration: 3000,
+        color: 'warning'
+      });
+      await toast.present();
+      return;
+    }
+
     const newCustomText: SavedCustomText = {
       id: Date.now().toString(),
       name: this.customTextName.trim(),

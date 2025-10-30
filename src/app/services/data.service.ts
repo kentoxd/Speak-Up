@@ -4039,21 +4039,22 @@ export class DataService {
   }
   getStructuredPracticeContent(): StructuredPractice[] {
     return [
-      {
-        type: 'monologue',
-        difficulty: 'beginner',
-        title: 'Simple Personal Introduction',
-        description: 'Practice introducing yourself clearly and confidently',
-        practiceText: 'Hello, my name is... I am from... I enjoy...',
-        targetText: 'Hello, my name is [Your Name]. I am from [Your Location]. I enjoy [Your Hobbies] and I am learning public speaking to improve my communication skills.',
-        timeLimit: 60,
-        tips: [
-          'Speak slowly and clearly',
-          'Make eye contact with your audience',
-          'Smile naturally',
-          'Stand with good posture'
-        ]
-      },
+{
+type: 'monologue',
+difficulty: 'beginner',
+title: 'Simple Personal Introduction',
+description: 'Practice delivering a clear and confident short introduction.',
+practiceText: 'Hello, everyone. It’s nice to meet you. I’m excited to be here today.',
+targetText: 'Hello, everyone. It’s nice to meet you. I’m excited to be here today and to have the chance to speak in front of you. I believe public speaking helps us grow more confident and express ourselves better.',
+timeLimit: 60,
+tips: [
+'Speak with a calm and steady tone',
+'Smile as you introduce yourself',
+'Keep your hands relaxed by your sides or use small gestures',
+'Take a deep breath before you start'
+]
+},
+
       {
         type: 'public-speaking',
         difficulty: 'intermediate',
