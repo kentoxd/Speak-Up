@@ -187,3 +187,18 @@
     }
   }
 }
+
+// Keep toolbar title with ellipsis
+ion-header ion-toolbar ion-title {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+// Full title shows in content area
+.content-item h2 {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-wrap: break-word;
+}

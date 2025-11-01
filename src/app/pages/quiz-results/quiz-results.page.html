@@ -5,13 +5,7 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">{{ isLessonQuiz ? 'Lesson Quiz Result' : 'Quiz Result' }}</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <div class="quiz-results-container" *ngIf="topic || lesson">  <!-- Updated: Show if topic OR lesson exists -->
+  <div class="quiz-results-container" *ngIf="topic || lesson">
     
     <!-- Score Summary -->
     <ion-card class="score-card">
@@ -81,6 +75,17 @@
 
     <!-- Action Buttons -->
     <div class="action-buttons">
+      <!-- Next Lesson Button -->
+      <ion-button 
+        fill="solid"
+        color="primary"
+        expand="block"
+        (click)="goToNextLesson()">
+        <ion-icon name="arrow-forward" slot="start"></ion-icon>
+        Next Lesson
+      </ion-button>
+
+      <!-- Back to Lessons Button -->
       <ion-button 
         fill="outline"
         expand="block"
@@ -89,12 +94,13 @@
         Back to Lessons
       </ion-button>
       
+      <!-- Back to Topics Button -->
       <ion-button 
         fill="clear"
         expand="block"
-        (click)="goToLearnTab()">
-        <ion-icon name="school" slot="start"></ion-icon>
-        Back to Learn Tab
+        (click)="backToTopics()">
+        <ion-icon name="grid" slot="start"></ion-icon>
+        Back to Topics
       </ion-button>
     </div>
 

@@ -1,28 +1,16 @@
 // Profile Page Styles - Consistent with Learn Tab
 
-
 ion-content {
   --background: #EDF2FA;
 }
 
 .profile-container {
-  max-width: 960px;
-  width: 100%;
-  margin: 0 auto;
   padding: 16px;
   background: #EDF2FA;
+  min-height: 100vh;
 }
 
-// Header Section
-ion-header {
-  ion-toolbar {
-    ion-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #2c3e50;
-    }
-  }
-}
+
 
 // Profile Header Card
 .profile-header {
@@ -94,7 +82,7 @@ ion-header {
       }
 
       p {
-        margin: 2px 0;
+        margin: 4px 0;
         color: #7f8c8d;
         font-size: 0.85rem;
 
@@ -121,6 +109,39 @@ ion-header {
       border-radius: 12px;
     }
 
+    .avatar-edit-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin: 16px 0;
+      cursor: pointer;
+
+      .avatar-container {
+        position: relative;
+        display: inline-block;
+
+        .avatar-image,
+        .avatar-icon {
+          width: 100px;
+          height: 100px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 4px solid var(--ion-color-primary);
+        }
+
+        .avatar-icon {
+          font-size: 100px;
+          color: #bdc3c7;
+        }
+      }
+
+      .edit-avatar-text {
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+    }
+
     .edit-buttons {
       display: flex;
       gap: 12px;
@@ -141,7 +162,7 @@ ion-header {
 
   h3 {
     margin: 0 0 16px 0;
-    color: rgb(0, 0, 0);
+    color: #000000;
     font-size: 1.5rem;
     font-weight: 600;
   }
@@ -156,12 +177,17 @@ ion-header {
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(10px);
+      margin: 0;
       transition: all 0.3s ease;
       cursor: pointer;
 
       &:hover {
         transform: translateY(-4px);
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+      }
+
+      ion-card-content {
+        padding: 16px;
       }
 
       .stat-header {
@@ -186,6 +212,7 @@ ion-header {
             font-size: 1.5rem;
             font-weight: 600;
             color: #2c3e50;
+            margin: 0;
           }
         }
 
@@ -205,8 +232,7 @@ ion-header {
 // Analytics Section
 .analytics-section {
   margin-bottom: 24px;
-  padding: 16px;
-  background: #EDF2FA;
+
   .analytics-card {
     border-radius: 16px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -258,6 +284,8 @@ ion-header {
 
   ion-progress-bar {
     margin-bottom: 8px;
+    height: 8px;
+    border-radius: 4px;
   }
 
   .progress-text {
@@ -278,12 +306,14 @@ ion-header {
         justify-content: space-between;
         margin-bottom: 8px;
         font-weight: 500;
-        color: #7f8c8d;
-        font-size: 0.8rem;
+        color: #2c3e50;
+        font-size: 0.85rem;
       }
 
       ion-progress-bar {
         margin-bottom: 6px;
+        height: 8px;
+        border-radius: 4px;
       }
 
       p {
@@ -325,6 +355,10 @@ ion-header {
     gap: 12px;
 
     .practice-type-item {
+      padding: 12px;
+      background: rgba(237, 242, 250, 0.4);
+      border-radius: 12px;
+
       .type-header {
         display: flex;
         justify-content: space-between;
@@ -406,9 +440,8 @@ ion-header {
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   background: #ffffff;
-  padding: 20px 16px;
+  padding: 16px;
   transition: all 0.3s ease;
-  width: 100%;
 
   h3 {
     margin: 0 0 12px 0;
@@ -420,9 +453,8 @@ ion-header {
   .achievement-progress {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    margin-bottom: 20px;
     gap: 6px;
+    margin-bottom: 20px;
 
     span {
       font-size: 0.85rem;
@@ -433,9 +465,8 @@ ion-header {
     ion-progress-bar {
       width: 100%;
       height: 8px;
-      border-radius: 10px;
+      border-radius: 4px;
       --progress-background: #f1f2f6;
-      --progress-bar-background: var(--ion-color-warning);
     }
   }
 
@@ -445,13 +476,10 @@ ion-header {
     gap: 12px;
 
     .achievement-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       background: #ffffff;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
       border-radius: 12px;
-      padding: 12px 14px;
+      margin: 0;
       transition: all 0.3s ease;
 
       &:hover {
@@ -459,45 +487,72 @@ ion-header {
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
       }
 
-      .achievement-info {
-        flex: 1;
-
-        h4 {
-          margin: 0 0 4px 0;
-          color: #2c3e50;
-          font-size: 0.9rem;
-          font-weight: 600;
-        }
-
-        p {
-          margin: 0;
-          font-size: 0.8rem;
-          color: #7f8c8d;
-        }
+      ion-card-content {
+        padding: 12px 14px;
       }
 
-      .achievement-status {
-        flex-shrink: 0;
+      .achievement-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
 
-        ion-icon {
-          font-size: 1.2rem;
-          color: var(--ion-color-success);
+        .achievement-info {
+          flex: 1;
+
+          h4 {
+            margin: 0 0 4px 0;
+            color: #2c3e50;
+            font-size: 0.9rem;
+            font-weight: 600;
+          }
+
+          p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+          }
+        }
+
+        .achievement-status {
+          flex-shrink: 0;
+
+          ion-icon {
+            font-size: 1.5rem;
+          }
         }
       }
     }
   }
 
+  .no-achievements {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    text-align: center;
 
+    ion-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
 
+    p {
+      color: #7f8c8d;
+      margin: 0;
+      font-size: 0.9rem;
+    }
+  }
+}
 
 // Settings Section
 .settings-section {
   margin-bottom: 24px;
-  padding: 16px;
-  background: #EDF2FA;
+
   h3 {
     margin: 0 0 16px 0;
-    color: rgb(0, 0, 0);
+    color: #000000;
     font-size: 1.5rem;
     font-weight: 600;
   }
@@ -528,9 +583,15 @@ ion-header {
       ion-item {
         --padding-start: 16px;
         --padding-end: 16px;
+        --inner-padding-end: 0;
+        --min-height: 60px;
+
+        ion-icon {
+          margin-right: 12px;
+        }
 
         h3 {
-          margin: 0;
+          margin: 0 0 2px 0;
           color: #2c3e50;
           font-weight: 600;
           font-size: 0.95rem;
@@ -539,7 +600,7 @@ ion-header {
         p {
           margin: 0;
           color: #7f8c8d;
-          font-size: 0.85rem;
+          font-size: 0.8rem;
         }
       }
     }
@@ -557,29 +618,21 @@ ion-header {
     text-align: center;
   }
 
-  .stats-list {
-    gap: 12px;
-  }
-
   .practice-stats {
     grid-template-columns: 1fr;
-  }
-
-  .achievements-list {
-    gap: 12px;
-  }
-
-  .settings-list {
-    gap: 10px;
   }
 }
 
 @media (max-width: 480px) {
   .profile-container {
-    padding: 8px;
+    padding: 12px;
   }
 
-  .profile-header {
+  .profile-header,
+  .stats-section,
+  .analytics-section,
+  .achievements-section,
+  .settings-section {
     margin-bottom: 16px;
   }
 
@@ -611,6 +664,4 @@ ion-header {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-}
-
 }

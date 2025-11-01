@@ -1,19 +1,15 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/tabs/lessons"></ion-back-button>
+    <ion-button (click)="goBack()">
+        <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+      </ion-button>
     </ion-buttons>
     <ion-title>{{ topic?.title || 'Topic' }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">{{ topic?.title || 'Topic' }}</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
   <div class="topic-lessons-container" *ngIf="topic">
     
     <!-- Topic Header -->

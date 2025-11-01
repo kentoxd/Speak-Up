@@ -9,13 +9,13 @@ import { DataService, Topic, Lesson, QuizQuestion } from '../../services/data.se
 })
 export class QuizResultsPage implements OnInit {
   topic: Topic | null = null;
-  lesson: Lesson | null = null;  // Add support for lessons
+  lesson: Lesson | null = null;
   questions: QuizQuestion[] = [];
   userAnswers: number[] = [];
   score = 0;
   totalQuestions = 0;
   percentage = 0;
-  isLessonQuiz = false;  // Flag to distinguish lesson vs. topic quiz
+  isLessonQuiz = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -24,9 +24,9 @@ export class QuizResultsPage implements OnInit {
   ) { }
 
   ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id');  // Could be topicId or lessonId
+    const id = this.route.snapshot.paramMap.get('id');
     const queryParams = this.route.snapshot.queryParams;
-    const type = queryParams['type'];  // Add 'type' param: 'topic' or 'lesson'
+    const type = queryParams['type'];
     
     if (id && type === 'lesson') {
       this.isLessonQuiz = true;
@@ -55,14 +55,13 @@ export class QuizResultsPage implements OnInit {
     }
   }
 
-  private loadLesson(lessonId: string) {  // New method for lessons
+  private loadLesson(lessonId: string) {
     this.lesson = this.dataService.getLesson(lessonId) || null;
     if (this.lesson && this.lesson.quiz) {
       this.questions = [...this.lesson.quiz.questions];
     }
   }
 
-  // Rest of the methods remain the same...
   isCorrectAnswer(questionIndex: number, answerIndex: number): boolean {
     return this.questions[questionIndex]?.correctAnswer === answerIndex;
   }
@@ -82,7 +81,6 @@ export class QuizResultsPage implements OnInit {
 
   tryAgain() {
     if (this.isLessonQuiz && this.lesson) {
-      // Navigate to lesson content and signal to randomize quiz
       this.router.navigate(['/lesson-content', this.lesson.id], {
         queryParams: { retry: 'true', randomize: 'true' }
       });
@@ -93,16 +91,45 @@ export class QuizResultsPage implements OnInit {
     }
   }
 
-  backToLessons() {
-    if (this.isLessonQuiz && this.lesson) {
-      this.router.navigate(['/tabs/lessons']);  // Or specific lesson list
-    } else if (this.topic) {
-      this.router.navigate(['/topic-lessons', this.topic.id]);
+  // NEW: Navigate to next lesson
+  goToNextLesson() {
+    if (this.lesson) {
+      // Get all lessons from the topic
+      const allLessons = this.dataService.getAllLessons();
+      const currentIndex = allLessons.findIndex(l => l.id === this.lesson?.id);
+      
+      // Find next lesson
+      if (currentIndex !== -1 && currentIndex < allLessons.length - 1) {
+        const nextLesson = allLessons[currentIndex + 1];
+        this.router.navigate(['/lesson-content', nextLesson.id]);
+      } else {
+        // No next lesson available, go back to lessons
+        this.backToLessons();
+      }
     }
   }
 
-  goToLearnTab() {
+  // UPDATED: Back to Lessons (list of lessons for the current topic)
+  backToLessons() {
+    if (this.lesson && this.lesson.topicId) {
+      // Navigate to lessons page for this lesson's topic
+      this.router.navigate(['/topic-lessons', this.lesson.topicId]);
+    } else if (this.topic) {
+      // Navigate to lessons page for this topic
+      this.router.navigate(['/topic-lessons', this.topic.id]);
+    } else {
+      // Fallback to lessons tab
+      this.router.navigate(['/tabs/lessons']);
+    }
+  }
+
+  // NEW: Back to Topics (main learn/topics page)
+  backToTopics() {
     this.router.navigate(['/tabs/lessons']);
+  }
+
+  goToLearnTab() {
+    this.router.navigate(['/tabs/topic-lessons']);
   }
 
   getScoreMessage(): string {
