@@ -1,0 +1,259 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Settings</ion-title>
+    <ion-buttons slot="start">
+      <ion-button fill="clear" routerLink="/tabs/profile">
+        <ion-icon name="arrow-back" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="settings-container" *ngIf="preferences">
+    
+    <!-- Practice Preferences Section -->
+    <ion-card class="settings-section">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="settings" color="primary"></ion-icon>
+          Practice Preferences
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item>
+            <ion-label>
+              <h3>Auto-start Recording</h3>
+              <p>Automatically start recording when practice begins</p>
+            </ion-label>
+            <ion-toggle
+              [(ngModel)]="preferences.autoStartRecording"
+              (ionChange)="updatePreference('autoStartRecording', $event.detail.checked)">
+            </ion-toggle>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>
+              <h3>Recording Quality</h3>
+              <p>Audio quality for recordings</p>
+            </ion-label>
+            <ion-select
+              [(ngModel)]="preferences.recordingQuality"
+              (ionChange)="updatePreference('recordingQuality', $event.detail.value)"
+              interface="popover">
+              <ion-select-option value="low">Low (faster processing)</ion-select-option>
+              <ion-select-option value="medium">Medium (balanced)</ion-select-option>
+              <ion-select-option value="high">High (best quality)</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>
+              <h3>Feedback Detail Level</h3>
+              <p>How detailed should feedback be? (1 = minimal, 10 = comprehensive)</p>
+            </ion-label>
+            <ion-range
+              [(ngModel)]="preferences.feedbackDetailLevel"
+              (ionChange)="updatePreference('feedbackDetailLevel', $event.detail.value)"
+              min="1"
+              max="10"
+              step="1"
+              snaps="true"
+              ticks="true">
+              <ion-label slot="start">1</ion-label>
+              <ion-label slot="end">10</ion-label>
+            </ion-range>
+            <ion-label slot="end" class="range-value">{{ preferences.feedbackDetailLevel }}</ion-label>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>
+              <h3>Show Tips by Default</h3>
+              <p>Display helpful tips during practice sessions</p>
+            </ion-label>
+            <ion-toggle
+              [(ngModel)]="preferences.showTips"
+              (ionChange)="updatePreference('showTips', $event.detail.checked)">
+            </ion-toggle>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Notifications Section -->
+    <ion-card class="settings-section">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="notifications" color="primary"></ion-icon>
+          Notifications
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item>
+            <ion-label>
+              <h3>Practice Reminders</h3>
+              <p>Get notified to practice regularly</p>
+            </ion-label>
+            <ion-toggle
+              [(ngModel)]="preferences.notifications.practiceReminders"
+              (ionChange)="updateNestedPreference('notifications', 'practiceReminders', $event.detail.checked)">
+            </ion-toggle>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>
+              <h3>Achievement Alerts</h3>
+              <p>Notify when you earn achievements</p>
+            </ion-label>
+            <ion-toggle
+              [(ngModel)]="preferences.notifications.achievementAlerts"
+              (ionChange)="updateNestedPreference('notifications', 'achievementAlerts', $event.detail.checked)">
+            </ion-toggle>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>
+              <h3>Weekly Progress Summary</h3>
+              <p>Receive weekly progress reports</p>
+            </ion-label>
+            <ion-toggle
+              [(ngModel)]="preferences.notifications.weeklyProgressSummary"
+              (ionChange)="updateNestedPreference('notifications', 'weeklyProgressSummary', $event.detail.checked)">
+            </ion-toggle>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Privacy & Data Section -->
+    <ion-card class="settings-section">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="shield-checkmark" color="primary"></ion-icon>
+          Privacy & Data
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item>
+            <ion-label>
+              <h3>Share Anonymous Usage Data</h3>
+              <p>Help improve SpeakUp by sharing anonymous usage statistics</p>
+            </ion-label>
+            <ion-toggle
+              [(ngModel)]="preferences.privacy.shareAnonymousUsageData"
+              (ionChange)="updateNestedPreference('privacy', 'shareAnonymousUsageData', $event.detail.checked)">
+            </ion-toggle>
+          </ion-item>
+
+          <ion-item button (click)="clearPracticeHistory()" lines="none">
+            <ion-icon name="trash" slot="start" color="danger"></ion-icon>
+            <ion-label>
+              <h3>Clear Practice History</h3>
+              <p>Delete all saved practice sessions</p>
+            </ion-label>
+          </ion-item>
+
+          <ion-item button (click)="exportData()" [disabled]="isLoading" lines="none">
+            <ion-icon name="download" slot="start" color="primary"></ion-icon>
+            <ion-label>
+              <h3>Export My Data</h3>
+              <p>Download your data as JSON</p>
+            </ion-label>
+            <ion-spinner *ngIf="isLoading" name="crescent" slot="end"></ion-spinner>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Accessibility Section -->
+    <ion-card class="settings-section">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="accessibility" color="primary"></ion-icon>
+          Accessibility
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item>
+            <ion-label>
+              <h3>Font Size</h3>
+              <p>Adjust text size for better readability</p>
+            </ion-label>
+            <ion-select
+              [(ngModel)]="preferences.accessibility.fontSize"
+              (ionChange)="updateNestedPreference('accessibility', 'fontSize', $event.detail.value)"
+              interface="popover">
+              <ion-select-option value="small">Small</ion-select-option>
+              <ion-select-option value="medium">Medium</ion-select-option>
+              <ion-select-option value="large">Large</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>
+              <h3>High Contrast Mode</h3>
+              <p>Increase contrast for better visibility</p>
+            </ion-label>
+            <ion-toggle
+              [(ngModel)]="preferences.accessibility.highContrastMode"
+              (ionChange)="updateNestedPreference('accessibility', 'highContrastMode', $event.detail.checked)">
+            </ion-toggle>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>
+              <h3>Screen Reader Optimizations</h3>
+              <p>Enhanced support for screen readers</p>
+            </ion-label>
+            <ion-toggle
+              [(ngModel)]="preferences.accessibility.screenReaderOptimizations"
+              (ionChange)="updateNestedPreference('accessibility', 'screenReaderOptimizations', $event.detail.checked)">
+            </ion-toggle>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- About Section -->
+    <ion-card class="settings-section">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="information-circle" color="primary"></ion-icon>
+          About
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item>
+            <ion-label>
+              <h3>App Version</h3>
+              <p>1.0.0</p>
+            </ion-label>
+          </ion-item>
+
+          <ion-item button (click)="resetPreferences()" lines="none">
+            <ion-icon name="refresh" slot="start" color="warning"></ion-icon>
+            <ion-label>
+              <h3>Reset Preferences</h3>
+              <p>Reset all settings to default values</p>
+            </ion-label>
+          </ion-item>
+
+          <ion-item button (click)="deleteAccount()" lines="none">
+            <ion-icon name="trash" slot="start" color="danger"></ion-icon>
+            <ion-label>
+              <h3>Delete Account</h3>
+              <p>Permanently delete your account and all data</p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+  </div>
+</ion-content>
+

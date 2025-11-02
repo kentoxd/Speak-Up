@@ -1,8 +1,48 @@
 ion-tab-bar {
-  --background: var(--ion-color-primary);
-  --color: var(--ion-color-primary-contrast);
+  --background: var(--ion-color-light);
+  --color: var(--ion-color-medium);
+  border-top: 1px solid var(--ion-color-light-shade);
 }
 
 ion-tab-button {
-  --color-selected: var(--ion-color-secondary);
+  --color: var(--ion-color-medium);
+  --color-selected: var(--ion-color-primary);
+  transition: all 0.3s ease;
+  opacity: 1 !important; /* Ensure all tabs are visible */
+  
+  ion-icon {
+    color: var(--color);
+    transition: all 0.3s ease;
+  }
+  
+  ion-label {
+    color: var(--color);
+    transition: all 0.3s ease;
+    font-size: 0.75rem;
+  }
+  
+  &.active {
+    --color: var(--ion-color-primary);
+    --color-selected: var(--ion-color-primary);
+    
+    ion-icon {
+      color: var(--ion-color-primary);
+      transform: scale(1.15);
+    }
+    
+    ion-label {
+      color: var(--ion-color-primary);
+      font-weight: 600;
+    }
+  }
+  
+  &:not(.active) {
+    --color: var(--ion-color-medium);
+    
+    ion-icon,
+    ion-label {
+      color: var(--ion-color-medium);
+      opacity: 0.8;
+    }
+  }
 }

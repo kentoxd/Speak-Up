@@ -14,6 +14,8 @@ export class SignInPageComponent implements OnInit {
   showPassword = false;
   isLoading = false;
   rememberMe = false;
+  emailTouched = false;
+  passwordTouched = false;
 
   constructor(
     private router: Router,
@@ -112,13 +114,66 @@ export class SignInPageComponent implements OnInit {
 
   getFieldError(fieldName: string): string {
     const field = this.signInForm.get(fieldName);
-    if (field?.errors && field.touched) {
+    if (!field) return '';
+    
+    // Show errors if field is touched or if form was submitted
+    if (field.errors && (field.touched || this.isLoading)) {
       if (field.errors['required']) {
         return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
       }
       if (field.errors['email']) {
         return 'Please enter a valid email address';
       }
+    }
+    return '';
+  }
+
+  onEmailBlur() {
+    this.emailTouched = true;
+  }
+
+  onPasswordBlur() {
+    this.passwordTouched = true;
+  }
+
+  onEmailInput() {
+    // Validate on input for real-time feedback
+    const emailField = this.signInForm.get('email');
+    if (emailField && this.emailTouched) {
+      emailField.updateValueAndValidity();
+    }
+  }
+
+  onPasswordInput() {
+    // Validate on input for real-time feedback
+    const passwordField = this.signInForm.get('password');
+    if (passwordField && this.passwordTouched) {
+      passwordField.updateValueAndValidity();
+    }
+  }
+
+  getPasswordStrength(): { strength: string; color: string } {
+    const password = this.signInForm.get('password')?.value || '';
+    if (!password) return { strength: '', color: '' };
+    
+    if (password.length < 6) {
+      return { strength: 'Weak', color: 'danger' };
+    } else if (password.length < 8) {
+      return { strength: 'Fair', color: 'warning' };
+    } else if (password.length < 12) {
+      return { strength: 'Good', color: 'success' };
+    } else {
+      return { strength: 'Strong', color: 'success' };
+    }
+  }
+
+  getEmailValidationMessage(): string {
+    const email = this.signInForm.get('email')?.value || '';
+    if (!email) {
+      return 'Email is required';
+    }
+    if (this.signInForm.get('email')?.hasError('email')) {
+      return 'Please enter a valid email address (e.g., user@example.com)';
     }
     return '';
   }

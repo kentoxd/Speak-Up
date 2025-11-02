@@ -146,6 +146,10 @@ export class StorageService {
     await this._storage?.set('practiceHistory', history);
   }
 
+  async clearPracticeHistory(): Promise<void> {
+    await this._storage?.remove('practiceHistory');
+  }
+
   // Streak tracking
   async updateStreak(): Promise<number> {
     const today = new Date().toDateString();

@@ -5,7 +5,13 @@ import { SpeechService, SpeechRecognitionResult } from '../../services/speech.se
 import { StorageService } from '../../services/storage.service';
 import { UserProgressionService } from '../../services/user-progression.service';
 import { AuthService } from '../../services/auth.service';
+import { ErrorHandlerService, ErrorType } from '../../services/error-handler.service';
+import { PracticeStateService } from '../../services/practice-state.service';
+import { UndoService, UndoActionType } from '../../services/undo.service';
+import { PreferencesService } from '../../services/preferences.service';
+import { KeyboardShortcutsService } from '../../services/keyboard-shortcuts.service';
 import { FeedbackModalComponent } from '../../components/feedback-modal/feedback-modal.component';
+import { SessionCompleteComponent } from '../../components/session-complete/session-complete.component';
 import { PracticeHistoryModalComponent } from './practice-history-modal.component';
 
 export interface SavedCustomText {
@@ -66,6 +72,16 @@ export class PracticePage implements OnInit, OnDestroy {
   isPlayingRecording = false;
   currentRecordingBlob: Blob | null = null;
   currentRecordingUrl: string | null = null;
+  
+  // Context indicator properties
+  recordingDuration = 0;
+  recordingStartTime = 0;
+  wordCount = 0;
+  showTargetText = true; // Toggle for sticky target text visibility
+  
+  // Step tracking
+  currentPracticeStep = 1; // 1: Select Type, 2: Set Difficulty, 3: Start Practice
+  previousSessionAccuracy: number | undefined = undefined;
 
   constructor(
     private dataService: DataService,
@@ -77,21 +93,44 @@ export class PracticePage implements OnInit, OnDestroy {
     private toastController: ToastController,
     private modalController: ModalController,
     private cdr: ChangeDetectorRef,
+    private errorHandler: ErrorHandlerService,
+    private practiceStateService: PracticeStateService,
+    private undoService: UndoService,
+    private preferencesService: PreferencesService,
+    private keyboardShortcuts: KeyboardShortcutsService
   ) { }
 
   async ngOnInit() {
     this.exercises = this.dataService.getPracticeExercises();
     await this.loadPracticeHistory();
     await this.loadSavedCustomTexts();
+    
+    // Subscribe to keyboard shortcuts
+    this.keyboardShortcuts.shortcut$.subscribe(shortcut => {
+      this.handleKeyboardShortcut(shortcut);
+    });
+    
+    // Restore practice state if available
+    const savedState = this.practiceStateService.getState();
+    if (savedState && savedState.isActive) {
+      if (savedState.practiceType && savedState.difficulty) {
+        this.selectedPracticeType = savedState.practiceType;
+        this.selectedDifficulty = savedState.difficulty;
+      }
+      if (savedState.customText) {
+        this.customTextName = savedState.customText.name;
+        this.customTargetText = savedState.customText.text;
+        this.useCustomText = true;
+      }
+    }
+    
     this.loadStructuredPractice();
     
     if (!this.speechService.isSpeechRecognitionSupported()) {
-      const toast = await this.toastController.create({
-        message: 'Speech Recognition not supported in this browser. Please use Chrome, Edge, or Safari.',
-        duration: 5000,
-        color: 'warning'
-      });
-      await toast.present();
+      await this.errorHandler.showError(
+        new Error('Speech Recognition not supported'),
+        ErrorType.SPEECH_RECOGNITION_NOT_SUPPORTED
+      );
     }
     
     this.authService.getCurrentUser().subscribe(async user => {
@@ -118,18 +157,84 @@ export class PracticePage implements OnInit, OnDestroy {
 
   setPracticeReady() {
     this.isPracticeReady = true;
+    this.currentPracticeStep = 3; // Move to step 3 (ready to start)
   }
 
   onPracticeTypeChange(event: any) {
     this.selectedPracticeType = event.detail.value;
     this.isPracticeReady = false;
+    this.currentPracticeStep = 1; // Reset to step 1
     this.loadStructuredPractice();
+    // Save state
+    this.practiceStateService.updatePracticeSetup(this.selectedPracticeType, this.selectedDifficulty);
   }
 
   onDifficultyChange(event: any) {
     this.selectedDifficulty = event.detail.value;
     this.isPracticeReady = false;
+    this.currentPracticeStep = 2; // Move to step 2 (difficulty selected)
     this.loadStructuredPractice();
+    // Save state
+    this.practiceStateService.updatePracticeSetup(this.selectedPracticeType, this.selectedDifficulty);
+  }
+  
+  onStepChange(step: number) {
+    this.currentPracticeStep = step;
+    if (step === 1) {
+      // Reset to type selection
+      this.isPracticeReady = false;
+    } else if (step === 2) {
+      // Move to difficulty selection
+      this.isPracticeReady = false;
+    }
+  }
+  
+  getPracticeStepLabels(): string[] {
+    return ['Select Type', 'Set Difficulty', 'Start Practice'];
+  }
+  
+  shouldShowTips(): boolean {
+    return this.preferencesService.getPreferences().showTips;
+  }
+  
+  private handleKeyboardShortcut(shortcut: any): void {
+    switch (shortcut.action) {
+      case 'practice:start-recording':
+        if (this.isPracticing && !this.isRecording) {
+          this.startStructuredRecording();
+        } else if (this.isRecording) {
+          this.stopStructuredRecording();
+        }
+        break;
+      case 'practice:stop-practice':
+        if (this.isPracticing) {
+          this.stopStructuredPractice();
+        }
+        break;
+      case 'practice:retry':
+        if (this.userSpeechText) {
+          this.clearSpeech();
+        }
+        break;
+      case 'show-help':
+        this.showKeyboardShortcutsHelp();
+        break;
+    }
+  }
+  
+  async showKeyboardShortcutsHelp(): Promise<void> {
+    const shortcuts = this.keyboardShortcuts.getShortcutsByCategory('practice');
+    const shortcutText = shortcuts.map(s => 
+      `${this.keyboardShortcuts.formatShortcutDisplay(s)}: ${s.description}`
+    ).join('\n');
+    
+    const alert = await this.alertController.create({
+      header: 'Keyboard Shortcuts',
+      message: shortcutText || 'No shortcuts available',
+      buttons: ['OK']
+    });
+    
+    await alert.present();
   }
 
   loadStructuredPractice() {
@@ -138,22 +243,67 @@ export class PracticePage implements OnInit, OnDestroy {
         this.selectedPracticeType, 
         this.selectedDifficulty
       );
+      // Update step based on whether practice is ready
+      if (this.currentStructuredPractice && this.isPracticeReady) {
+        this.currentPracticeStep = 3;
+      } else if (this.selectedDifficulty && this.selectedPracticeType) {
+        this.currentPracticeStep = 2;
+      } else {
+        this.currentPracticeStep = 1;
+      }
     }
   }
 
-  startStructuredPractice() {
+  async startStructuredPractice() {
     this.isPracticing = true;
     this.sessionResults = null;
-    this.startStructuredRecording();
+    this.currentPracticeStep = 3;
+    
+    // Check if auto-start is enabled in preferences
+    const prefs = this.preferencesService.getPreferences();
+    if (prefs.autoStartRecording) {
+      // Auto-start recording if preference is enabled
+      await this.startStructuredRecording();
+    }
+    // Otherwise, user must click "START RECORDING" button
   }
 
-  stopStructuredPractice() {
+  async stopStructuredPractice() {
+    // Show confirmation if there's unsaved progress
+    if (this.userSpeechText && this.userSpeechText.trim() !== '' && this.userSpeechText !== '🎤 Listening...') {
+      const alert = await this.alertController.create({
+        header: 'End Practice Session?',
+        message: 'Your progress will be saved. Are you sure you want to end this practice session?',
+        buttons: [
+          {
+            text: 'Cancel',
+            role: 'cancel'
+          },
+          {
+            text: 'End Session',
+            role: 'destructive',
+            handler: () => {
+              this.endPracticeSessionNow();
+            }
+          }
+        ]
+      });
+      
+      await alert.present();
+    } else {
+      this.endPracticeSessionNow();
+    }
+  }
+  
+  private endPracticeSessionNow() {
     this.isPracticing = false;
     this.isRecording = false;
     this.userSpeechText = '';
     this.sessionResults = null;
     this.showFeedback = false;
     this.timeRemaining = 0;
+    this.currentPracticeStep = 1;
+    this.practiceStateService.clearState();
   }
 
   cleanWord(word: string): string {
@@ -179,17 +329,14 @@ export class PracticePage implements OnInit, OnDestroy {
         practiceText: this.customTargetText
       };
       this.isPracticeReady = true;
+      // Save state
+      this.practiceStateService.updateCustomText(displayName, this.customTargetText);
     }
   }
 
   async saveCustomText() {
     if (this.customTargetText.trim().length < 10 || this.customTextName.trim().length === 0) {
-      const toast = await this.toastController.create({
-        message: 'Please enter both a name and text (minimum 10 characters)',
-        duration: 2000,
-        color: 'warning'
-      });
-      await toast.present();
+      await this.errorHandler.showWarning('Please enter both a name and text (minimum 10 characters)');
       return;
     }
 
@@ -198,12 +345,7 @@ export class PracticePage implements OnInit, OnDestroy {
     );
 
     if (nameExists) {
-      const toast = await this.toastController.create({
-        message: 'A custom text with this name already exists. Please use a different name.',
-        duration: 3000,
-        color: 'warning'
-      });
-      await toast.present();
+      await this.errorHandler.showWarning('A custom text with this name already exists. Please use a different name.');
       return;
     }
 
@@ -213,12 +355,7 @@ export class PracticePage implements OnInit, OnDestroy {
     );
 
     if (contentExists) {
-      const toast = await this.toastController.create({
-        message: 'This text content has already been saved. Please enter different text.',
-        duration: 3000,
-        color: 'warning'
-      });
-      await toast.present();
+      await this.errorHandler.showWarning('This text content has already been saved. Please enter different text.');
       return;
     }
 
@@ -235,12 +372,7 @@ export class PracticePage implements OnInit, OnDestroy {
     // Clear form and setup the practice
     this.setupCustomText();
 
-    const toast = await this.toastController.create({
-      message: `"${newCustomText.name}" saved successfully!`,
-      duration: 2000,
-      color: 'success'
-    });
-    await toast.present();
+    await this.errorHandler.showSuccess(`"${newCustomText.name}" saved successfully!`);
   }
 
   async loadSavedCustomText(saved: SavedCustomText) {
@@ -248,15 +380,13 @@ export class PracticePage implements OnInit, OnDestroy {
     this.customTargetText = saved.text;
     this.setupCustomText();
 
-    const toast = await this.toastController.create({
-      message: `Loaded "${saved.name}"`,
-      duration: 1500,
-      color: 'success'
-    });
-    await toast.present();
+    await this.errorHandler.showSuccess(`Loaded "${saved.name}"`);
   }
 
   async deleteSavedCustomText(id: string) {
+    const savedText = this.savedCustomTexts.find(t => t.id === id);
+    if (!savedText) return;
+
     const alert = await this.alertController.create({
       header: 'Delete Custom Text',
       message: 'Are you sure you want to delete this saved text?',
@@ -269,15 +399,20 @@ export class PracticePage implements OnInit, OnDestroy {
           text: 'Delete',
           role: 'destructive',
           handler: async () => {
+            // Register undo action before deleting
+            this.undoService.registerAction(
+              UndoActionType.DELETE_CUSTOM_TEXT,
+              { text: savedText },
+              `"${savedText.name}" deleted`,
+              async (data: any) => {
+                // Undo: restore the deleted text
+                await this.storageService.addSavedCustomText(data.text);
+                await this.loadSavedCustomTexts();
+              }
+            );
+
             await this.storageService.deleteSavedCustomText(id);
             await this.loadSavedCustomTexts();
-            
-            const toast = await this.toastController.create({
-              message: 'Custom text deleted',
-              duration: 2000,
-              color: 'success'
-            });
-            await toast.present();
           }
         }
       ]
@@ -299,12 +434,10 @@ export class PracticePage implements OnInit, OnDestroy {
       });
     } catch (error) {
       console.error('Error speaking text:', error);
-      const toast = await this.toastController.create({
-        message: 'Unable to play audio. Please check your browser settings.',
-        duration: 2000,
-        color: 'warning'
-      });
-      await toast.present();
+      await this.errorHandler.showError(
+        error,
+        ErrorType.AUDIO_PLAYBACK_FAILURE
+      );
     } finally {
       this.isListeningToText = false;
     }
@@ -323,12 +456,9 @@ export class PracticePage implements OnInit, OnDestroy {
       const audioUrl = this.speechService.getAudioUrl();
       
       if (!audioBlob && !audioUrl) {
-        const toast = await this.toastController.create({
-          message: 'No audio recording available to play. Please record your speech first.',
-          duration: 3000,
-          color: 'warning'
-        });
-        await toast.present();
+        await this.errorHandler.showWarning(
+          'No audio recording available to play. Please record your speech first.'
+        );
         return;
       }
       
@@ -348,12 +478,9 @@ export class PracticePage implements OnInit, OnDestroy {
     
     // Verify we have something to play
     if (!this.currentRecordingBlob && !this.currentRecordingUrl) {
-      const toast = await this.toastController.create({
-        message: 'Audio recording is not available. Please record again.',
-        duration: 3000,
-        color: 'warning'
-      });
-      await toast.present();
+      await this.errorHandler.showWarning(
+        'Audio recording is not available. Please record again.'
+      );
       return;
     }
     
@@ -366,20 +493,10 @@ export class PracticePage implements OnInit, OnDestroy {
       console.log('Recording playback completed successfully');
     } catch (error: any) {
       console.error('Error playing recording:', error);
-      const errorMessage = error?.message || 'Unable to play audio recording. Please try recording again.';
-      
-      const toast = await this.toastController.create({
-        message: errorMessage,
-        duration: 4000,
-        color: 'danger',
-        buttons: [
-          {
-            text: 'OK',
-            role: 'cancel'
-          }
-        ]
-      });
-      await toast.present();
+      await this.errorHandler.showError(
+        error,
+        ErrorType.AUDIO_PLAYBACK_FAILURE
+      );
     } finally {
       this.isPlayingRecording = false;
       this.cdr.detectChanges();
@@ -439,7 +556,33 @@ export class PracticePage implements OnInit, OnDestroy {
     return phoneticMap[cleanWord] || `/${cleanWord}/`; // Fallback to word itself
   }
 
-  clearSpeech() {
+  async clearSpeech() {
+    if (!this.userSpeechText || this.userSpeechText.trim() === '' || this.userSpeechText === '🎤 Listening...') {
+      return;
+    }
+
+    const speechToClear = this.userSpeechText;
+    const audioBlob = this.currentRecordingBlob;
+    const audioUrl = this.currentRecordingUrl;
+
+    // Register undo action before clearing
+    this.undoService.registerAction(
+      UndoActionType.CLEAR_SPEECH,
+      { text: speechToClear, audioBlob, audioUrl },
+      'Speech cleared',
+      async (data: any) => {
+        // Undo: restore the speech
+        this.userSpeechText = data.text;
+        if (data.audioUrl) {
+          this.currentRecordingUrl = data.audioUrl;
+        }
+        if (data.audioBlob) {
+          this.currentRecordingBlob = data.audioBlob;
+        }
+        this.cdr.detectChanges();
+      }
+    );
+
     this.userSpeechText = '';
     // Clean up audio recording
     if (this.currentRecordingUrl) {
@@ -467,12 +610,7 @@ export class PracticePage implements OnInit, OnDestroy {
 
   async showDetailedFeedback() {
     if (!this.sessionResults || !this.currentStructuredPractice) {
-      const toast = await this.toastController.create({
-        message: 'No speech recorded. Please record first.',
-        duration: 2000,
-        color: 'warning'
-      });
-      await toast.present();
+      await this.errorHandler.showWarning('No speech recorded. Please record first.');
       return;
     }
 
@@ -480,12 +618,7 @@ export class PracticePage implements OnInit, OnDestroy {
     const targetText = this.currentStructuredPractice.targetText;
 
     if (!userTranscript || userTranscript.trim() === '') {
-      const toast = await this.toastController.create({
-        message: 'No speech text found. Please record again.',
-        duration: 2000,
-        color: 'warning'
-      });
-      await toast.present();
+      await this.errorHandler.showWarning('No speech text found. Please record again.');
       return;
     }
 
@@ -555,6 +688,52 @@ export class PracticePage implements OnInit, OnDestroy {
 
     await modal.present();
     this.showFeedback = true;
+    
+    // Wait for modal to dismiss, then show session complete
+    const { data } = await modal.onDidDismiss();
+    
+    // Show session complete modal
+    await this.showSessionComplete({
+      accuracy: overallAccuracy,
+      duration: this.sessionResults.duration / 1000, // Convert ms to seconds
+      wordsSpoken: userWords,
+      previousAccuracy: this.previousSessionAccuracy,
+      practiceType: this.selectedPracticeType
+    });
+    
+    // Store this accuracy for next comparison
+    this.previousSessionAccuracy = overallAccuracy;
+  }
+  
+  private async showSessionComplete(data: {
+    accuracy: number;
+    duration: number;
+    wordsSpoken: number;
+    previousAccuracy?: number;
+    practiceType: string;
+  }) {
+    const modal = await this.modalController.create({
+      component: SessionCompleteComponent,
+      componentProps: data,
+      cssClass: 'session-complete-modal'
+    });
+    
+    await modal.present();
+    
+    const { data: result } = await modal.onDidDismiss();
+    
+    // Handle action from session complete modal
+    if (result?.action === 'tryAgain') {
+      // Reset and start again
+      this.userSpeechText = '';
+      this.sessionResults = null;
+      this.showFeedback = false;
+      this.startStructuredPractice();
+    } else if (result?.action === 'viewHistory') {
+      await this.viewHistoryWithFeedback();
+    } else if (result?.action === 'startNew') {
+      this.endPracticeSessionNow();
+    }
   }
 
   async startExercise(exercise: PracticeExercise) {
@@ -600,12 +779,10 @@ export class PracticePage implements OnInit, OnDestroy {
 
   async startRecording() {
     if (!this.speechService.isSpeechRecognitionSupported()) {
-      const toast = await this.toastController.create({
-        message: 'Speech Recognition not supported. Please use Chrome, Edge, or Safari.',
-        duration: 3000,
-        color: 'danger'
-      });
-      await toast.present();
+      await this.errorHandler.showError(
+        new Error('Speech Recognition not supported'),
+        ErrorType.SPEECH_RECOGNITION_NOT_SUPPORTED
+      );
       return;
     }
 
@@ -630,12 +807,13 @@ export class PracticePage implements OnInit, OnDestroy {
       console.error('Recording error:', error);
       this.isRecording = false;
       
-      const toast = await this.toastController.create({
-        message: 'Recording failed. Please try again.',
-        duration: 2000,
-        color: 'danger'
-      });
-      await toast.present();
+      await this.errorHandler.showError(
+        error,
+        ErrorType.RECORDING_FAILED,
+        async () => {
+          await this.startRecording();
+        }
+      );
     }
   }
 
@@ -670,12 +848,7 @@ export class PracticePage implements OnInit, OnDestroy {
       await this.loadPracticeHistory();
     }
 
-    const toast = await this.toastController.create({
-      message: 'Practice session completed!',
-      duration: 2000,
-      color: 'success'
-    });
-    await toast.present();
+    await this.errorHandler.showSuccess('Practice session completed!');
   }
 
   stopPractice() {
@@ -694,12 +867,7 @@ export class PracticePage implements OnInit, OnDestroy {
 
   async viewHistoryWithFeedback() {
     if (this.practiceHistory.length === 0) {
-      const toast = await this.toastController.create({
-        message: 'No practice sessions yet. Start practicing to see your history!',
-        duration: 2000,
-        color: 'warning'
-      });
-      await toast.present();
+      await this.errorHandler.showInfo('No practice sessions yet. Start practicing to see your history!');
       return;
     }
 
@@ -735,6 +903,18 @@ export class PracticePage implements OnInit, OnDestroy {
       
       await this.speechService.startRecording();
       this.isRecording = true;
+      this.recordingStartTime = Date.now();
+      this.recordingDuration = 0;
+      this.wordCount = 0;
+      
+      // Start recording duration timer
+      const durationInterval = setInterval(() => {
+        if (this.isRecording) {
+          this.recordingDuration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+        } else {
+          clearInterval(durationInterval);
+        }
+      }, 1000);
       
       // Update transcript more frequently and ensure UI updates
       const transcriptInterval = setInterval(() => {
@@ -745,6 +925,11 @@ export class PracticePage implements OnInit, OnDestroy {
             const formattedText = currentTranscript.trim() !== '' 
               ? this.capitalizeFirstLetter(currentTranscript)
               : '🎤 Listening...';
+            
+            // Update word count
+            if (formattedText !== '🎤 Listening...') {
+              this.wordCount = formattedText.split(/\s+/).filter(w => w.length > 0).length;
+            }
             
             // Only update if text has changed to avoid unnecessary change detection
             if (this.userSpeechText !== formattedText) {
@@ -768,12 +953,13 @@ export class PracticePage implements OnInit, OnDestroy {
       console.error('Recording error:', error);
       this.isRecording = false;
       
-      const toast = await this.toastController.create({
-        message: 'Recording failed. Please try again.',
-        duration: 2000,
-        color: 'danger'
-      });
-      await toast.present();
+      await this.errorHandler.showError(
+        error,
+        ErrorType.RECORDING_FAILED,
+        async () => {
+          await this.startStructuredRecording();
+        }
+      );
     }
   }
 
@@ -800,17 +986,17 @@ export class PracticePage implements OnInit, OnDestroy {
       // Check if transcript is empty
       if (!finalTranscript || finalTranscript.trim() === '' || finalTranscript === '🎤 Listening...') {
         console.error('❌ Empty transcript detected!');
-        const toast = await this.toastController.create({
-          message: 'No speech detected. Please speak clearly and try again. Make sure your microphone is working.',
-          duration: 4000,
-          color: 'warning',
-          buttons: [{
-            text: 'OK',
-            role: 'cancel'
-          }]
-        });
-        await toast.present();
         this.userSpeechText = '';
+        
+        await this.errorHandler.showError(
+          new Error('Empty transcript'),
+          ErrorType.EMPTY_TRANSCRIPT,
+          async () => {
+            // Retry: Start recording again
+            await this.startStructuredRecording();
+          }
+        );
+        
         return; // Exit early if no speech detected
       }
       
@@ -855,13 +1041,9 @@ export class PracticePage implements OnInit, OnDestroy {
       // Show warning if no audio available
       if (!audioBlob && !audioUrl) {
         console.warn('⚠️ No audio recording available');
-        const toast = await this.toastController.create({
-          message: 'Audio recording may not be available for playback. Speech recognition worked correctly.',
-          duration: 3000,
-          color: 'warning',
-          position: 'bottom'
-        });
-        await toast.present();
+        await this.errorHandler.showWarning(
+          'Audio recording may not be available for playback. Speech recognition worked correctly.'
+        );
       }
       
       this.handleStructuredRecordingResult(result);
@@ -873,21 +1055,19 @@ export class PracticePage implements OnInit, OnDestroy {
       if (finalTranscript && finalTranscript.trim() !== '') {
         this.userSpeechText = this.capitalizeFirstLetter(finalTranscript);
         
-        const toast = await this.toastController.create({
-          message: 'Speech captured but audio recording failed. You can still get feedback.',
-          duration: 3000,
-          color: 'warning'
-        });
-        await toast.present();
+        await this.errorHandler.showWarning(
+          'Speech captured but audio recording failed. You can still get feedback.'
+        );
         this.cdr.detectChanges();
       } else {
         // Show error if both transcript and audio failed
-        const toast = await this.toastController.create({
-          message: 'Recording failed. No speech was detected. Please try again.',
-          duration: 3000,
-          color: 'danger'
-        });
-        await toast.present();
+        await this.errorHandler.showError(
+          new Error('Recording and transcript failed'),
+          ErrorType.RECORDING_FAILED,
+          async () => {
+            await this.startStructuredRecording();
+          }
+        );
       }
     }
   }
@@ -905,6 +1085,10 @@ export class PracticePage implements OnInit, OnDestroy {
       difficulty: this.selectedDifficulty,
       timestamp: new Date().toISOString()
     };
+
+    // Save session to storage
+    await this.storageService.addPracticeSession(this.sessionResults);
+    await this.loadPracticeHistory();
 
     if (this.sessionResults && this.currentStructuredPractice) {
       const accuracy = this.calculateOverallAccuracy({
@@ -964,11 +1148,9 @@ export class PracticePage implements OnInit, OnDestroy {
   }
 
   private async showSpeechRecognitionError() {
-    const alert = await this.alertController.create({
-      header: 'Speech Recognition Not Supported',
-      message: 'Your browser does not support speech recognition. Please use: Chrome, Edge, or Safari.',
-      buttons: ['OK']
-    });
-    await alert.present();
+    await this.errorHandler.showError(
+      new Error('Speech Recognition not supported'),
+      ErrorType.SPEECH_RECOGNITION_NOT_SUPPORTED
+    );
   }
 }

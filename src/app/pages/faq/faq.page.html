@@ -23,7 +23,7 @@
     <div class="faq-list">
       <ion-card *ngFor="let faq of faqs; let i = index" class="faq-card">
         <ion-card-content>
-          <ion-item button (click)="toggleFAQ(i)" lines="none" class="faq-item">
+          <ion-item (click)="toggleFAQ(i)" lines="none" class="faq-item">
             <ion-label>
               <h3>{{ faq.question }}</h3>
             </ion-label>

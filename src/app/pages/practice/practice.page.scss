@@ -459,6 +459,18 @@ ion-content {
   }
 
   .target-text-card {
+    &.sticky {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      margin-bottom: 16px;
+    }
+    
+    ion-card-content.hidden {
+      display: none;
+    }
+    
     .target-text-container {
       background: rgba(237, 242, 250, 0.6);
       padding: 20px;
@@ -601,6 +613,21 @@ ion-content {
       }
     }
   }
+
+// For smaller screens
+@media (max-width: 360px) {
+  ::ng-deep app-step-indicator {
+    .step-label,
+    .step-label span {
+      font-size: 9px !important;
+    }
+    
+    .step-item {
+      min-width: 70px !important;
+      max-width: 80px !important;
+    }
+  }
+}
 
   .feedback-section {
     ion-button {

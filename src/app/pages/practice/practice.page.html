@@ -5,6 +5,30 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
+  <!-- Undo Toast Component (manages undo toasts) -->
+  <app-undo-toast></app-undo-toast>
+  
+  <!-- Breadcrumb Navigation -->
+  <app-breadcrumb></app-breadcrumb>
+  
+  <!-- Recording Indicator (Fixed top position during recording) -->
+  <app-recording-indicator
+    [isRecording]="isRecording"
+    [duration]="recordingDuration"
+    [wordCount]="wordCount"
+    [showAudioLevel]="true">
+  </app-recording-indicator>
+  
+  <!-- Context Indicator (shown during practice) -->
+  <app-context-indicator
+    [isVisible]="isPracticing && !isRecording"
+    [label]="'Practice Session'"
+    [value]="currentStructuredPractice?.title || ''"
+    [secondaryText]="(selectedDifficulty | titlecase) + ' • ' + (selectedPracticeType | titlecase)"
+    [icon]="'play-circle'"
+    [iconColor]="'primary'">
+  </app-context-indicator>
+  
   <div class="practice-container">
 
     <!-- Structured Practice Selection -->
@@ -26,6 +50,15 @@
           </ion-button>
         </div>
         <p>Select practice type and difficulty to get targeted speaking exercises with personalized feedback.</p>
+        
+        <!-- Step Indicator -->
+        <app-step-indicator
+          [totalSteps]="3"
+          [currentStep]="currentPracticeStep"
+          [stepLabels]="getPracticeStepLabels()"
+          [allowBackNavigation]="true"
+          (stepChange)="onStepChange($event)">
+        </app-step-indicator>
         
         <!-- Instructions Dropdown -->
         <div class="instructions-dropdown" *ngIf="showInstructions">
@@ -264,6 +297,9 @@
               <ion-icon name="play" slot="start"></ion-icon>
               START PRACTICE
             </ion-button>
+            <p class="practice-note" style="text-align: center; margin-top: 0.5rem; color: var(--ion-color-medium); font-size: 0.875rem;">
+              Click "START RECORDING" when you're ready to begin speaking
+            </p>
           </ion-card-content>
         </ion-card>
       </div>
@@ -301,15 +337,23 @@
         <h2>{{ currentStructuredPractice?.title }}</h2>
       </div>
 
-      <!-- Target Text Container -->
-      <ion-card class="target-text-card">
+      <!-- Target Text Container (Sticky during recording) -->
+      <ion-card class="target-text-card" [class.sticky]="isRecording">
         <ion-card-header>
           <ion-card-title>
             <ion-icon name="document-text" color="primary"></ion-icon>
             Target Text
+            <ion-button 
+              *ngIf="isRecording" 
+              fill="clear" 
+              size="small" 
+              slot="end"
+              (click)="showTargetText = !showTargetText">
+              <ion-icon [name]="showTargetText ? 'chevron-up' : 'chevron-down'" slot="icon-only"></ion-icon>
+            </ion-button>
           </ion-card-title>
         </ion-card-header>
-        <ion-card-content>
+        <ion-card-content [class.hidden]="!showTargetText && isRecording">
           <div class="target-text-container">
             <p class="target-text" *ngIf="currentStructuredPractice?.targetText">
               <span 
@@ -427,7 +471,7 @@
       </ion-card>
 
       <!-- Tips Card -->
-      <ion-card class="tips-card" *ngIf="currentStructuredPractice?.tips">
+      <ion-card class="tips-card" *ngIf="currentStructuredPractice?.tips && shouldShowTips()">
         <ion-card-header>
           <ion-card-title>
             <ion-icon name="bulb" color="warning"></ion-icon>
