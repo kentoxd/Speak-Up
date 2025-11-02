@@ -43,15 +43,32 @@ h1 {
   font-size: 32px;
   color: inherit;
   margin: 0;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-wrap: break-word;
+  line-height: 1.3;
 }
 
-/* Section Headings (H2) - Inter Semibold 24px */
+/* Section Headings (H2) - Inter Semibold 24px - Center only in headers/toolbars */
+ion-toolbar h2,
+.back-button-container + * h2,
+h2:first-child {
+  text-align: center !important;
+}
+
 h2 {
   font-family: 'Inter', sans-serif;
   font-weight: 600;
   font-size: 24px;
   color: inherit;
   margin: 0;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-wrap: break-word;
+  line-height: 1.3;
 }
 
 /* Subheadings (H3) - Inter Semibold 18px */
@@ -61,6 +78,11 @@ h3 {
   font-size: 18px;
   color: inherit;
   margin: 0;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-wrap: break-word;
+  line-height: 1.4;
 }
 
 /* Body Text - Noto Sans Regular 16px */
@@ -135,6 +157,27 @@ ion-toolbar {
   --background: var(--ion-toolbar-background);
   --color: var(--ion-toolbar-color);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  ion-title {
+    text-align: center !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    word-wrap: break-word;
+    line-height: 1.3;
+    padding: 0.5rem 1rem 0.5rem 0;
+  }
+}
+
+/* Global Back Button Container Styling */
+.back-button-container {
+  padding: 0.5rem 1rem;
+  
+  ion-button {
+    margin: -10px;
+    font-size: 0.95rem;
+    color: black;
+  }
 }
 
 

@@ -6,6 +6,14 @@
 
 <ion-content [fullscreen]="true">
 
+  <!-- Back Button -->
+  <div class="back-button-container" *ngIf="topic">
+    <ion-button fill="clear" (click)="goBack()">
+      <ion-icon slot="start" name="chevron-back"></ion-icon>
+      Back
+    </ion-button>
+  </div>
+
   <div class="lesson-container" *ngIf="topic && getCurrentQuestion() && !quizCompleted">
     
     <!-- Progress Header -->

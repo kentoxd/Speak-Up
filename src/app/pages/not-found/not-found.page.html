@@ -5,6 +5,15 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
+  
+  <!-- Back Button -->
+  <div class="back-button-container">
+    <ion-button fill="clear" (click)="goBack()">
+      <ion-icon slot="start" name="chevron-back"></ion-icon>
+      Back
+    </ion-button>
+  </div>
+  
   <div class="not-found-container">
     
     <div class="error-content">

@@ -36,6 +36,7 @@ export class SpeechService {
   private currentAudioBlob: Blob | null = null;
   private currentAudioUrl: string | null = null;
   private audioPlayer: HTMLAudioElement | null = null;
+  private recordingStopResolve: (() => void) | null = null;
 
   constructor() {
     this.synthesis = window.speechSynthesis;
@@ -83,19 +84,52 @@ export class SpeechService {
       };
       
       this.mediaRecorder.onstop = async () => {
-        // Create blob from chunks
-        this.currentAudioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-        
-        // Clean up previous URL if exists
-        if (this.currentAudioUrl) {
-          URL.revokeObjectURL(this.currentAudioUrl);
+        // Ensure we have chunks before creating blob
+        if (this.audioChunks.length > 0) {
+          try {
+            // Create blob from chunks - try webm first, fallback to generic audio
+            let mimeType = 'audio/webm';
+            if (!MediaRecorder.isTypeSupported('audio/webm')) {
+              // Try alternatives
+              if (MediaRecorder.isTypeSupported('audio/ogg')) {
+                mimeType = 'audio/ogg';
+              } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                mimeType = 'audio/mp4';
+              } else {
+                mimeType = 'audio/webm'; // Default fallback
+              }
+            }
+            
+            this.currentAudioBlob = new Blob(this.audioChunks, { type: mimeType });
+            
+            // Clean up previous URL if exists
+            if (this.currentAudioUrl) {
+              URL.revokeObjectURL(this.currentAudioUrl);
+            }
+            this.currentAudioUrl = URL.createObjectURL(this.currentAudioBlob);
+            
+            console.log('Audio recording saved:', {
+              blobSize: this.currentAudioBlob.size,
+              mimeType: mimeType,
+              url: this.currentAudioUrl
+            });
+          } catch (error) {
+            console.error('Error creating audio blob:', error);
+          }
+        } else {
+          console.warn('No audio chunks available to create blob');
         }
-        this.currentAudioUrl = URL.createObjectURL(this.currentAudioBlob);
         
         // Stop all tracks
         if (this.audioStream) {
           this.audioStream.getTracks().forEach(track => track.stop());
           this.audioStream = null;
+        }
+        
+        // Resolve the stopRecording promise if waiting
+        if (this.recordingStopResolve) {
+          this.recordingStopResolve();
+          this.recordingStopResolve = null;
         }
       };
       
@@ -168,48 +202,51 @@ export class SpeechService {
     if (!text || !this.targetText) {
       return text;
     }
-
+  
     const userWords = text.split(/\s+/);
     const targetWords = this.targetText.toLowerCase().split(/\s+/);
     let result = '';
     let targetIndex = 0;
-
+  
     for (let i = 0; i < userWords.length; i++) {
       const userWord = userWords[i].toLowerCase().replace(/[.,!?;:]/g, '');
       
       if (!userWord) continue;
-
+  
       let foundMatch = false;
+      let matchedWord = userWords[i]; // Keep original by default
       let matchedPunctuation = '';
-
+  
       // Try to find matching word in target (with fuzzy matching)
       for (let j = targetIndex; j < Math.min(targetIndex + 5, targetWords.length); j++) {
         const targetWord = targetWords[j].toLowerCase();
         const cleanTargetWord = targetWord.replace(/[.,!?;:]/g, '');
         const punctuation = targetWord.match(/[.,!?;:]+$/)?.[0] || '';
-
+  
         // Exact match or similar match
         if (userWord === cleanTargetWord || this.isSimilarWord(userWord, cleanTargetWord)) {
+          // USE THE CORRECT WORD FROM TARGET TEXT instead of user's word
+          matchedWord = cleanTargetWord;
           matchedPunctuation = punctuation;
           targetIndex = j + 1;
           foundMatch = true;
-          console.log(`✓ Word match: "${userWord}" → "${cleanTargetWord}" (punctuation: "${punctuation}")`);
+          console.log(`✓ Word corrected: "${userWord}" → "${cleanTargetWord}" (punctuation: "${punctuation}")`);
           break;
         }
       }
-
-      // Add word with punctuation
+  
+      // Add corrected word with punctuation
       if (result) result += ' ';
-      result += userWords[i];
-
+      result += matchedWord;
+  
       if (foundMatch && matchedPunctuation) {
         result += matchedPunctuation;
-      } else if (!isInterim && i === userWords.length - 1 && !userWords[i].match(/[.!?;:]$/)) {
+      } else if (!isInterim && i === userWords.length - 1 && !matchedWord.match(/[.!?;:]$/)) {
         // Add default period to last word if no match found
         result += '.';
       }
     }
-
+  
     return result;
   }
 
@@ -270,8 +307,20 @@ export class SpeechService {
   }
   
   async playRecording(): Promise<void> {
-    if (!this.currentAudioUrl) {
+    // Check for audio URL or blob
+    if (!this.currentAudioUrl && !this.currentAudioBlob) {
       throw new Error('No recording available to play');
+    }
+    
+    // Create URL from blob if we don't have one
+    let audioUrl = this.currentAudioUrl;
+    if (!audioUrl && this.currentAudioBlob) {
+      audioUrl = URL.createObjectURL(this.currentAudioBlob);
+      this.currentAudioUrl = audioUrl;
+    }
+    
+    if (!audioUrl) {
+      throw new Error('No audio URL available to play');
     }
     
     return new Promise((resolve, reject) => {
@@ -281,10 +330,47 @@ export class SpeechService {
         this.audioPlayer = null;
       }
       
-      this.audioPlayer = new Audio(this.currentAudioUrl!);
-      this.audioPlayer.onended = () => resolve();
-      this.audioPlayer.onerror = (error) => reject(error);
-      this.audioPlayer.play().catch(reject);
+      this.audioPlayer = new Audio(audioUrl!);
+      
+      // Set up event handlers
+      this.audioPlayer.onended = () => {
+        console.log('Audio playback completed');
+        resolve();
+      };
+      
+      this.audioPlayer.onerror = (error) => {
+        console.error('Audio error:', error, this.audioPlayer?.error);
+        const errorCode = this.audioPlayer?.error?.code;
+        let errorMessage = 'Unknown error';
+        
+        switch (errorCode) {
+          case MediaError.MEDIA_ERR_ABORTED:
+            errorMessage = 'Playback aborted';
+            break;
+          case MediaError.MEDIA_ERR_NETWORK:
+            errorMessage = 'Network error';
+            break;
+          case MediaError.MEDIA_ERR_DECODE:
+            errorMessage = 'Audio decode error';
+            break;
+          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+            errorMessage = 'Audio format not supported';
+            break;
+        }
+        
+        reject(new Error(`Audio playback failed: ${errorMessage}`));
+      };
+      
+      this.audioPlayer.onloadeddata = () => {
+        console.log('Audio data loaded, starting playback');
+        this.audioPlayer!.play().catch((playError) => {
+          console.error('Error starting playback:', playError);
+          reject(playError);
+        });
+      };
+      
+      // Start loading
+      this.audioPlayer.load();
     });
   }
   
@@ -314,17 +400,27 @@ export class SpeechService {
     return this.recordingStartTime > 0 ? Date.now() - this.recordingStartTime : 0;
   }
 
-  stopRecording(): void {
-    if (this.recognition && this.isRecording) {
-      this.recognition.stop();
-    }
-    
-    // Stop audio recording
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      this.mediaRecorder.stop();
-    }
-    
-    this.isRecording = false;
+  stopRecording(): Promise<void> {
+    return new Promise((resolve) => {
+      // Stop speech recognition
+      if (this.recognition && this.isRecording) {
+        this.recognition.stop();
+      }
+      
+      // Stop audio recording and wait for it to finish
+      if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+        // Store resolve function to call when onstop fires
+        this.recordingStopResolve = () => {
+          this.isRecording = false;
+          // Small delay to ensure blob is fully created
+          setTimeout(() => resolve(), 100);
+        };
+        this.mediaRecorder.stop();
+      } else {
+        this.isRecording = false;
+        resolve();
+      }
+    });
   }
 
   getIsRecording(): boolean {

@@ -324,8 +324,8 @@ export class PracticePage implements OnInit, OnDestroy {
       
       if (!audioBlob && !audioUrl) {
         const toast = await this.toastController.create({
-          message: 'No audio recording available to play.',
-          duration: 2000,
+          message: 'No audio recording available to play. Please record your speech first.',
+          duration: 3000,
           color: 'warning'
         });
         await toast.present();
@@ -334,25 +334,55 @@ export class PracticePage implements OnInit, OnDestroy {
       
       if (audioBlob) {
         this.currentRecordingBlob = audioBlob;
+        console.log('Loaded audio blob from service:', audioBlob.size, 'bytes');
       }
       if (audioUrl) {
+        // Clean up previous URL if exists
+        if (this.currentRecordingUrl) {
+          URL.revokeObjectURL(this.currentRecordingUrl);
+        }
         this.currentRecordingUrl = audioUrl;
+        console.log('Loaded audio URL from service');
       }
+    }
+    
+    // Verify we have something to play
+    if (!this.currentRecordingBlob && !this.currentRecordingUrl) {
+      const toast = await this.toastController.create({
+        message: 'Audio recording is not available. Please record again.',
+        duration: 3000,
+        color: 'warning'
+      });
+      await toast.present();
+      return;
     }
     
     try {
       this.isPlayingRecording = true;
+      this.cdr.detectChanges();
+      
+      console.log('Attempting to play recording...');
       await this.speechService.playRecording();
-    } catch (error) {
+      console.log('Recording playback completed successfully');
+    } catch (error: any) {
       console.error('Error playing recording:', error);
+      const errorMessage = error?.message || 'Unable to play audio recording. Please try recording again.';
+      
       const toast = await this.toastController.create({
-        message: 'Unable to play audio recording. Please try recording again.',
-        duration: 2000,
-        color: 'warning'
+        message: errorMessage,
+        duration: 4000,
+        color: 'danger',
+        buttons: [
+          {
+            text: 'OK',
+            role: 'cancel'
+          }
+        ]
       });
       await toast.present();
     } finally {
       this.isPlayingRecording = false;
+      this.cdr.detectChanges();
     }
   }
   
@@ -706,17 +736,31 @@ export class PracticePage implements OnInit, OnDestroy {
       await this.speechService.startRecording();
       this.isRecording = true;
       
+      // Update transcript more frequently and ensure UI updates
       const transcriptInterval = setInterval(() => {
         if (this.isRecording) {
           const currentTranscript = this.speechService.getCurrentTranscript();
-          if (currentTranscript && currentTranscript.trim() !== '') {
-            this.userSpeechText = this.capitalizeFirstLetter(currentTranscript);
+          if (currentTranscript) {
+            // Always update, even if empty, to show "Listening..." state
+            const formattedText = currentTranscript.trim() !== '' 
+              ? this.capitalizeFirstLetter(currentTranscript)
+              : '🎤 Listening...';
+            
+            // Only update if text has changed to avoid unnecessary change detection
+            if (this.userSpeechText !== formattedText) {
+              this.userSpeechText = formattedText;
+              this.cdr.detectChanges();
+              console.log('Transcript updated:', formattedText.substring(0, 50) + '...');
+            }
+          } else if (!this.userSpeechText || this.userSpeechText === '') {
+            // Show listening state if no transcript yet
+            this.userSpeechText = '🎤 Listening...';
             this.cdr.detectChanges();
           }
         } else {
           clearInterval(transcriptInterval);
         }
-      }, 100);
+      }, 100); // Check every 100ms for real-time updates
       
       (this as any).transcriptInterval = transcriptInterval;
       
@@ -733,8 +777,7 @@ export class PracticePage implements OnInit, OnDestroy {
     }
   }
 
-  stopStructuredRecording() {
-    this.speechService.stopRecording();
+  async stopStructuredRecording() {
     this.isRecording = false;
     
     if ((this as any).transcriptInterval) {
@@ -742,33 +785,111 @@ export class PracticePage implements OnInit, OnDestroy {
       (this as any).transcriptInterval = null;
     }
     
-    // Wait a bit longer for MediaRecorder to finish processing the blob
-    setTimeout(() => {
+    // Wait for recording to stop properly (including MediaRecorder)
+    try {
+      await this.speechService.stopRecording();
+      
+      // Wait longer for MediaRecorder to finish processing the blob
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
       const result = this.speechService.getRecordingResult();
       const finalTranscript = this.speechService.getCurrentTranscript();
       console.log('%cFinal transcript with punctuation:', 'color: lime; font-weight: bold', finalTranscript);
+      console.log('%cTranscript length:', 'color: orange; font-weight: bold', finalTranscript.length);
+      
+      // Check if transcript is empty
+      if (!finalTranscript || finalTranscript.trim() === '' || finalTranscript === '🎤 Listening...') {
+        console.error('❌ Empty transcript detected!');
+        const toast = await this.toastController.create({
+          message: 'No speech detected. Please speak clearly and try again. Make sure your microphone is working.',
+          duration: 4000,
+          color: 'warning',
+          buttons: [{
+            text: 'OK',
+            role: 'cancel'
+          }]
+        });
+        await toast.present();
+        this.userSpeechText = '';
+        return; // Exit early if no speech detected
+      }
+      
+      // Get audio with multiple attempts
+      let audioBlob = result.audioBlob || this.speechService.getAudioBlob();
+      let audioUrl = result.audioUrl || this.speechService.getAudioUrl();
+      
+      // Retry getting blob if not available yet
+      if (!audioBlob) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        audioBlob = this.speechService.getAudioBlob();
+      }
+      
+      console.log('%cAudio blob available:', 'color: lime; font-weight: bold', !!audioBlob, 'Size:', audioBlob?.size);
       
       this.userSpeechText = this.capitalizeFirstLetter(finalTranscript);
       console.log('%cFinal userSpeechText:', 'color: lime; font-weight: bold', this.userSpeechText);
       
-      // Store the audio recording for playback (check both result and service directly)
-      const audioBlob = result.audioBlob || this.speechService.getAudioBlob();
-      const audioUrl = result.audioUrl || this.speechService.getAudioUrl();
-      
+      // Store the audio recording for playback
       if (audioBlob) {
         this.currentRecordingBlob = audioBlob;
+        console.log('✓ Audio blob stored:', audioBlob.size, 'bytes');
+        
+        // Create URL from blob if not available
+        if (!audioUrl) {
+          if (this.currentRecordingUrl) {
+            URL.revokeObjectURL(this.currentRecordingUrl);
+          }
+          this.currentRecordingUrl = URL.createObjectURL(audioBlob);
+          console.log('✓ Audio URL created from blob');
+        }
       }
+      
       if (audioUrl) {
-        // Clean up previous URL if exists
-        if (this.currentRecordingUrl) {
+        if (this.currentRecordingUrl && this.currentRecordingUrl !== audioUrl) {
           URL.revokeObjectURL(this.currentRecordingUrl);
         }
         this.currentRecordingUrl = audioUrl;
+        console.log('✓ Audio URL stored:', audioUrl);
+      }
+      
+      // Show warning if no audio available
+      if (!audioBlob && !audioUrl) {
+        console.warn('⚠️ No audio recording available');
+        const toast = await this.toastController.create({
+          message: 'Audio recording may not be available for playback. Speech recognition worked correctly.',
+          duration: 3000,
+          color: 'warning',
+          position: 'bottom'
+        });
+        await toast.present();
       }
       
       this.handleStructuredRecordingResult(result);
       this.cdr.detectChanges();
-    }, 300); // Increased timeout to allow MediaRecorder to process
+    } catch (error) {
+      console.error('Error stopping recording:', error);
+      // Still try to get transcript even if audio fails
+      const finalTranscript = this.speechService.getCurrentTranscript();
+      if (finalTranscript && finalTranscript.trim() !== '') {
+        this.userSpeechText = this.capitalizeFirstLetter(finalTranscript);
+        
+        const toast = await this.toastController.create({
+          message: 'Speech captured but audio recording failed. You can still get feedback.',
+          duration: 3000,
+          color: 'warning'
+        });
+        await toast.present();
+        this.cdr.detectChanges();
+      } else {
+        // Show error if both transcript and audio failed
+        const toast = await this.toastController.create({
+          message: 'Recording failed. No speech was detected. Please try again.',
+          duration: 3000,
+          color: 'danger'
+        });
+        await toast.present();
+      }
+    }
   }
 
   private async handleStructuredRecordingResult(result: SpeechRecognitionResult) {

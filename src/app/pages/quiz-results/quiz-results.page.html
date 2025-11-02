@@ -5,6 +5,15 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
+  
+  <!-- Back Button -->
+  <div class="back-button-container" *ngIf="topic || lesson">
+    <ion-button fill="clear" (click)="backToLessons()">
+      <ion-icon slot="start" name="chevron-back"></ion-icon>
+      Back
+    </ion-button>
+  </div>
+  
   <div class="quiz-results-container" *ngIf="topic || lesson">
     
     <!-- Score Summary -->
