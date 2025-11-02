@@ -4,6 +4,9 @@ import { DataService } from './data.service';
 import { BehaviorSubject } from 'rxjs';
 import { SavedCustomText } from '../pages/practice/practice.page';
 import { Lesson } from './data.service';
+import { UserProgressionService } from './user-progression.service';
+import { AuthService } from './auth.service';
+import { take } from 'rxjs/operators';
 export interface UserProfile {
   name: string;
   email: string;
@@ -44,7 +47,12 @@ export class StorageService {
   private topicProgressChanged = new BehaviorSubject<string | null>(null);
   public topicProgressChanged$ = this.topicProgressChanged.asObservable();
 
-  constructor(private storage: Storage, private dataService: DataService) {
+  constructor(
+    private storage: Storage, 
+    private dataService: DataService,
+    private userProgressionService: UserProgressionService,
+    private authService: AuthService
+  ) {
     this.init();
   }
 
@@ -71,20 +79,60 @@ export class StorageService {
     await this._storage?.set('hasSeenWelcome', true);
   }
 
-  // Lesson Progress
+  // Lesson Progress - Uses Firebase when user is logged in
   async getLessonProgress(lessonId: string): Promise<LessonProgress | null> {
-    const allProgress = await this._storage?.get('lessonProgress') || {};
-    return allProgress[lessonId] || null;
+    // Check if user is logged in
+    const user = await this.authService.getCurrentUser().pipe(take(1)).toPromise();
+    
+    if (user) {
+      // Use Firebase
+      const fbProgress = await this.userProgressionService.getLessonProgress(lessonId);
+      if (fbProgress) {
+        // Convert Firebase format to storage format (remove userId)
+        const { userId, ...progress } = fbProgress;
+        return progress;
+      }
+      return null;
+    } else {
+      // Fallback to local storage
+      const allProgress = await this._storage?.get('lessonProgress') || {};
+      return allProgress[lessonId] || null;
+    }
   }
 
   async setLessonProgress(lessonId: string, progress: LessonProgress): Promise<void> {
-    const allProgress = await this._storage?.get('lessonProgress') || {};
-    allProgress[lessonId] = progress;
-    await this._storage?.set('lessonProgress', allProgress);
+    // Check if user is logged in
+    const user = await this.authService.getCurrentUser().pipe(take(1)).toPromise();
+    
+    if (user) {
+      // Use Firebase
+      await this.userProgressionService.setLessonProgress(lessonId, progress);
+    } else {
+      // Fallback to local storage
+      const allProgress = await this._storage?.get('lessonProgress') || {};
+      allProgress[lessonId] = progress;
+      await this._storage?.set('lessonProgress', allProgress);
+    }
   }
 
   async getAllLessonProgress(): Promise<{[key: string]: LessonProgress}> {
-    return await this._storage?.get('lessonProgress') || {};
+    // Check if user is logged in
+    const user = await this.authService.getCurrentUser().pipe(take(1)).toPromise();
+    
+    if (user) {
+      // Use Firebase
+      const fbProgress = await this.userProgressionService.getAllLessonProgress();
+      // Convert Firebase format to storage format (remove userId from each)
+      const progress: {[key: string]: LessonProgress} = {};
+      Object.keys(fbProgress).forEach(key => {
+        const { userId, ...prog } = fbProgress[key];
+        progress[key] = prog;
+      });
+      return progress;
+    } else {
+      // Fallback to local storage
+      return await this._storage?.get('lessonProgress') || {};
+    }
   }
 
   // Practice History
@@ -125,23 +173,63 @@ export class StorageService {
     return await this._storage?.get('currentStreak') || 0;
   }
 
-  // Topic Progress
+  // Topic Progress - Uses Firebase when user is logged in
   async getTopicProgress(topicId: string): Promise<TopicProgress | null> {
-    const allProgress = await this._storage?.get('topicProgress') || {};
-    return allProgress[topicId] || null;
+    // Check if user is logged in
+    const user = await this.authService.getCurrentUser().pipe(take(1)).toPromise();
+    
+    if (user) {
+      // Use Firebase
+      const fbProgress = await this.userProgressionService.getTopicProgress(topicId);
+      if (fbProgress) {
+        // Convert Firebase format to storage format (remove userId)
+        const { userId, ...progress } = fbProgress;
+        return progress;
+      }
+      return null;
+    } else {
+      // Fallback to local storage
+      const allProgress = await this._storage?.get('topicProgress') || {};
+      return allProgress[topicId] || null;
+    }
   }
 
   async setTopicProgress(topicId: string, progress: TopicProgress): Promise<void> {
-    const allProgress = await this._storage?.get('topicProgress') || {};
-    allProgress[topicId] = progress;
-    await this._storage?.set('topicProgress', allProgress);
+    // Check if user is logged in
+    const user = await this.authService.getCurrentUser().pipe(take(1)).toPromise();
+    
+    if (user) {
+      // Use Firebase
+      await this.userProgressionService.setTopicProgress(topicId, progress);
+    } else {
+      // Fallback to local storage
+      const allProgress = await this._storage?.get('topicProgress') || {};
+      allProgress[topicId] = progress;
+      await this._storage?.set('topicProgress', allProgress);
+    }
     
     // Notify subscribers of progress change
     this.topicProgressChanged.next(topicId);
   }
 
   async getAllTopicProgress(): Promise<{[key: string]: TopicProgress}> {
-    return await this._storage?.get('topicProgress') || {};
+    // Check if user is logged in
+    const user = await this.authService.getCurrentUser().pipe(take(1)).toPromise();
+    
+    if (user) {
+      // Use Firebase
+      const fbProgress = await this.userProgressionService.getAllTopicProgress();
+      // Convert Firebase format to storage format (remove userId from each)
+      const progress: {[key: string]: TopicProgress} = {};
+      Object.keys(fbProgress).forEach(key => {
+        const { userId, ...prog } = fbProgress[key];
+        progress[key] = prog;
+      });
+      return progress;
+    } else {
+      // Fallback to local storage
+      return await this._storage?.get('topicProgress') || {};
+    }
   }
 
   async updateTopicProgress(topicId: string, lessonCompleted: boolean): Promise<TopicProgress> {

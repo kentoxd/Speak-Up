@@ -311,7 +311,22 @@
           </ion-card-title>
         </ion-card-header>
         <ion-card-content>
-          <p class="target-text">{{ currentStructuredPractice?.targetText }}</p>
+          <div class="target-text-container">
+            <p class="target-text" *ngIf="currentStructuredPractice?.targetText">
+              <span 
+                *ngFor="let word of getWordsArray(currentStructuredPractice?.targetText); let i = index" 
+                [class.highlighted]="highlightedWord === cleanWord(word)"
+                [class.clickable-word]="true"
+                (click)="speakWord(word, $event)"
+                class="word-span">
+                {{ word }}<span *ngIf="i < getWordsArray(currentStructuredPractice?.targetText).length - 1">&nbsp;</span>
+              </span>
+            </p>
+            <div class="phonetic-guide" *ngIf="phoneticGuide">
+              <ion-icon name="information-circle"></ion-icon>
+              <span>{{ phoneticGuide }}</span>
+            </div>
+          </div>
           
           <div class="listen-controls">
             <ion-button 
@@ -388,6 +403,24 @@
               (click)="clearSpeech()">
               <ion-icon name="refresh" slot="start"></ion-icon>
               Clear & Retry
+            </ion-button>
+            
+            <ion-button 
+              *ngIf="userSpeechText && !isRecording && !isPlayingRecording"
+              fill="outline" 
+              color="secondary"
+              (click)="listenToRecording()">
+              <ion-icon name="headset" slot="start"></ion-icon>
+              Listen to Your Recording
+            </ion-button>
+            
+            <ion-button 
+              *ngIf="isPlayingRecording"
+              fill="solid" 
+              color="secondary"
+              (click)="stopPlayingRecording()">
+              <ion-icon name="stop" slot="start"></ion-icon>
+              Stop Playing
             </ion-button>
             
           </div>

@@ -1,22 +1,18 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Quiz</ion-title>
+    <ion-title>{{ topic?.title }} Quiz</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Quiz</ion-title>
-    </ion-toolbar>
-  </ion-header>
 
-  <div class="quiz-container" *ngIf="topic && getCurrentQuestion()">
+  <div class="lesson-container" *ngIf="topic && getCurrentQuestion() && !quizCompleted">
     
-    <!-- Quiz Progress -->
-    <div class="quiz-progress">
+    <!-- Progress Header -->
+    <div class="progress-header">
       <div class="progress-info">
         <span>Question {{ currentQuestionIndex + 1 }} of {{ totalQuestions }}</span>
+        <span>{{ Math.round(getProgress()) }}%</span>
       </div>
       <ion-progress-bar 
         [value]="getProgress() / 100"
@@ -24,30 +20,49 @@
       </ion-progress-bar>
     </div>
 
-    <!-- Quiz Question -->
-    <ion-card class="question-card">
-      <ion-card-content>
-        <h2>{{ getCurrentQuestion()?.question }}</h2>
-        
-        <div class="answer-options">
-          <ion-button 
-            *ngFor="let option of getCurrentQuestion()?.options; let i = index"
-            [fill]="isAnswerSelected(i) ? 'solid' : 'outline'"
-            [color]="isAnswerSelected(i) ? 'primary' : 'medium'"
-            expand="block"
-            class="answer-button"
-            (click)="selectAnswer(i)">
-            {{ option }}
-          </ion-button>
-        </div>
-      </ion-card-content>
-    </ion-card>
+    <!-- Quiz Area -->
+    <div class="quiz-area">
+      <div class="quiz-header">
+        <h2>{{ topic.title }} Assessment</h2>
+        <p>Answer all questions to complete this topic</p>
+      </div>
 
-    <!-- Navigation Buttons -->
-    <div class="quiz-navigation">
+      <div class="quiz-questions">
+        <div class="question-card">
+          <h3>Question {{ currentQuestionIndex + 1 }}</h3>
+          <div class="question-text">
+            {{ getCurrentQuestion()?.question }}
+          </div>
+
+          <ion-radio-group [value]="selectedAnswers[currentQuestionIndex]">
+            <div 
+              *ngFor="let option of getCurrentQuestion()?.options; let i = index"
+              class="quiz-option-wrapper"
+              (click)="selectAnswer(i)">
+              <div 
+                class="quiz-option"
+                [class.selected]="isAnswerSelected(i)">
+                <ion-radio 
+                  [value]="i"
+                  slot="start"
+                  [style.display]="'none'">
+                </ion-radio>
+                <div class="option-text">
+                  {{ option }}
+                </div>
+              </div>
+            </div>
+          </ion-radio-group>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Controls -->
+    <div class="navigation-controls">
       <ion-button 
         *ngIf="currentQuestionIndex < totalQuestions - 1"
         fill="solid"
+        color="primary"
         [disabled]="!hasAnswerSelected()"
         (click)="nextQuestion()">
         Next
@@ -60,32 +75,15 @@
         color="success"
         [disabled]="!hasAnswerSelected()"
         (click)="submitQuiz()">
+        <ion-icon name="checkmark-circle" slot="start"></ion-icon>
         Submit Quiz
-        <ion-icon name="checkmark" slot="end"></ion-icon>
       </ion-button>
     </div>
-
   </div>
-
-  <!-- Quiz Completed State -->
-  <div class="quiz-completed" *ngIf="quizCompleted">
-    <ion-card class="completion-card">
-      <ion-card-content>
-        <div class="completion-actions">
-          <ion-button 
-            fill="solid" 
-            color="tertiary"
-            (click)="goToResults()">
-            View Results
-          </ion-button>
-          <ion-button 
-            fill="outline"
-            (click)="goBack()">
-            Back to Lessons
-          </ion-button>
-        </div>
-      </ion-card-content>
-    </ion-card>
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="!topic">
+    <ion-spinner></ion-spinner>
+    <p>Loading quiz...</p>
   </div>
 
 </ion-content>

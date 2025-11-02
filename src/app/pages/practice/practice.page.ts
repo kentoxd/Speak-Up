@@ -61,6 +61,11 @@ export class PracticePage implements OnInit, OnDestroy {
   showFeedback = false;
   recordingTimer: any = null;
   showInstructions = false;
+  highlightedWord: string | null = null;
+  phoneticGuide: string = '';
+  isPlayingRecording = false;
+  currentRecordingBlob: Blob | null = null;
+  currentRecordingUrl: string | null = null;
 
   constructor(
     private dataService: DataService,
@@ -149,6 +154,10 @@ export class PracticePage implements OnInit, OnDestroy {
     this.sessionResults = null;
     this.showFeedback = false;
     this.timeRemaining = 0;
+  }
+
+  cleanWord(word: string): string {
+    return word.toLowerCase().replace(/[.,!?;:]/g, '');
   }
 
   setupCustomText() {
@@ -277,16 +286,139 @@ export class PracticePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  listenToTargetText() {
-    // Add logic later (e.g. text-to-speech)
+  async listenToTargetText() {
+    if (!this.currentStructuredPractice?.targetText) return;
+    
+    this.isListeningToText = true;
+    try {
+      await this.speechService.speak({
+        text: this.currentStructuredPractice.targetText,
+        rate: 0.9,
+        pitch: 1,
+        volume: 1
+      });
+    } catch (error) {
+      console.error('Error speaking text:', error);
+      const toast = await this.toastController.create({
+        message: 'Unable to play audio. Please check your browser settings.',
+        duration: 2000,
+        color: 'warning'
+      });
+      await toast.present();
+    } finally {
+      this.isListeningToText = false;
+    }
   }
 
   stopListening() {
+    this.speechService.stopSpeaking();
     this.isListeningToText = false;
+  }
+
+  async listenToRecording() {
+    // Check if we have a stored audio blob from the last recording
+    if (!this.currentRecordingBlob && !this.currentRecordingUrl) {
+      // Try to get from speech service
+      const audioBlob = this.speechService.getAudioBlob();
+      const audioUrl = this.speechService.getAudioUrl();
+      
+      if (!audioBlob && !audioUrl) {
+        const toast = await this.toastController.create({
+          message: 'No audio recording available to play.',
+          duration: 2000,
+          color: 'warning'
+        });
+        await toast.present();
+        return;
+      }
+      
+      if (audioBlob) {
+        this.currentRecordingBlob = audioBlob;
+      }
+      if (audioUrl) {
+        this.currentRecordingUrl = audioUrl;
+      }
+    }
+    
+    try {
+      this.isPlayingRecording = true;
+      await this.speechService.playRecording();
+    } catch (error) {
+      console.error('Error playing recording:', error);
+      const toast = await this.toastController.create({
+        message: 'Unable to play audio recording. Please try recording again.',
+        duration: 2000,
+        color: 'warning'
+      });
+      await toast.present();
+    } finally {
+      this.isPlayingRecording = false;
+    }
+  }
+  
+  stopPlayingRecording() {
+    this.speechService.stopPlaying();
+    this.isPlayingRecording = false;
+  }
+
+  async speakWord(word: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    // Remove punctuation for cleaner pronunciation
+    const cleanWord = word.replace(/[.,!?;:]/g, '').trim();
+    if (!cleanWord) return;
+    
+    // Highlight the word and show phonetic guide
+    this.highlightedWord = cleanWord.toLowerCase();
+    this.phoneticGuide = this.getPhoneticGuide(word);
+    
+    try {
+      await this.speechService.speak({
+        text: cleanWord,
+        rate: 0.8,
+        pitch: 1,
+        volume: 1
+      });
+    } catch (error) {
+      console.error('Error speaking word:', error);
+    } finally {
+      // Clear highlight after a short delay
+      setTimeout(() => {
+        this.highlightedWord = null;
+        this.phoneticGuide = '';
+      }, 2000);
+    }
+  }
+
+  getPhoneticGuide(word: string): string {
+    // Simple phonetic approximation - in a real app, you'd use a proper phonetic dictionary
+    // This is a basic implementation
+    const cleanWord = word.replace(/[.,!?;:]/g, '').toLowerCase();
+    
+    // Simple phonetic approximations for common words
+    const phoneticMap: {[key: string]: string} = {
+      'hello': '/həˈloʊ/',
+      'world': '/wɜːrld/',
+      'education': '/ˌedʒuˈkeɪʃn/',
+      'technology': '/tekˈnɑːlədʒi/',
+      'communication': '/kəˌmjuːnɪˈkeɪʃn/'
+    };
+    
+    return phoneticMap[cleanWord] || `/${cleanWord}/`; // Fallback to word itself
   }
 
   clearSpeech() {
     this.userSpeechText = '';
+    // Clean up audio recording
+    if (this.currentRecordingUrl) {
+      URL.revokeObjectURL(this.currentRecordingUrl);
+      this.currentRecordingUrl = null;
+    }
+    this.currentRecordingBlob = null;
+    this.speechService.clearRecording();
+    this.stopPlayingRecording();
   }
 
   getTotalPracticeTime(): string {
@@ -559,13 +691,19 @@ export class PracticePage implements OnInit, OnDestroy {
     try {
       this.userSpeechText = '';
       this.sessionResults = null;
+      // Clear previous recording
+      if (this.currentRecordingUrl) {
+        URL.revokeObjectURL(this.currentRecordingUrl);
+        this.currentRecordingUrl = null;
+      }
+      this.currentRecordingBlob = null;
       this.speechService.clearTranscript();
       
       if (this.currentStructuredPractice?.targetText) {
         this.speechService.setTargetText(this.currentStructuredPractice.targetText);
       }
       
-      this.speechService.startRecording();
+      await this.speechService.startRecording();
       this.isRecording = true;
       
       const transcriptInterval = setInterval(() => {
@@ -604,6 +742,7 @@ export class PracticePage implements OnInit, OnDestroy {
       (this as any).transcriptInterval = null;
     }
     
+    // Wait a bit longer for MediaRecorder to finish processing the blob
     setTimeout(() => {
       const result = this.speechService.getRecordingResult();
       const finalTranscript = this.speechService.getCurrentTranscript();
@@ -612,9 +751,24 @@ export class PracticePage implements OnInit, OnDestroy {
       this.userSpeechText = this.capitalizeFirstLetter(finalTranscript);
       console.log('%cFinal userSpeechText:', 'color: lime; font-weight: bold', this.userSpeechText);
       
+      // Store the audio recording for playback (check both result and service directly)
+      const audioBlob = result.audioBlob || this.speechService.getAudioBlob();
+      const audioUrl = result.audioUrl || this.speechService.getAudioUrl();
+      
+      if (audioBlob) {
+        this.currentRecordingBlob = audioBlob;
+      }
+      if (audioUrl) {
+        // Clean up previous URL if exists
+        if (this.currentRecordingUrl) {
+          URL.revokeObjectURL(this.currentRecordingUrl);
+        }
+        this.currentRecordingUrl = audioUrl;
+      }
+      
       this.handleStructuredRecordingResult(result);
       this.cdr.detectChanges();
-    }, 100);
+    }, 300); // Increased timeout to allow MediaRecorder to process
   }
 
   private async handleStructuredRecordingResult(result: SpeechRecognitionResult) {
@@ -681,6 +835,11 @@ export class PracticePage implements OnInit, OnDestroy {
   private capitalizeFirstLetter(text: string): string {
     if (!text) return text;
     return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  getWordsArray(text: string | undefined): string[] {
+    if (!text) return [];
+    return text.split(/\s+/).filter(word => word.length > 0);
   }
 
   private async showSpeechRecognitionError() {

@@ -41,8 +41,9 @@ export class LessonContentPage implements OnInit {
       if (this.lesson) {
         await this.loadLessonProgress();
         
-        // Always randomize quiz questions when lesson is opened
-        if (this.lesson.quiz) {
+        // Only randomize quiz questions if explicitly requested (retry or randomize param)
+        // This ensures questions stay consistent during an active quiz session
+        if (this.lesson.quiz && (retry === 'true' || randomize === 'true')) {
           this.shuffleQuizQuestions();
         }
         
@@ -143,19 +144,27 @@ export class LessonContentPage implements OnInit {
     const score = correctAnswers;
     const total = this.lesson.quiz.questions.length;
 
+    // Get shuffle mapping if questions were shuffled
+    const shuffleMapping = (this.lesson.quiz as any)._shuffleMapping || null;
+
     // Mark lesson as completed before navigating to results
     this.quizCompleted = true;
     await this.completeLesson();
 
-    // Navigate to results page with params
-    this.router.navigate(['/quiz-results', this.lesson.id], {
-      queryParams: {
-        score: score,
-        total: total,
-        answers: JSON.stringify(this.selectedAnswers),
-        type: 'lesson'  // Indicate it's a lesson quiz
-      }
-    });
+    // Navigate to results page with params - include question order mapping if shuffled
+    const queryParams: any = {
+      score: score,
+      total: total,
+      answers: JSON.stringify(this.selectedAnswers),
+      type: 'lesson'  // Indicate it's a lesson quiz
+    };
+    
+    if (shuffleMapping) {
+      // Pass the mapping: array where index = shuffled position, value = original index
+      queryParams.questionOrder = JSON.stringify(shuffleMapping);
+    }
+
+    this.router.navigate(['/quiz-results', this.lesson.id], { queryParams });
   }
 
   async completeLesson(showToast: boolean = false) {
@@ -242,17 +251,27 @@ export class LessonContentPage implements OnInit {
   private shuffleQuizQuestions() {
     if (!this.lesson?.quiz) return;
     
-    // Create a copy of questions array and shuffle it
-    const questions = [...this.lesson.quiz.questions];
-    for (let i = questions.length - 1; i > 0; i--) {
+    // Store original indices before shuffling
+    const originalQuestions = [...this.lesson.quiz.questions];
+    const indices = originalQuestions.map((_, idx) => idx);
+    
+    // Shuffle indices array
+    for (let i = indices.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [questions[i], questions[j]] = [questions[j], questions[i]];
+      [indices[i], indices[j]] = [indices[j], indices[i]];
     }
     
-    // Create shuffled quiz object with original reference to options
+    // Create shuffled questions array using shuffled indices
+    const shuffledQuestions = indices.map(idx => originalQuestions[idx]);
+    
+    // Store the mapping for results page (which original index is at which shuffled position)
+    // Store in a temporary property that will be used when submitting
+    (this.lesson.quiz as any)._shuffleMapping = indices;
+    
+    // Create shuffled quiz object
     this.lesson.quiz = {
       ...this.lesson.quiz,
-      questions: questions
+      questions: shuffledQuestions
     };
   }
 }

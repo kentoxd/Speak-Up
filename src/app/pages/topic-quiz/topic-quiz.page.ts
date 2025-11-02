@@ -44,6 +44,8 @@ export class TopicQuizPage implements OnInit {
     }
   }
 
+  private shuffleMapping: number[] = [];
+
   private async resetQuiz() {
     if (this.topic) {
       // Reset all quiz state
@@ -51,14 +53,23 @@ export class TopicQuizPage implements OnInit {
       this.quizCompleted = false;
       this.score = 0;
       
-      // Collect all questions from lessons and randomize for retry
-      this.questions = [];
+      // Collect all questions from lessons
+      const originalQuestions: QuizQuestion[] = [];
       this.topic.lessons.forEach((lesson: Lesson) => {
         if (lesson.quiz && lesson.quiz.questions) {
-          this.questions.push(...lesson.quiz.questions);
+          originalQuestions.push(...lesson.quiz.questions);
         }
       });
-      this.questions = this.questions.sort(() => Math.random() - 0.5);
+      
+      // Create indices array and shuffle it
+      this.shuffleMapping = originalQuestions.map((_, idx) => idx);
+      for (let i = this.shuffleMapping.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [this.shuffleMapping[i], this.shuffleMapping[j]] = [this.shuffleMapping[j], this.shuffleMapping[i]];
+      }
+      
+      // Apply shuffle to questions
+      this.questions = this.shuffleMapping.map(idx => originalQuestions[idx]);
       
       this.totalQuestions = this.questions.length;
       this.selectedAnswers = new Array(this.totalQuestions).fill(-1);
@@ -74,16 +85,28 @@ export class TopicQuizPage implements OnInit {
       this.score = 0;
       
       // Collect all quiz questions from all lessons in the topic
-      this.questions = [];
+      const originalQuestions: QuizQuestion[] = [];
       this.topic.lessons.forEach((lesson: Lesson) => {
         if (lesson.quiz && lesson.quiz.questions) {
-          this.questions.push(...lesson.quiz.questions);
+          originalQuestions.push(...lesson.quiz.questions);
         }
       });
       
-      // Randomize questions if it's a retry
+      // Only randomize questions if it's explicitly a retry
+      // This ensures consistency during an active quiz session
       if (isRetry) {
-        this.questions = this.questions.sort(() => Math.random() - 0.5);
+        // Create indices array and shuffle it
+        this.shuffleMapping = originalQuestions.map((_, idx) => idx);
+        for (let i = this.shuffleMapping.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [this.shuffleMapping[i], this.shuffleMapping[j]] = [this.shuffleMapping[j], this.shuffleMapping[i]];
+        }
+        // Apply shuffle to questions
+        this.questions = this.shuffleMapping.map(idx => originalQuestions[idx]);
+      } else {
+        // Use original order
+        this.questions = [...originalQuestions];
+        this.shuffleMapping = originalQuestions.map((_, idx) => idx);
       }
       
       this.totalQuestions = this.questions.length;
@@ -119,6 +142,7 @@ export class TopicQuizPage implements OnInit {
       this.currentQuestionIndex--;
     }
   }
+  
 
   async submitQuiz() {
     if (this.selectedAnswers.includes(-1)) {
@@ -162,14 +186,20 @@ export class TopicQuizPage implements OnInit {
 
   goToResults() {
     if (this.topic) {
-      this.router.navigate(['/quiz-results', this.topic.id], {
-        queryParams: {
-          type: 'topic',
-          score: this.score,
-          total: this.totalQuestions,
-          answers: JSON.stringify(this.selectedAnswers)
-        }
-      });
+      // Pass shuffle mapping to preserve question order in results page
+      const queryParams: any = {
+        type: 'topic',
+        score: this.score,
+        total: this.totalQuestions,
+        answers: JSON.stringify(this.selectedAnswers)
+      };
+      
+      // If questions were shuffled, pass the mapping
+      if (this.shuffleMapping && this.shuffleMapping.length > 0) {
+        queryParams.questionOrder = JSON.stringify(this.shuffleMapping);
+      }
+      
+      this.router.navigate(['/quiz-results', this.topic.id], { queryParams });
     }
   }
 
@@ -194,4 +224,12 @@ export class TopicQuizPage implements OnInit {
   getProgress(): number {
     return ((this.currentQuestionIndex + 1) / this.totalQuestions) * 100;
   }
+  retakeQuiz() {
+    // Reset quiz state
+    this.currentQuestionIndex = 0;
+    this.selectedAnswers = [];
+    this.score = 0;
+    this.quizCompleted = false;
+  }
+  
 }

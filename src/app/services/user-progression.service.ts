@@ -1,9 +1,29 @@
 import { Injectable } from '@angular/core';
 import { AngularFirestore, AngularFirestoreCollection } from '@angular/fire/compat/firestore';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
-import { Observable, BehaviorSubject, combineLatest } from 'rxjs';
+import { Observable, BehaviorSubject, combineLatest, of } from 'rxjs';
 import { map, switchMap, take } from 'rxjs/operators';
 import { UserProgression, AccuracyRecord, Achievement, WeeklyProgress, MonthlyProgress } from '../models/user-progression.model';
+
+export interface LessonProgress {
+  lessonId: string;
+  completed: boolean;
+  progress: number;
+  lastAccessed: string;
+  userId: string;
+}
+
+export interface TopicProgress {
+  topicId: string;
+  completed: boolean;
+  progress: number;
+  lessonsCompleted: number;
+  totalLessons: number;
+  quizUnlocked: boolean;
+  quizCompleted: boolean;
+  lastAccessed: string;
+  userId: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -463,5 +483,165 @@ export class UserProgressionService {
   private getMonthlyProgressForMonth(progression: UserProgression, month: string): any {
     // Implementation to get progress for specific month
     return { practiceSessions: 0 };
+  }
+
+  // ==========================================
+  // Lesson Progress Methods (Firebase)
+  // ==========================================
+
+  async getLessonProgress(lessonId: string): Promise<LessonProgress | null> {
+    const user = await this.currentUser$.pipe(take(1)).toPromise();
+    if (!user) return null;
+
+    try {
+      const doc = await this.firestore.collection('lessonProgress')
+        .doc(`${user.uid}_${lessonId}`)
+        .get()
+        .toPromise();
+      
+      if (doc?.exists) {
+        return doc.data() as LessonProgress;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting lesson progress:', error);
+      return null;
+    }
+  }
+
+  async setLessonProgress(lessonId: string, progress: Omit<LessonProgress, 'userId'>): Promise<void> {
+    const user = await this.currentUser$.pipe(take(1)).toPromise();
+    if (!user) return;
+
+    try {
+      const lessonProgress: LessonProgress = {
+        ...progress,
+        userId: user.uid
+      };
+      
+      await this.firestore.collection('lessonProgress')
+        .doc(`${user.uid}_${lessonId}`)
+        .set(lessonProgress, { merge: true });
+    } catch (error) {
+      console.error('Error setting lesson progress:', error);
+      throw error;
+    }
+  }
+
+  async getAllLessonProgress(): Promise<{[key: string]: LessonProgress}> {
+    const user = await this.currentUser$.pipe(take(1)).toPromise();
+    if (!user) return {};
+
+    try {
+      const snapshot = await this.firestore.collection('lessonProgress', ref =>
+        ref.where('userId', '==', user.uid)
+      ).get().toPromise();
+      
+      const progress: {[key: string]: LessonProgress} = {};
+      snapshot?.docs.forEach((doc: any) => {
+        const data = doc.data() as LessonProgress;
+        progress[data.lessonId] = data;
+      });
+      
+      return progress;
+    } catch (error) {
+      console.error('Error getting all lesson progress:', error);
+      return {};
+    }
+  }
+
+  // ==========================================
+  // Topic Progress Methods (Firebase)
+  // ==========================================
+
+  async getTopicProgress(topicId: string): Promise<TopicProgress | null> {
+    const user = await this.currentUser$.pipe(take(1)).toPromise();
+    if (!user) return null;
+
+    try {
+      const doc = await this.firestore.collection('topicProgress')
+        .doc(`${user.uid}_${topicId}`)
+        .get()
+        .toPromise();
+      
+      if (doc?.exists) {
+        return doc.data() as TopicProgress;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting topic progress:', error);
+      return null;
+    }
+  }
+
+  async setTopicProgress(topicId: string, progress: Omit<TopicProgress, 'userId'>): Promise<void> {
+    const user = await this.currentUser$.pipe(take(1)).toPromise();
+    if (!user) return;
+
+    try {
+      const topicProgress: TopicProgress = {
+        ...progress,
+        userId: user.uid
+      };
+      
+      await this.firestore.collection('topicProgress')
+        .doc(`${user.uid}_${topicId}`)
+        .set(topicProgress, { merge: true });
+    } catch (error) {
+      console.error('Error setting topic progress:', error);
+      throw error;
+    }
+  }
+
+  async getAllTopicProgress(): Promise<{[key: string]: TopicProgress}> {
+    const user = await this.currentUser$.pipe(take(1)).toPromise();
+    if (!user) return {};
+
+    try {
+      const snapshot = await this.firestore.collection('topicProgress', ref =>
+        ref.where('userId', '==', user.uid)
+      ).get().toPromise();
+      
+      const progress: {[key: string]: TopicProgress} = {};
+      snapshot?.docs.forEach((doc: any) => {
+        const data = doc.data() as TopicProgress;
+        progress[data.topicId] = data;
+      });
+      
+      return progress;
+    } catch (error) {
+      console.error('Error getting all topic progress:', error);
+      return {};
+    }
+  }
+
+  async updateTopicProgressFromLessons(topicId: string, totalLessons: number): Promise<TopicProgress> {
+    const user = await this.currentUser$.pipe(take(1)).toPromise();
+    if (!user) throw new Error('User not authenticated');
+
+    // Get all lesson progress for this topic's lessons
+    const allLessonProgress = await this.getAllLessonProgress();
+    
+    // Count completed lessons (would need topic data to get lesson IDs, simplified here)
+    let completedCount = 0;
+    // This is a simplified version - in practice, you'd need to pass lesson IDs for the topic
+    
+    const progress = (100 * completedCount) / totalLessons;
+    const completed = completedCount === totalLessons;
+    
+    const topicProgress: TopicProgress = {
+      topicId,
+      userId: user.uid,
+      completed,
+      progress: Math.round(progress),
+      lessonsCompleted: completedCount,
+      totalLessons,
+      quizUnlocked: completed,
+      quizCompleted: false,
+      lastAccessed: new Date().toISOString()
+    };
+    
+    await this.setTopicProgress(topicId, topicProgress);
+    return topicProgress;
   }
 }

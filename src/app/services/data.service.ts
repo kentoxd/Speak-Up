@@ -4039,51 +4039,153 @@ export class DataService {
   }
   getStructuredPracticeContent(): StructuredPractice[] {
     return [
-{
-type: 'monologue',
-difficulty: 'beginner',
-title: 'Simple Personal Introduction',
-description: 'Practice delivering a clear and confident short introduction.',
-practiceText: 'Hello, everyone. It’s nice to meet you. I’m excited to be here today.',
-targetText: 'Hello, everyone. It’s nice to meet you. I’m excited to be here today and to have the chance to speak in front of you. I believe public speaking helps us grow more confident and express ourselves better.',
-timeLimit: 60,
-tips: [
-'Speak with a calm and steady tone',
-'Smile as you introduce yourself',
-'Keep your hands relaxed by your sides or use small gestures',
-'Take a deep breath before you start'
-]
-},
-
+      // Monologue - Beginner
+      {
+        type: 'monologue',
+        difficulty: 'beginner',
+        title: 'Simple Personal Introduction',
+        description: 'Practice delivering a clear and confident short introduction.',
+        practiceText: 'Hello, everyone. It\'s nice to meet you. I\'m excited to be here today.',
+        targetText: 'Hello, everyone. It\'s nice to meet you. I\'m excited to be here today and to have the chance to speak in front of you. I believe public speaking helps us grow more confident and express ourselves better.',
+        timeLimit: 60,
+        tips: [
+          'Speak with a calm and steady tone',
+          'Smile as you introduce yourself',
+          'Keep your hands relaxed by your sides or use small gestures',
+          'Take a deep breath before you start'
+        ]
+      },
+      // Monologue - Intermediate
+      {
+        type: 'monologue',
+        difficulty: 'intermediate',
+        title: 'Personal Storytelling',
+        description: 'Practice telling a meaningful personal story with structure and emotion.',
+        practiceText: 'I want to share a story that changed my perspective...',
+        targetText: 'I want to share a story that changed my perspective on life. It was a moment that taught me the value of persistence and the power of believing in yourself. This experience shaped who I am today and continues to inspire me in everything I do.',
+        timeLimit: 90,
+        tips: [
+          'Use the three-act structure: setup, conflict, resolution',
+          'Include sensory details to make it vivid',
+          'Show emotion through your voice and body language',
+          'End with a meaningful takeaway'
+        ]
+      },
+      // Monologue - Advanced
+      {
+        type: 'monologue',
+        difficulty: 'advanced',
+        title: 'Reflective Monologue',
+        description: 'Deliver a thoughtful, introspective monologue on a meaningful topic.',
+        practiceText: 'When I reflect on the journey of personal growth...',
+        targetText: 'When I reflect on the journey of personal growth, I realize that every challenge we face is an opportunity for transformation. The obstacles that once seemed insurmountable have become the stepping stones to our greatest achievements. Growth requires courage, patience, and the willingness to embrace change.',
+        timeLimit: 120,
+        tips: [
+          'Use varied sentence structure for rhythm',
+          'Incorporate rhetorical questions to engage listeners',
+          'Build intensity gradually',
+          'End with a powerful, memorable conclusion'
+        ]
+      },
+      // Public Speaking - Beginner
+      {
+        type: 'public-speaking',
+        difficulty: 'beginner',
+        title: 'Simple Informative Speech',
+        description: 'Practice delivering clear information about a familiar topic.',
+        practiceText: 'Today I want to talk about something important...',
+        targetText: 'Today I want to talk about something important. Good communication skills are essential in our daily lives. They help us connect with others, share ideas, and build relationships. Practicing public speaking can improve your confidence and help you express yourself more effectively.',
+        timeLimit: 90,
+        tips: [
+          'Start with a clear introduction',
+          'Organize your main points logically',
+          'Use simple language that everyone can understand',
+          'Conclude by summarizing your key points'
+        ]
+      },
+      // Public Speaking - Intermediate
       {
         type: 'public-speaking',
         difficulty: 'intermediate',
         title: 'Persuasive Speech on Education',
         description: 'Deliver a short persuasive speech about the importance of education',
         practiceText: 'Education is important because...',
-        targetText: 'Education is the foundation of progress. It empowers individuals, strengthens communities, and drives innovation. When we invest in education, we invest in our future.',
+        targetText: 'Education is the foundation of progress. It empowers individuals, strengthens communities, and drives innovation. When we invest in education, we invest in our future. Every person deserves access to quality education because it opens doors to opportunities and enables us to reach our full potential.',
         timeLimit: 120,
         tips: [
           'Use the P.R.E. method (Point, Reason, Example)',
           'Vary your tone for emphasis',
           'Use hand gestures naturally',
-          'Pause between main points'
+          'Pause between main points',
+          'Address potential counterarguments'
         ]
       },
+      // Public Speaking - Advanced
+      {
+        type: 'public-speaking',
+        difficulty: 'advanced',
+        title: 'Compelling Keynote Address',
+        description: 'Deliver a powerful keynote that inspires and motivates your audience.',
+        practiceText: 'We stand at a crossroads in our society...',
+        targetText: 'We stand at a crossroads in our society, where the choices we make today will shape the world of tomorrow. Leadership is not about having all the answers, but about asking the right questions. It requires empathy, integrity, and the courage to stand up for what we believe in, even when it\'s difficult.',
+        timeLimit: 150,
+        tips: [
+          'Start with a powerful hook or story',
+          'Build emotional connection with your audience',
+          'Use rhetorical devices effectively',
+          'Create a memorable call to action',
+          'Maintain strong stage presence'
+        ]
+      },
+      // Debate Speech - Beginner
+      {
+        type: 'debate-speech',
+        difficulty: 'beginner',
+        title: 'Simple Argument Presentation',
+        description: 'Practice presenting a clear argument with supporting reasons.',
+        practiceText: 'I believe that this is important because...',
+        targetText: 'I believe that regular exercise is important because it improves physical health, boosts mental well-being, and increases energy levels. Making time for physical activity is an investment in yourself that pays dividends throughout your life.',
+        timeLimit: 90,
+        tips: [
+          'State your position clearly',
+          'Provide at least two supporting reasons',
+          'Use examples to illustrate your points',
+          'End with a strong conclusion'
+        ]
+      },
+      // Debate Speech - Intermediate
+      {
+        type: 'debate-speech',
+        difficulty: 'intermediate',
+        title: 'Balanced Argument Discussion',
+        description: 'Present multiple perspectives on a complex issue.',
+        practiceText: 'This topic has many different viewpoints...',
+        targetText: 'This topic has many different viewpoints that deserve consideration. While technology offers incredible benefits in efficiency and connectivity, we must also acknowledge its potential drawbacks, including privacy concerns and reduced face-to-face interaction. A balanced approach requires understanding all sides of the issue.',
+        timeLimit: 120,
+        tips: [
+          'Acknowledge different perspectives fairly',
+          'Present evidence for each side',
+          'Use transitional phrases to connect ideas',
+          'Maintain a respectful and objective tone',
+          'Conclude with a balanced summary'
+        ]
+      },
+      // Debate Speech - Advanced
       {
         type: 'debate-speech',
         difficulty: 'advanced',
         title: 'Debate: Technology and Communication',
         description: 'Present arguments about technology\'s impact on communication',
         practiceText: 'Technology has changed how we communicate...',
-        targetText: 'While technology has made communication faster and more accessible, we must consider both benefits and drawbacks. Technology connects us globally, but face-to-face interaction remains essential for building deep relationships.',
+        targetText: 'While technology has made communication faster and more accessible, we must consider both benefits and drawbacks. Technology connects us globally, but face-to-face interaction remains essential for building deep relationships. The challenge lies in finding the right balance between digital convenience and human connection.',
         timeLimit: 180,
         tips: [
           'Present both sides fairly',
           'Use evidence to support your claims',
           'Maintain a respectful tone',
           'Listen actively before responding',
-          'Find common ground'
+          'Find common ground',
+          'Use sophisticated argumentation techniques'
         ]
       }
     ];

@@ -459,15 +459,59 @@ ion-content {
   }
 
   .target-text-card {
-    .target-text {
+    .target-text-container {
       background: rgba(237, 242, 250, 0.6);
       padding: 20px;
       border-radius: 12px;
+      margin: 0 0 16px 0;
+    }
+    
+    .target-text {
       color: #2c3e50;
       font-size: 1rem;
       line-height: 1.8;
-      margin: 0 0 16px 0;
       font-weight: 500;
+      margin: 0;
+      
+      .word-span {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 2px 4px;
+        border-radius: 4px;
+        display: inline-block;
+        
+        &.clickable-word {
+          &:hover {
+            background: rgba(92, 107, 192, 0.15);
+            color: #5c6bc0;
+            transform: translateY(-1px);
+          }
+          
+          &.highlighted {
+            background: rgba(92, 107, 192, 0.25);
+            color: #5c6bc0;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(92, 107, 192, 0.3);
+          }
+        }
+      }
+    }
+    
+    .phonetic-guide {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: rgba(92, 107, 192, 0.1);
+      border-radius: 8px;
+      color: #5c6bc0;
+      font-size: 0.9rem;
+      font-style: italic;
+      
+      ion-icon {
+        font-size: 1.1rem;
+      }
     }
 
     .listen-controls {

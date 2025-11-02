@@ -4,6 +4,8 @@ export interface SpeechRecognitionResult {
   transcript: string;
   confidence: number;
   duration: number;
+  audioBlob?: Blob;
+  audioUrl?: string;
 }
 
 export interface TextToSpeechOptions {
@@ -26,6 +28,14 @@ export class SpeechService {
   private recordingStartTime = 0;
   private targetText = '';
   private lastProcessedWordIndex = 0;
+  
+  // Audio recording properties
+  private mediaRecorder: MediaRecorder | null = null;
+  private audioChunks: Blob[] = [];
+  private audioStream: MediaStream | null = null;
+  private currentAudioBlob: Blob | null = null;
+  private currentAudioUrl: string | null = null;
+  private audioPlayer: HTMLAudioElement | null = null;
 
   constructor() {
     this.synthesis = window.speechSynthesis;
@@ -43,7 +53,7 @@ export class SpeechService {
     }
   }
 
-  startRecording(): void {
+  async startRecording(): Promise<void> {
     if (this.isRecording) {
       return;
     }
@@ -58,6 +68,42 @@ export class SpeechService {
     this.interimTranscript = '';
     this.recordingStartTime = Date.now();
     this.lastProcessedWordIndex = 0;
+    this.audioChunks = [];
+    
+    // Start audio recording with MediaRecorder
+    try {
+      this.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.mediaRecorder = new MediaRecorder(this.audioStream);
+      this.audioChunks = [];
+      
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
+      };
+      
+      this.mediaRecorder.onstop = async () => {
+        // Create blob from chunks
+        this.currentAudioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        
+        // Clean up previous URL if exists
+        if (this.currentAudioUrl) {
+          URL.revokeObjectURL(this.currentAudioUrl);
+        }
+        this.currentAudioUrl = URL.createObjectURL(this.currentAudioBlob);
+        
+        // Stop all tracks
+        if (this.audioStream) {
+          this.audioStream.getTracks().forEach(track => track.stop());
+          this.audioStream = null;
+        }
+      };
+      
+      this.mediaRecorder.start();
+    } catch (error) {
+      console.error('Error starting audio recording:', error);
+      // Continue with speech recognition even if audio recording fails
+    }
 
     this.recognition.onstart = () => {
       console.log('Speech recognition started');
@@ -209,8 +255,59 @@ export class SpeechService {
     return {
       transcript: this.currentTranscript,
       confidence: this.calculateConfidence(this.currentTranscript),
-      duration
+      duration,
+      audioBlob: this.currentAudioBlob || undefined,
+      audioUrl: this.currentAudioUrl || undefined
     };
+  }
+  
+  getAudioBlob(): Blob | null {
+    return this.currentAudioBlob;
+  }
+  
+  getAudioUrl(): string | null {
+    return this.currentAudioUrl;
+  }
+  
+  async playRecording(): Promise<void> {
+    if (!this.currentAudioUrl) {
+      throw new Error('No recording available to play');
+    }
+    
+    return new Promise((resolve, reject) => {
+      // Clean up previous audio player if exists
+      if (this.audioPlayer) {
+        this.audioPlayer.pause();
+        this.audioPlayer = null;
+      }
+      
+      this.audioPlayer = new Audio(this.currentAudioUrl!);
+      this.audioPlayer.onended = () => resolve();
+      this.audioPlayer.onerror = (error) => reject(error);
+      this.audioPlayer.play().catch(reject);
+    });
+  }
+  
+  stopPlaying(): void {
+    if (this.audioPlayer) {
+      this.audioPlayer.pause();
+      this.audioPlayer.currentTime = 0;
+      this.audioPlayer = null;
+    }
+  }
+  
+  isPlaying(): boolean {
+    return this.audioPlayer !== null && !this.audioPlayer.paused;
+  }
+  
+  clearRecording(): void {
+    if (this.currentAudioUrl) {
+      URL.revokeObjectURL(this.currentAudioUrl);
+      this.currentAudioUrl = null;
+    }
+    this.currentAudioBlob = null;
+    this.audioChunks = [];
+    this.stopPlaying();
   }
 
   private getRecordingDuration(): number {
@@ -221,6 +318,12 @@ export class SpeechService {
     if (this.recognition && this.isRecording) {
       this.recognition.stop();
     }
+    
+    // Stop audio recording
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.stop();
+    }
+    
     this.isRecording = false;
   }
 
@@ -238,6 +341,7 @@ export class SpeechService {
     this.interimTranscript = '';
     this.targetText = '';
     this.lastProcessedWordIndex = 0;
+    this.clearRecording();
   }
 
   setTargetText(text: string): void {
@@ -302,6 +406,11 @@ export class SpeechService {
 
   isSpeechRecognitionSupported(): boolean {
     return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+  }
+
+  isMediaRecorderSupported(): boolean {
+    return typeof MediaRecorder !== 'undefined' && 
+           !!navigator.mediaDevices?.getUserMedia;
   }
 
   isTextToSpeechSupported(): boolean {

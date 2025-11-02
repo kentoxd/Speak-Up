@@ -30,9 +30,9 @@ export class QuizResultsPage implements OnInit {
     
     if (id && type === 'lesson') {
       this.isLessonQuiz = true;
-      this.loadLesson(id);
+      this.loadLesson(id, queryParams);
     } else if (id) {
-      this.loadTopic(id);
+      this.loadTopic(id, queryParams);
     }
     
     if (queryParams['score'] && queryParams['total'] && queryParams['answers']) {
@@ -43,22 +43,48 @@ export class QuizResultsPage implements OnInit {
     }
   }
 
-  private loadTopic(topicId: string) {
+  private loadTopic(topicId: string, queryParams: any) {
     this.topic = this.dataService.getTopic(topicId) || null;
     if (this.topic) {
-      this.questions = [];
+      // Collect all questions in original order
+      const originalQuestions: QuizQuestion[] = [];
       this.topic.lessons.forEach((lesson: Lesson) => {
         if (lesson.quiz && lesson.quiz.questions) {
-          this.questions.push(...lesson.quiz.questions);
+          originalQuestions.push(...lesson.quiz.questions);
         }
       });
+      
+      // Preserve question order from quiz if provided (shuffle mapping)
+      // The mapping tells us: at shuffled position i, which original index should appear
+      if (queryParams['questionOrder']) {
+        const shuffleMapping = JSON.parse(queryParams['questionOrder']) as number[];
+        this.questions = shuffleMapping.map((originalIdx: number) => {
+          return originalQuestions[originalIdx];
+        }).filter(q => q !== undefined);
+      } else {
+        // Use original order if no mapping provided
+        this.questions = originalQuestions;
+      }
     }
   }
 
-  private loadLesson(lessonId: string) {
+  private loadLesson(lessonId: string, queryParams: any) {
     this.lesson = this.dataService.getLesson(lessonId) || null;
     if (this.lesson && this.lesson.quiz) {
-      this.questions = [...this.lesson.quiz.questions];
+      // Get original questions from data service (unshuffled)
+      const originalQuestions = [...this.lesson.quiz.questions];
+      
+      // If questionOrder mapping is provided, use it to reorder (for shuffled quizzes)
+      // The mapping tells us: at shuffled position i, which original index should appear
+      if (queryParams['questionOrder']) {
+        const shuffleMapping = JSON.parse(queryParams['questionOrder']) as number[];
+        this.questions = shuffleMapping.map((originalIdx: number) => {
+          return originalQuestions[originalIdx];
+        }).filter(q => q !== undefined);
+      } else {
+        // Use original order if no mapping was specified
+        this.questions = originalQuestions;
+      }
     }
   }
 
