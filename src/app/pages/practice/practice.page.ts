@@ -1111,15 +1111,18 @@
     }
 
     async startRecording() {
-      if (!this.speechService.isSpeechRecognitionSupported() && !this.recognitionFallback) {
+      // Use service-level capability check (web or native)
+      const canRecognize = await this.speechService.isAnyRecognitionAvailable();
+      if (!canRecognize && !this.recognitionFallback) {
         await this.showSpeechRecognitionError();
+        this.isStartingRecording = false;
         return;
       }
 
       try {
         this.isRecording = true;
         this.userSpeechText = '🎤 Listening...';
-        this.speechService.startRecording();
+        await this.speechService.startRecording();
         
         const transcriptInterval = setInterval(() => {
           if (this.isRecording) {

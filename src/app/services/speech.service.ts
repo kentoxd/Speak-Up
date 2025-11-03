@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 
 export interface SpeechRecognitionResult {
   transcript: string;
@@ -37,6 +38,9 @@ export class SpeechService {
   private currentAudioUrl: string | null = null;
   private audioPlayer: HTMLAudioElement | null = null;
   private recordingStopResolve: (() => void) | null = null;
+  // Native speech recognition (Capacitor plugin) fallback
+  private nativeSpeech: any | null = null;
+  private isCordovaSpeech = false;
 
   constructor() {
     this.synthesis = window.speechSynthesis;
@@ -59,9 +63,13 @@ export class SpeechService {
       return;
     }
 
+    // If web speech not supported, try native plugin fallback
     if (!this.isSpeechRecognitionSupported()) {
-      console.error('Speech Recognition not supported');
-      return;
+      const ok = await this.initNativeSpeechIfAvailable();
+      if (!ok) {
+        console.error('Speech Recognition not supported on this platform');
+        return;
+      }
     }
 
     this.isRecording = true;
@@ -139,62 +147,59 @@ export class SpeechService {
       // Continue with speech recognition even if audio recording fails
     }
 
-    this.recognition.onstart = () => {
-      console.log('Speech recognition started');
-    };
+    if (this.isSpeechRecognitionSupported()) {
+      this.recognition.onstart = () => {
+        console.log('Speech recognition started');
+      };
 
-    this.recognition.onresult = (event: any) => {
-      let interimText = '';
+      this.recognition.onresult = (event: any) => {
+        let interimText = '';
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        let transcript = event.results[i][0].transcript.trim();
-        const isFinal = event.results[i].isFinal;
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          let transcript = event.results[i][0].transcript.trim();
+          const isFinal = event.results[i].isFinal;
 
-        console.log(`Result ${i}: "${transcript}" | isFinal: ${isFinal}`);
+          console.log(`Result ${i}: "${transcript}" | isFinal: ${isFinal}`);
 
-        if (isFinal) {
-          // Add punctuation to all words in final result
-          transcript = this.addPunctuationToAllWords(transcript);
-          console.log(`After punctuation: "${transcript}"`);
-          
-          // Append to current transcript with space
-          if (this.currentTranscript && !this.currentTranscript.endsWith(' ')) {
-            this.currentTranscript += ' ';
+          if (isFinal) {
+            transcript = this.addPunctuationToAllWords(transcript);
+            if (this.currentTranscript && !this.currentTranscript.endsWith(' ')) {
+              this.currentTranscript += ' ';
+            }
+            this.currentTranscript += transcript;
+          } else {
+            const enhancedInterim = this.addPunctuationToAllWords(transcript, true);
+            interimText += enhancedInterim + ' ';
           }
-          this.currentTranscript += transcript;
-          
-          console.log(`Updated currentTranscript: "${this.currentTranscript}"`);
-        } else {
-          // For interim results, show live with punctuation
-          const enhancedInterim = this.addPunctuationToAllWords(transcript, true);
-          interimText += enhancedInterim + ' ';
         }
-      }
 
-      // Set interim for real-time preview
-      this.interimTranscript = interimText.trim();
-    };
+        this.interimTranscript = interimText.trim();
+      };
 
-    this.recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
-    };
+      this.recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+      };
 
-    this.recognition.onend = () => {
-      if (this.isRecording) {
-        try {
-          this.recognition.start();
-        } catch (error) {
-          console.error('Failed to restart recognition:', error);
-          this.isRecording = false;
+      this.recognition.onend = () => {
+        if (this.isRecording) {
+          try {
+            this.recognition.start();
+          } catch (error) {
+            console.error('Failed to restart recognition:', error);
+            this.isRecording = false;
+          }
         }
-      }
-    };
+      };
 
-    try {
-      this.recognition.start();
-    } catch (error) {
-      console.error('Failed to start recognition:', error);
-      this.isRecording = false;
+      try {
+        this.recognition.start();
+      } catch (error) {
+        console.error('Failed to start recognition:', error);
+        this.isRecording = false;
+      }
+    } else {
+      // Native fallback
+      await this.startNativeRecognition();
     }
   }
 
@@ -406,6 +411,8 @@ export class SpeechService {
       if (this.recognition && this.isRecording) {
         this.recognition.stop();
       }
+      // Stop native recognition if used
+      this.stopNativeRecognition().catch(() => {});
       
       // Stop audio recording and wait for it to finish
       if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
@@ -502,6 +509,134 @@ export class SpeechService {
 
   isSpeechRecognitionSupported(): boolean {
     return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+  }
+
+  // Returns true if either Web or Native recognition is available
+  async isAnyRecognitionAvailable(): Promise<boolean> {
+    if (this.isSpeechRecognitionSupported()) return true;
+    return await this.initNativeSpeechIfAvailable();
+  }
+
+  private async initNativeSpeechIfAvailable(): Promise<boolean> {
+    if (this.nativeSpeech) return true;
+    if (!Capacitor.isNativePlatform()) return false;
+    try {
+      // @ts-ignore - dynamic import without installed typings
+      const mod = await import('@capacitor-community/speech-recognition');
+      this.nativeSpeech = (mod as any).SpeechRecognition || (mod as any).default || null;
+      if (!this.nativeSpeech) return false;
+      const perm = await this.nativeSpeech.checkPermission();
+      if (!perm || perm.permission !== 'granted') {
+        await this.nativeSpeech.requestPermission();
+      }
+      return true;
+    } catch (e) {
+      console.warn('Capacitor speech plugin not available, trying Cordova plugin...', e);
+      // Try Cordova plugin fallback: cordova-plugin-speechrecognition
+      const sr = (window as any)?.plugins?.speechRecognition;
+      if (!sr) {
+        console.error('Cordova speech plugin not found');
+        return false;
+      }
+      this.nativeSpeech = sr;
+      this.isCordovaSpeech = true;
+      return await new Promise<boolean>((resolve) => {
+        try {
+          sr.hasPermission((has: boolean) => {
+            if (has) return resolve(true);
+            sr.requestPermission(() => resolve(true), () => resolve(false));
+          }, () => resolve(false));
+        } catch (err) {
+          console.error('Cordova speech permission check failed', err);
+          resolve(false);
+        }
+      });
+    }
+  }
+
+  private async startNativeRecognition(): Promise<void> {
+    if (!this.nativeSpeech) return;
+    this.currentTranscript = '';
+    this.interimTranscript = '';
+    if (!this.isCordovaSpeech) {
+      // Capacitor plugin
+      await this.nativeSpeech.start({
+        language: 'en-US',
+        maxResults: 1,
+        partialResults: true,
+        prompt: '',
+        popup: false
+      });
+      if (this.nativeSpeech.addListener) {
+        this.nativeSpeech.addListener('partialResults', (e: any) => {
+          const parts = e?.matches || e?.value || [];
+          const text = Array.isArray(parts) ? parts.join(' ') : (parts || '');
+          this.interimTranscript = (text || '').trim();
+        });
+        this.nativeSpeech.addListener('result', (e: any) => {
+          const parts = e?.matches || e?.value || [];
+          const text = Array.isArray(parts) ? parts.join(' ') : (parts || '');
+          if (text && text.trim()) {
+            if (this.currentTranscript && !this.currentTranscript.endsWith(' ')) {
+              this.currentTranscript += ' ';
+            }
+            this.currentTranscript += text.trim();
+            this.interimTranscript = '';
+          }
+        });
+      }
+    } else {
+      // Cordova plugin
+      await new Promise<void>((resolve, reject) => {
+        try {
+          this.nativeSpeech.startListening((matches: string[]) => {
+            // Treat first item as current interim/live text
+            if (Array.isArray(matches) && matches.length > 0) {
+              const text = (matches[0] || '').trim();
+              this.interimTranscript = text;
+            }
+          }, (err: any) => {
+            console.error('Cordova speech error', err);
+            reject(err);
+          }, {
+            language: 'en-US',
+            matches: 1,
+            showPartial: true,
+            showPopup: false
+          });
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }
+  }
+
+  private async stopNativeRecognition(): Promise<void> {
+    if (!this.nativeSpeech) return;
+    try {
+      if (!this.isCordovaSpeech) {
+        await this.nativeSpeech.stop();
+      } else {
+        await new Promise<void>((resolve) => {
+          try {
+            this.nativeSpeech.stopListening(() => {
+              // Push the last interim as final
+              if (this.interimTranscript) {
+                if (this.currentTranscript && !this.currentTranscript.endsWith(' ')) {
+                  this.currentTranscript += ' ';
+                }
+                this.currentTranscript += this.interimTranscript;
+                this.interimTranscript = '';
+              }
+              resolve();
+            }, () => resolve());
+          } catch {
+            resolve();
+          }
+        });
+      }
+    } catch {}
   }
 
   isMediaRecorderSupported(): boolean {
