@@ -100,6 +100,11 @@
     private recognitionFallback: any = null;
     private interimTranscript = '';
     private finalTranscript = '';
+    // Interaction guards
+    private isPlaybackStarting = false;
+    private isStoppingPlayback = false;
+    private isStartingRecording = false;
+    private isStoppingRecording = false;
 
     constructor(
       private dataService: DataService,
@@ -430,7 +435,26 @@
               text: 'End Session',
               role: 'destructive',
               handler: () => {
-                this.endPracticeSessionNow();
+              // Show session complete when explicitly ending the session
+              if (this.sessionResults && this.currentStructuredPractice) {
+                const finalTranscript = this.userSpeechText || this.sessionResults.transcript || '';
+                const userWords = finalTranscript.split(/\s+/).filter((w: string) => w.length > 0).length;
+                const overallAccuracy = this.calculateOverallAccuracy({
+                  wordAccuracy: this.calculateWordAccuracy(finalTranscript, this.currentStructuredPractice.targetText),
+                  punctuationAccuracy: this.calculatePunctuationAccuracy(finalTranscript, this.currentStructuredPractice.targetText),
+                  confidence: this.sessionResults.confidence,
+                  duration: this.sessionResults.duration
+                });
+
+                this.showSessionComplete({
+                  accuracy: overallAccuracy,
+                  duration: (this.sessionResults.duration || 0) / 1000,
+                  wordsSpoken: userWords,
+                  previousAccuracy: this.previousSessionAccuracy,
+                  practiceType: this.selectedPracticeType
+                });
+              }
+              this.endPracticeSessionNow();
               }
             }
           ]
@@ -590,6 +614,10 @@
     }
 
     async listenToRecording() {
+      if (this.isPlaybackStarting || this.isPlayingRecording) {
+        return;
+      }
+      this.isPlaybackStarting = true;
       // Verify we have recording data
       if (!this.currentRecordingBlob && !this.currentRecordingUrl) {
         const audioBlob = this.speechService.getAudioBlob();
@@ -599,6 +627,7 @@
           await this.errorHandler.showWarning(
             'No audio recording available to play. Please record your speech first.'
           );
+          this.isPlaybackStarting = false;
           return;
         }
         
@@ -636,12 +665,16 @@
         console.log('Recording playback completed');
       } catch (error: any) {
         console.error('Error playing recording:', error);
-        await this.errorHandler.showError(
-          error,
-          ErrorType.AUDIO_PLAYBACK_FAILURE
-        );
+        const msg = (error && (error.name || error.message)) ? (error.name || error.message) : '';
+        if (msg !== 'AbortError' && msg !== 'NotAllowedError') {
+          await this.errorHandler.showError(
+            error,
+            ErrorType.AUDIO_PLAYBACK_FAILURE
+          );
+        }
       } finally {
         this.isPlayingRecording = false;
+        this.isPlaybackStarting = false;
         this.cdr.detectChanges();
       }
     }
@@ -676,6 +709,10 @@
           // Set up event listeners
           this.audioElement.onended = () => {
             console.log('iOS audio playback ended');
+            resolve();
+          };
+          // Resolve also on manual pause/stop so toggle can replay immediately
+          this.audioElement.onpause = () => {
             resolve();
           };
           
@@ -742,6 +779,9 @@
             console.log('Android audio playback ended');
             resolve();
           };
+          this.audioElement.onpause = () => {
+            resolve();
+          };
           
           this.audioElement.onerror = (e) => {
             console.error('Android audio error:', e);
@@ -771,45 +811,57 @@
     }
     
     private async playRecordingDesktop(): Promise<void> {
-      // Desktop browsers - use the speech service method
-      try {
-        await this.speechService.playRecording();
-      } catch (error) {
-        // Fallback to manual audio element
-        return new Promise((resolve, reject) => {
-          if (this.audioElement) {
-            this.audioElement.pause();
-            this.audioElement.src = '';
-          }
-          
-          this.audioElement = new Audio();
-          
-          if (this.currentRecordingUrl) {
-            this.audioElement.src = this.currentRecordingUrl;
-          } else if (this.currentRecordingBlob) {
-            const url = URL.createObjectURL(this.currentRecordingBlob);
-            this.audioElement.src = url;
-            this.currentRecordingUrl = url;
-          } else {
-            reject(new Error('No audio source'));
-            return;
-          }
-          
-          this.audioElement.onended = () => resolve();
-          this.audioElement.onerror = (e) => reject(e);
-          
-          this.audioElement.play().catch(reject);
-        });
-      }
+      // Always use a direct Audio element so we control the playing state
+      return new Promise((resolve, reject) => {
+        if (this.audioElement) {
+          this.audioElement.pause();
+          this.audioElement.src = '';
+        }
+        
+        this.audioElement = new Audio();
+        
+        if (this.currentRecordingUrl) {
+          this.audioElement.src = this.currentRecordingUrl;
+        } else if (this.currentRecordingBlob) {
+          const url = URL.createObjectURL(this.currentRecordingBlob);
+          this.audioElement.src = url;
+          this.currentRecordingUrl = url;
+        } else {
+          reject(new Error('No audio source'));
+          return;
+        }
+        
+        this.audioElement.onended = () => resolve();
+        this.audioElement.onpause = () => resolve();
+        this.audioElement.onerror = (e) => reject(e);
+        
+        this.audioElement.play().catch(reject);
+      });
     }
     
     stopPlayingRecording() {
-      if (this.audioElement) {
-        this.audioElement.pause();
-        this.audioElement.currentTime = 0;
+      if (this.isStoppingPlayback) return;
+      this.isStoppingPlayback = true;
+      try {
+        if (this.audioElement) {
+          this.audioElement.pause();
+          this.audioElement.currentTime = 0;
+        }
+        this.speechService.stopPlaying();
+        this.isPlayingRecording = false;
+      } finally {
+        this.isStoppingPlayback = false;
       }
-      this.speechService.stopPlaying();
-      this.isPlayingRecording = false;
+    }
+
+    async togglePlayback() {
+      // Single toggle with spam protection; never block stopping
+      if (this.isPlaybackStarting && !this.isPlayingRecording) return;
+      if (this.isPlayingRecording) {
+        this.stopPlayingRecording();
+        return;
+      }
+      await this.listenToRecording();
     }
 
     async speakWord(word: string, event?: Event) {
@@ -983,17 +1035,8 @@
 
       await modal.present();
       this.showFeedback = true;
-      
+      // No auto session-complete here; it will be shown only when the user ends the session
       const { data } = await modal.onDidDismiss();
-      
-      await this.showSessionComplete({
-        accuracy: overallAccuracy,
-        duration: this.sessionResults.duration / 1000,
-        wordsSpoken: userWords,
-        previousAccuracy: this.previousSessionAccuracy,
-        practiceType: this.selectedPracticeType
-      });
-      
       this.previousSessionAccuracy = overallAccuracy;
     }
     
@@ -1168,6 +1211,10 @@
     }
 
     async startStructuredRecording() {
+      if (this.isStartingRecording || this.isRecording) {
+        return;
+      }
+      this.isStartingRecording = true;
       // Check permissions first on mobile
       if (this.isMobile) {
         try {
@@ -1177,18 +1224,22 @@
         } catch (error) {
           console.error('Microphone permission denied:', error);
           await this.showMicrophonePermissionError();
+          this.isStartingRecording = false;
           return;
         }
       }
       
       if (!this.speechService.isSpeechRecognitionSupported() && !this.recognitionFallback) {
         await this.showSpeechRecognitionError();
+        this.isStartingRecording = false;
         return;
       }
 
       try {
         this.userSpeechText = '';
         this.sessionResults = null;
+        // Ensure target text is visible (compact) while recording
+        this.showTargetText = true;
         
         if (this.currentRecordingUrl) {
           URL.revokeObjectURL(this.currentRecordingUrl);
@@ -1260,10 +1311,12 @@
         }, 100);
         
         (this as any).transcriptInterval = transcriptInterval;
+        this.isStartingRecording = false;
         
       } catch (error) {
         console.error('Recording error:', error);
         this.isRecording = false;
+        this.isStartingRecording = false;
         
         await this.errorHandler.showError(
           error,
@@ -1273,6 +1326,10 @@
           }
         );
       }
+    }
+
+    toggleTargetText() {
+      this.showTargetText = !this.showTargetText;
     }
     
     private async startMediaRecorder(): Promise<void> {
@@ -1405,13 +1462,8 @@
           return;
         }
         
-        // Verify audio blob
-        if (!this.currentRecordingBlob) {
-          console.warn('⚠️ No audio recording available');
-          await this.errorHandler.showWarning(
-            'Audio recording may not be available for playback. Speech recognition worked correctly.'
-          );
-        } else {
+        // Verify audio blob (no intrusive warning; playback button will handle notification if needed)
+        if (this.currentRecordingBlob) {
           console.log('✓ Audio available:', this.currentRecordingBlob.size, 'bytes');
         }
         

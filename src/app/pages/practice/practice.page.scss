@@ -476,6 +476,10 @@ ion-content {
       padding: 20px;
       border-radius: 12px;
       margin: 0 0 16px 0;
+      &.compact {
+        max-height: 160px;
+        overflow: auto;
+      }
     }
     
     .target-text {
@@ -484,6 +488,10 @@ ion-content {
       line-height: 1.8;
       font-weight: 500;
       margin: 0;
+      &.recording-mode {
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
       
       .word-span {
         cursor: pointer;

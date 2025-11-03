@@ -17,7 +17,26 @@
     [duration]="recordingDuration"
     [wordCount]="wordCount"
     [showAudioLevel]="true">
+    <!-- Quick Stop Button in Recording Bar -->
+    <ion-button 
+      *ngIf="isRecording"
+      slot="end"
+      fill="solid" 
+      color="light"
+      size="small"
+      (click)="stopStructuredRecording()"
+      class="quick-stop-btn">
+      <ion-icon name="stop" slot="start"></ion-icon>
+      STOP
+    </ion-button>
   </app-recording-indicator>
+
+  <!-- Always-Visible Stop button overlay near the red header while recording (in case slot isn't rendered) -->
+  <ion-fab *ngIf="isRecording" vertical="top" horizontal="end" edge="true">
+    <ion-fab-button size="small" color="light" (click)="stopStructuredRecording()">
+      <ion-icon name="stop"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
   
   <!-- Context Indicator (shown during practice) -->
   <app-context-indicator
@@ -338,7 +357,7 @@
       </div>
 
       <!-- Target Text Container (Sticky during recording) -->
-      <ion-card class="target-text-card" [class.sticky]="isRecording">
+      <ion-card class="target-text-card" [class.sticky]="isRecording" [class.collapsed]="isRecording && !showTargetText">
         <ion-card-header>
           <ion-card-title>
             <ion-icon name="document-text" color="primary"></ion-icon>
@@ -348,30 +367,30 @@
               fill="clear" 
               size="small" 
               slot="end"
-              (click)="showTargetText = !showTargetText">
+              (click)="toggleTargetText()">
               <ion-icon [name]="showTargetText ? 'chevron-up' : 'chevron-down'" slot="icon-only"></ion-icon>
             </ion-button>
           </ion-card-title>
         </ion-card-header>
-        <ion-card-content [class.hidden]="!showTargetText && isRecording">
-          <div class="target-text-container">
-            <p class="target-text" *ngIf="currentStructuredPractice?.targetText">
+        <ion-card-content [class.hidden]="isRecording && !showTargetText">
+          <div class="target-text-container" [class.compact]="isRecording">
+            <p class="target-text" [class.recording-mode]="isRecording" *ngIf="currentStructuredPractice?.targetText">
               <span 
                 *ngFor="let word of getWordsArray(currentStructuredPractice?.targetText); let i = index" 
                 [class.highlighted]="highlightedWord === cleanWord(word)"
-                [class.clickable-word]="true"
-                (click)="speakWord(word, $event)"
+                [class.clickable-word]="!isRecording"
+                (click)="!isRecording && speakWord(word, $event)"
                 class="word-span">
                 {{ word }}<span *ngIf="i < getWordsArray(currentStructuredPractice?.targetText).length - 1">&nbsp;</span>
               </span>
             </p>
-            <div class="phonetic-guide" *ngIf="phoneticGuide">
+            <div class="phonetic-guide" *ngIf="phoneticGuide && !isRecording">
               <ion-icon name="information-circle"></ion-icon>
               <span>{{ phoneticGuide }}</span>
             </div>
           </div>
           
-          <div class="listen-controls">
+          <div class="listen-controls" *ngIf="!isRecording">
             <ion-button 
               *ngIf="!isListeningToText"
               fill="outline" 
@@ -449,21 +468,12 @@
             </ion-button>
             
             <ion-button 
-              *ngIf="userSpeechText && !isRecording && !isPlayingRecording"
-              fill="outline" 
+              *ngIf="userSpeechText && !isRecording"
+              [fill]="isPlayingRecording ? 'solid' : 'outline'"
               color="secondary"
-              (click)="listenToRecording()">
-              <ion-icon name="headset" slot="start"></ion-icon>
-              Listen to Your Recording
-            </ion-button>
-            
-            <ion-button 
-              *ngIf="isPlayingRecording"
-              fill="solid" 
-              color="secondary"
-              (click)="stopPlayingRecording()">
-              <ion-icon name="stop" slot="start"></ion-icon>
-              Stop Playing
+              (click)="togglePlayback()">
+              <ion-icon [name]="isPlayingRecording ? 'stop' : 'headset'" slot="start"></ion-icon>
+              {{ isPlayingRecording ? 'Stop Listening To Your Recording' : 'Listen To Your Recording' }}
             </ion-button>
             
           </div>
