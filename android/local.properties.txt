@@ -1,0 +1,1 @@
+sdk.dir=C:\\Users\\Wendell Pingol\\AppData\\Local\\Android\\Sdk
