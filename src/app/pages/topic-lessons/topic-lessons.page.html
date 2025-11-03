@@ -1,6 +1,6 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>{{ topic?.title || 'Topic' }}</ion-title>
+    <ion-title>Topic</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -112,15 +112,16 @@
           <div class="quiz-header">
             <ion-icon name="help-circle" color="tertiary"></ion-icon>
             <div class="quiz-info">
-              <h3>Quiz</h3>
-              <p>Start quiz about the topic</p>
+              <h3>Exam</h3>
+              <p>Start Exam about the topic</p>
+              <p>50 Questions Exam about the topic</p>
             </div>
           </div>
           <ion-button 
             fill="solid" 
             color="tertiary"
             (click)="startQuiz()">
-            Start Quiz
+            Start Exam
           </ion-button>
         </ion-card-content>
       </ion-card>
