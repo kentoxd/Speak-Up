@@ -56,7 +56,7 @@ export interface MotivationalQuote {
 }
 
 export interface StructuredPractice {
-  type: 'monologue' | 'public-speaking' | 'debate-speech';
+  type: 'monologue' | 'public-speaking' | 'storytelling';
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   title: string;
   description: string;
@@ -4137,57 +4137,57 @@ export class DataService {
           'Maintain strong stage presence'
         ]
       },
-      // Debate Speech - Beginner
-      {
-        type: 'debate-speech',
-        difficulty: 'beginner',
-        title: 'Simple Argument Presentation',
-        description: 'Practice presenting a clear argument with supporting reasons.',
-        practiceText: 'I believe that this is important because...',
-        targetText: 'I believe that regular exercise is important because it improves physical health, boosts mental well-being, and increases energy levels. Making time for physical activity is an investment in yourself that pays dividends throughout your life.',
-        timeLimit: 90,
-        tips: [
-          'State your position clearly',
-          'Provide at least two supporting reasons',
-          'Use examples to illustrate your points',
-          'End with a strong conclusion'
-        ]
-      },
-      // Debate Speech - Intermediate
-      {
-        type: 'debate-speech',
-        difficulty: 'intermediate',
-        title: 'Balanced Argument Discussion',
-        description: 'Present multiple perspectives on a complex issue.',
-        practiceText: 'This topic has many different viewpoints...',
-        targetText: 'This topic has many different viewpoints that deserve consideration. While technology offers incredible benefits in efficiency and connectivity, we must also acknowledge its potential drawbacks, including privacy concerns and reduced face-to-face interaction. A balanced approach requires understanding all sides of the issue.',
-        timeLimit: 120,
-        tips: [
-          'Acknowledge different perspectives fairly',
-          'Present evidence for each side',
-          'Use transitional phrases to connect ideas',
-          'Maintain a respectful and objective tone',
-          'Conclude with a balanced summary'
-        ]
-      },
-      // Debate Speech - Advanced
-      {
-        type: 'debate-speech',
-        difficulty: 'advanced',
-        title: 'Debate: Technology and Communication',
-        description: 'Present arguments about technology\'s impact on communication',
-        practiceText: 'Technology has changed how we communicate...',
-        targetText: 'While technology has made communication faster and more accessible, we must consider both benefits and drawbacks. Technology connects us globally, but face-to-face interaction remains essential for building deep relationships. The challenge lies in finding the right balance between digital convenience and human connection.',
-        timeLimit: 180,
-        tips: [
-          'Present both sides fairly',
-          'Use evidence to support your claims',
-          'Maintain a respectful tone',
-          'Listen actively before responding',
-          'Find common ground',
-          'Use sophisticated argumentation techniques'
-        ]
-      }
+// Storytelling - Beginner
+{
+  type: 'storytelling',
+  difficulty: 'beginner',
+  title: 'A Rainy Day Lesson',
+  description: 'Practice telling a short story with a clear beginning, middle, and end.',
+  practiceText: 'It was raining hard, and I forgot my umbrella...',
+  targetText: 'It was raining hard, and I forgot my umbrella. I waited under a tree, hoping the rain would stop. Then, a kind woman offered to share her umbrella with me. We walked together and talked. That day, I realized that kindness can make even a rainy day feel warm.',
+  timeLimit: 90,
+  tips: [
+    'Set the scene clearly',
+    'Introduce characters or people involved',
+    'Describe events in order',
+    'Include a lesson or reflection at the end'
+  ]
+},
+
+// Storytelling - Intermediate
+{
+  type: 'storytelling',
+  difficulty: 'intermediate',
+  title: 'First Day Courage',
+  description: 'Tell a story about a personal experience and reflect on it.',
+  practiceText: 'I was nervous on my first day at work...',
+  targetText: 'I was nervous on my first day at work. I made mistakes, but my boss told me, “Don’t worry, learning takes time.” Those words encouraged me to do better every day. Now, I know that growth always begins with courage.',
+  timeLimit: 120,
+  tips: [
+    'Describe your feelings and thoughts',
+    'Show challenges or obstacles',
+    'Include dialogue or interactions',
+    'End with a reflection or lesson'
+  ]
+},
+
+// Storytelling - Advanced
+{
+  type: 'storytelling',
+  difficulty: 'advanced',
+  title: 'The Meaning of Home',
+  description: 'Narrate a story with multiple perspectives or emotions.',
+  practiceText: '“Ma!” I called as I stepped inside...',
+  targetText: '“Ma!” I called as I stepped inside.\nShe gasped, “You’re home!”\nDad laughed. “Finally!”\nOver dinner, we talked like old times.\nThat night, I realized — home isn’t a place. It’s people.',
+  timeLimit: 180,
+  tips: [
+    'Use dialogue to show emotions',
+    'Include sensory details and descriptions',
+    'Develop multiple layers or perspectives',
+    'Conclude with a meaningful reflection'
+  ]
+}
+
     ];
   }
 

@@ -34,7 +34,7 @@
     practiceTypes = [
       { value: 'monologue', label: 'Monologue' },
       { value: 'public-speaking', label: 'Public Speaking' },
-      { value: 'debate-speech', label: 'Debate Speech' }
+      { value: 'storytelling', label: 'Storytelling' }
     ];
     
     difficultyLevels = [
@@ -496,7 +496,7 @@
             'Speak clearly and at a natural pace',
             'Try to match the exact wording and punctuation'
           ],
-          type: this.selectedPracticeType as 'monologue' | 'public-speaking' | 'debate-speech',
+          type: this.selectedPracticeType as 'monologue' | 'public-speaking' | 'storytelling',
           difficulty: this.selectedDifficulty as 'beginner' | 'intermediate' | 'advanced',
           practiceText: this.customTargetText
         };
@@ -1517,9 +1517,11 @@
 
     private async handleStructuredRecordingResult(result: SpeechRecognitionResult) {
       this.isRecording = false;
-      
+    
+      // Use the transcript from the result if userSpeechText is empty
       const finalTranscript = this.userSpeechText || result.transcript;
-      
+    
+      // Store session result
       this.sessionResults = {
         transcript: finalTranscript,
         confidence: result.confidence,
@@ -1528,30 +1530,48 @@
         difficulty: this.selectedDifficulty,
         timestamp: new Date().toISOString()
       };
-
+    
       await this.storageService.addPracticeSession(this.sessionResults);
       await this.loadPracticeHistory();
-
-      if (this.sessionResults && this.currentStructuredPractice) {
-        const accuracy = this.calculateOverallAccuracy({
-          wordAccuracy: this.calculateWordAccuracy(finalTranscript, this.currentStructuredPractice.targetText),
-          punctuationAccuracy: this.calculatePunctuationAccuracy(finalTranscript, this.currentStructuredPractice.targetText),
-          confidence: result.confidence,
-          duration: result.duration
-        });
-
-        const durationMinutes = result.duration / 60000;
-        
-        const practiceType = this.selectedPracticeType === 'public-speaking' ? 'publicSpeaking' : 
-                            this.selectedPracticeType === 'debate-speech' ? 'debate' : 'monologue';
-        
-        await this.userProgressionService.updatePracticeSession(
-          accuracy,
-          durationMinutes,
-          practiceType as 'monologue' | 'publicSpeaking' | 'debate',
-          this.selectedDifficulty as 'beginner' | 'intermediate' | 'advanced'
-        );
-      }
+    
+      if (!this.sessionResults || !this.currentStructuredPractice) return;
+    
+      // Calculate accuracies
+      const wordAccuracy = this.calculateWordAccuracy(finalTranscript, this.currentStructuredPractice.targetText);
+      const punctuationAccuracy = this.calculatePunctuationAccuracy(finalTranscript, this.currentStructuredPractice.targetText);
+    
+      const accuracy = this.calculateOverallAccuracy({
+        wordAccuracy,
+        punctuationAccuracy,
+        confidence: result.confidence,
+        duration: result.duration
+      });
+    
+      const durationMinutes = result.duration / 60000;
+    
+      // Map selectedPracticeType to API type
+      const practiceTypeMap: Record<string, 'monologue' | 'publicSpeaking' | 'storytelling'> = {
+        'public-speaking': 'publicSpeaking',
+        'storytelling': 'storytelling',
+        'monologue': 'monologue'
+      };
+      const practiceType = practiceTypeMap[this.selectedPracticeType] || 'monologue';
+    
+      // Map selectedDifficulty safely
+      const difficultyMap: Record<string, 'beginner' | 'intermediate' | 'advanced'> = {
+        'beginner': 'beginner',
+        'intermediate': 'intermediate',
+        'advanced': 'advanced'
+      };
+      const difficulty = difficultyMap[this.selectedDifficulty] || 'beginner';
+    
+      // Update user progression
+      await this.userProgressionService.updatePracticeSession(  
+        accuracy,
+        durationMinutes,
+        practiceType === 'storytelling' ? 'monologue' : practiceType,
+        difficulty
+      );
     }
 
     private calculateOverallAccuracy(analysis: any): number {
