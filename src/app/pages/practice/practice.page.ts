@@ -87,6 +87,8 @@
     isIOS = false;
     isAndroid = false;
     isMobile = false;
+  // Browser microphone permission tracking
+  micPermissionState: 'unknown' | 'granted' | 'denied' | 'prompt' | 'unsupported' = 'unknown';
     
     // Audio playback
     private audioElement: HTMLAudioElement | null = null;
@@ -164,6 +166,8 @@
       
       // Enhanced speech recognition check
       await this.checkSpeechRecognitionSupport();
+  // Track mic permission state (browser)
+  await this.updateMicPermissionState();
       
       // Initialize audio context for iOS
       if (this.isIOS) {
@@ -1118,6 +1122,9 @@
         this.isStartingRecording = false;
         return;
       }
+      // Ensure browser mic access
+      const ok = await this.ensureMicrophoneAccess();
+      if (!ok) return;
 
       try {
         this.isRecording = true;
@@ -1218,18 +1225,14 @@
         return;
       }
       this.isStartingRecording = true;
-      // Check permissions first on mobile
+      // Check permissions first on mobile (browser flow) and ensure access
       if (this.isMobile) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          stream.getTracks().forEach(track => track.stop()); // Stop immediately, just checking permission
-          console.log('✓ Microphone permission granted');
-        } catch (error) {
-          console.error('Microphone permission denied:', error);
-          await this.showMicrophonePermissionError();
+        const ok = await this.ensureMicrophoneAccess();
+        if (!ok) {
           this.isStartingRecording = false;
           return;
         }
+        console.log('✓ Microphone permission granted');
       }
       
       if (!this.speechService.isSpeechRecognitionSupported() && !this.recognitionFallback) {
@@ -1609,6 +1612,67 @@
       return text.split(/\s+/).filter(word => word.length > 0);
     }
     
+  // Browser microphone permission helpers (Chrome Android / iOS Safari)
+  private async updateMicPermissionState(): Promise<void> {
+    try {
+      const anyNav: any = navigator as any;
+      if (!anyNav.permissions || !anyNav.permissions.query) {
+        this.micPermissionState = 'unsupported';
+        return;
+      }
+      const status = await anyNav.permissions.query({ name: 'microphone' as any });
+      this.micPermissionState = (status.state as any) || 'unknown';
+      status.onchange = () => {
+        this.micPermissionState = (status.state as any) || 'unknown';
+        this.cdr.detectChanges();
+      };
+    } catch {
+      this.micPermissionState = 'unsupported';
+    }
+  }
+
+  async requestMicrophonePermission(): Promise<boolean> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop());
+      this.micPermissionState = 'granted';
+      this.cdr.detectChanges();
+      return true;
+    } catch (error: any) {
+      console.error('Microphone request failed:', error);
+      await this.updateMicPermissionState();
+      await this.showMicFixInstructions(error);
+      return false;
+    }
+  }
+
+  private async ensureMicrophoneAccess(): Promise<boolean> {
+    try {
+      if ((navigator as any).permissions && this.micPermissionState === 'granted') return true;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop());
+      this.micPermissionState = 'granted';
+      return true;
+    } catch (error: any) {
+      console.warn('ensureMicrophoneAccess failed:', error);
+      await this.updateMicPermissionState();
+      await this.showMicFixInstructions(error);
+      return false;
+    }
+  }
+
+  private async showMicFixInstructions(error?: any) {
+    const isNotFound = error && error.name === 'NotFoundError';
+    const platformMsg = this.isAndroid
+      ? 'Chrome > Lock (🔒) > Site settings > Microphone > Allow, then reload.'
+      : 'iOS Settings > Safari > Microphone > Allow, then reopen the site.';
+    const extra = isNotFound
+      ? '\nNo input device found. Ensure a microphone is available and not in use by another app.'
+      : '';
+    const msg = `Microphone Permission Required\n\n${platformMsg}${extra}`;
+    await this.errorHandler.showInfo(msg);
+  }
+
     private async showMicrophonePermissionError() {
       const message = this.isAndroid 
         ? 'Please enable microphone permission in your browser settings:\n\n' +
@@ -1632,4 +1696,4 @@
         ErrorType.SPEECH_RECOGNITION_NOT_SUPPORTED
       );
     }
-  }
+}
