@@ -475,15 +475,6 @@
               <ion-icon [name]="isPlayingRecording ? 'stop' : 'headset'" slot="start"></ion-icon>
               {{ isPlayingRecording ? 'Stop Listening To Your Recording' : 'Listen To Your Recording' }}
             </ion-button>
-
-            <ion-button
-              *ngIf="!isRecording && micPermissionState !== 'granted'"
-              fill="outline"
-              color="primary"
-              (click)="requestMicrophonePermission()">
-              <ion-icon name="mic" slot="start"></ion-icon>
-              Request Microphone Access
-            </ion-button>
             
           </div>
         </ion-card-content>
