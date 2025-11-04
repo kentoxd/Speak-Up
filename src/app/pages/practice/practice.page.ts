@@ -21,15 +21,6 @@ export interface SavedCustomText {
   createdAt: string;
 }
 
-// Browser compatibility detection
-interface BrowserCapabilities {
-  hasSpeechRecognition: boolean;
-  hasMediaRecorder: boolean;
-  hasGetUserMedia: boolean;
-  speechRecognitionType: 'native' | 'webkit' | 'none';
-  preferredAudioFormat: string;
-}
-
 @Component({
   selector: 'app-practice',
   templateUrl: './practice.page.html',
@@ -97,16 +88,6 @@ export class PracticePage implements OnInit, OnDestroy {
   isIOS = false;
   isAndroid = false;
   isMobile = false;
-  browserName = '';
-  
-  // Browser capabilities
-  private browserCapabilities: BrowserCapabilities = {
-    hasSpeechRecognition: false,
-    hasMediaRecorder: false,
-    hasGetUserMedia: false,
-    speechRecognitionType: 'none',
-    preferredAudioFormat: 'audio/webm'
-  };
   
   // Audio playback
   private audioElement: HTMLAudioElement | null = null;
@@ -115,24 +96,16 @@ export class PracticePage implements OnInit, OnDestroy {
   // MediaRecorder for better cross-platform support
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
-  private mediaStream: MediaStream | null = null;
   
-  // Speech recognition instances
-  private recognitionInstance: any = null;
+  // Fallback for speech recognition
+  private recognitionFallback: any = null;
   private interimTranscript = '';
   private finalTranscript = '';
-  private recognitionRestartAttempts = 0;
-  private maxRestartAttempts = 3;
-  
   // Interaction guards
   private isPlaybackStarting = false;
   private isStoppingPlayback = false;
   private isStartingRecording = false;
   private isStoppingRecording = false;
-  
-  // Permission tracking
-  private microphonePermissionGranted = false;
-  private hasShownPermissionError = false;
 
   constructor(
     private dataService: DataService,
@@ -153,19 +126,17 @@ export class PracticePage implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
-    // Detect platform and browser
-    await this.detectPlatformAndBrowser();
+    // Detect platform
+    this.isIOS = this.platform.is('ios');
+    this.isAndroid = this.platform.is('android');
+    this.isMobile = this.platform.is('mobile');
     
     console.log('Platform detection:', {
       isIOS: this.isIOS,
       isAndroid: this.isAndroid,
       isMobile: this.isMobile,
-      browser: this.browserName,
       platforms: this.platform.platforms()
     });
-    
-    // Detect browser capabilities
-    await this.detectBrowserCapabilities();
     
     this.exercises = this.dataService.getPracticeExercises();
     await this.loadPracticeHistory();
@@ -192,13 +163,13 @@ export class PracticePage implements OnInit, OnDestroy {
     
     this.loadStructuredPractice();
     
+    // Enhanced speech recognition check
+    await this.checkSpeechRecognitionSupport();
+    
     // Initialize audio context for iOS
     if (this.isIOS) {
       await this.initializeAudioContext();
     }
-    
-    // Show compatibility warning if needed
-    await this.checkCompatibilityAndWarn();
     
     this.authService.getCurrentUser().subscribe(async user => {
       if (user) {
@@ -217,128 +188,11 @@ export class PracticePage implements OnInit, OnDestroy {
       clearInterval((this as any).transcriptInterval);
     }
     
-    // Clean up all resources
-    this.cleanupAllResources();
+    // Clean up audio resources
+    this.cleanupAudioResources();
   }
   
-  private async detectPlatformAndBrowser() {
-    this.isIOS = this.platform.is('ios');
-    this.isAndroid = this.platform.is('android');
-    this.isMobile = this.platform.is('mobile');
-    
-    // Detect browser
-    const ua = navigator.userAgent.toLowerCase();
-    if (ua.includes('chrome') && !ua.includes('edg')) {
-      this.browserName = 'chrome';
-    } else if (ua.includes('safari') && !ua.includes('chrome')) {
-      this.browserName = 'safari';
-    } else if (ua.includes('firefox')) {
-      this.browserName = 'firefox';
-    } else if (ua.includes('edg')) {
-      this.browserName = 'edge';
-    } else {
-      this.browserName = 'unknown';
-    }
-  }
-  
-  private async detectBrowserCapabilities() {
-    // Check for Speech Recognition
-    // @ts-ignore
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (SpeechRecognition) {
-      this.browserCapabilities.hasSpeechRecognition = true;
-      // @ts-ignore
-      this.browserCapabilities.speechRecognitionType = window.SpeechRecognition ? 'native' : 'webkit';
-    }
-    
-    // Check for MediaRecorder
-    this.browserCapabilities.hasMediaRecorder = typeof MediaRecorder !== 'undefined';
-    
-    // Check for getUserMedia
-    this.browserCapabilities.hasGetUserMedia = !!(
-      navigator.mediaDevices && navigator.mediaDevices.getUserMedia
-    );
-    
-    // Determine best audio format
-    if (this.browserCapabilities.hasMediaRecorder) {
-      if (this.isIOS) {
-        // iOS Safari prefers mp4
-        if (MediaRecorder.isTypeSupported('audio/mp4')) {
-          this.browserCapabilities.preferredAudioFormat = 'audio/mp4';
-        } else if (MediaRecorder.isTypeSupported('audio/wav')) {
-          this.browserCapabilities.preferredAudioFormat = 'audio/wav';
-        } else {
-          this.browserCapabilities.preferredAudioFormat = 'audio/webm';
-        }
-      } else if (this.browserName === 'firefox') {
-        // Firefox prefers ogg
-        if (MediaRecorder.isTypeSupported('audio/ogg')) {
-          this.browserCapabilities.preferredAudioFormat = 'audio/ogg';
-        } else {
-          this.browserCapabilities.preferredAudioFormat = 'audio/webm';
-        }
-      } else {
-        // Chrome/Edge prefer webm with opus
-        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-          this.browserCapabilities.preferredAudioFormat = 'audio/webm;codecs=opus';
-        } else {
-          this.browserCapabilities.preferredAudioFormat = 'audio/webm';
-        }
-      }
-    }
-    
-    console.log('Browser capabilities:', this.browserCapabilities);
-  }
-  
-  private async checkCompatibilityAndWarn() {
-    const issues: string[] = [];
-    
-    if (!this.browserCapabilities.hasSpeechRecognition) {
-      issues.push('Speech recognition is not supported in this browser');
-    }
-    
-    if (!this.browserCapabilities.hasMediaRecorder) {
-      issues.push('Audio recording is not supported in this browser');
-    }
-    
-    if (!this.browserCapabilities.hasGetUserMedia) {
-      issues.push('Microphone access is not supported in this browser');
-    }
-    
-    // Only show warning if there are ACTUAL issues
-    if (issues.length > 0) {
-      console.warn('Browser compatibility issues detected:', issues);
-      
-      let message = 'Some features may not work:\n\n';
-      message += issues.join('\n');
-      message += '\n\nRecommended browsers:\n';
-      
-      if (this.isIOS) {
-        message += '• Safari (latest version)\n';
-        message += '• Chrome for iOS (with microphone permission)';
-      } else if (this.isAndroid) {
-        message += '• Chrome (latest version)\n';
-        message += '• Firefox';
-      } else {
-        message += '• Chrome\n• Edge\n• Firefox';
-      }
-      
-      const alert = await this.alertController.create({
-        header: 'Browser Compatibility',
-        message: message,
-        buttons: ['I Understand']
-      });
-      
-      await alert.present();
-    } else {
-      // All features supported - just log success
-      console.log('✓ All browser features supported:', this.browserCapabilities);
-    }
-  }
-  
-  private cleanupAllResources() {
-    // Clean up audio
+  private cleanupAudioResources() {
     if (this.audioElement) {
       this.audioElement.pause();
       this.audioElement.src = '';
@@ -350,39 +204,8 @@ export class PracticePage implements OnInit, OnDestroy {
       this.currentRecordingUrl = null;
     }
     
-    // Clean up media recorder
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      try {
-        this.mediaRecorder.stop();
-      } catch (e) {
-        console.log('MediaRecorder already stopped');
-      }
-    }
-    this.mediaRecorder = null;
-    
-    // Clean up media stream
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach(track => track.stop());
-      this.mediaStream = null;
-    }
-    
-    // Clean up speech recognition
-    if (this.recognitionInstance) {
-      try {
-        this.recognitionInstance.stop();
-      } catch (e) {
-        console.log('Recognition already stopped');
-      }
-      this.recognitionInstance = null;
-    }
-    
-    // Clean up audio context
-    if (this.audioContext && this.audioContext.state !== 'closed') {
-      try {
-        this.audioContext.close();
-      } catch (e) {
-        console.log('AudioContext already closed');
-      }
+      this.mediaRecorder.stop();
     }
   }
   
@@ -392,6 +215,7 @@ export class PracticePage implements OnInit, OnDestroy {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       this.audioContext = new AudioContextClass();
       
+      // iOS requires user interaction to unlock audio context
       if (this.audioContext.state === 'suspended') {
         console.log('Audio context suspended, will resume on user interaction');
       }
@@ -400,67 +224,36 @@ export class PracticePage implements OnInit, OnDestroy {
     }
   }
   
-  private async requestMicrophonePermission(): Promise<boolean> {
-    if (this.microphonePermissionGranted) {
-      return true;
-    }
+  private async checkSpeechRecognitionSupport() {
+    const isSupported = this.speechService.isSpeechRecognitionSupported();
     
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 44100
-        } 
-      });
+    if (!isSupported) {
+      // Check for alternative speech recognition
+      // @ts-ignore
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       
-      // Permission granted - stop the stream immediately
-      stream.getTracks().forEach(track => track.stop());
-      this.microphonePermissionGranted = true;
-      this.hasShownPermissionError = false;
-      
-      console.log('✓ Microphone permission granted');
-      return true;
-      
-    } catch (error: any) {
-      console.error('Microphone permission denied:', error);
-      
-      if (!this.hasShownPermissionError) {
-        this.hasShownPermissionError = true;
-        await this.showMicrophonePermissionError(error);
+      if (SpeechRecognition) {
+        console.log('Alternative speech recognition available');
+        this.recognitionFallback = new SpeechRecognition();
+        this.setupFallbackRecognition();
+      } else {
+        console.warn('No speech recognition available on this device');
+        
+        if (this.isAndroid) {
+          await this.showAndroidRecordingInstructions();
+        }
       }
-      
-      return false;
     }
   }
   
-  private initializeSpeechRecognition() {
-    if (this.recognitionInstance) {
-      return this.recognitionInstance;
-    }
+  private setupFallbackRecognition() {
+    if (!this.recognitionFallback) return;
     
-    if (!this.browserCapabilities.hasSpeechRecognition) {
-      console.error('Speech recognition not supported');
-      return null;
-    }
+    this.recognitionFallback.continuous = true;
+    this.recognitionFallback.interimResults = true;
+    this.recognitionFallback.lang = 'en-US';
     
-    // @ts-ignore
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    
-    // Configure recognition for maximum compatibility
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-    recognition.maxAlternatives = 1;
-    
-    recognition.onstart = () => {
-      console.log('✓ Speech recognition started');
-      this.recognitionRestartAttempts = 0;
-    };
-    
-    recognition.onresult = (event: any) => {
+    this.recognitionFallback.onresult = (event: any) => {
       this.interimTranscript = '';
       
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -481,69 +274,33 @@ export class PracticePage implements OnInit, OnDestroy {
       }
     };
     
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
+    this.recognitionFallback.onerror = (event: any) => {
+      console.error('Fallback recognition error:', event.error);
       
-      // Don't show error for no-speech - it's normal
       if (event.error === 'no-speech') {
+        // Don't show error for no-speech, just continue
         return;
       }
       
-      // Handle aborted error (user stopped)
-      if (event.error === 'aborted') {
-        console.log('Speech recognition aborted by user');
-        return;
-      }
-      
-      // Try to restart on certain errors
-      if (event.error === 'network' && this.isRecording && this.recognitionRestartAttempts < this.maxRestartAttempts) {
-        console.log('Attempting to restart speech recognition...');
-        this.recognitionRestartAttempts++;
-        
-        setTimeout(() => {
-          if (this.isRecording && this.recognitionInstance) {
-            try {
-              this.recognitionInstance.start();
-            } catch (e) {
-              console.log('Could not restart recognition:', e);
-            }
-          }
-        }, 1000);
-        
-        return;
-      }
-      
-      // Show error for other cases
-      if (this.isRecording) {
-        this.errorHandler.showError(
-          new Error(event.error),
-          ErrorType.RECORDING_FAILED
-        );
-      }
+      this.errorHandler.showError(
+        new Error(event.error),
+        ErrorType.RECORDING_FAILED
+      );
     };
+  }
+  
+  private async showAndroidRecordingInstructions() {
+    const alert = await this.alertController.create({
+      header: 'Chrome Permissions Required',
+      message: 'To use speech recording on Android Chrome:\n\n' +
+              '1. Tap the 🔒 lock icon in the address bar\n' +
+              '2. Enable "Microphone" permission\n' +
+              '3. Reload the page\n\n' +
+              'Alternative: Use Chrome on desktop or Firefox on Android.',
+      buttons: ['OK']
+    });
     
-    recognition.onend = () => {
-      console.log('Speech recognition ended');
-      
-      // Auto-restart if still recording and not manually stopped
-      if (this.isRecording && this.recognitionRestartAttempts < this.maxRestartAttempts) {
-        console.log('Auto-restarting speech recognition...');
-        this.recognitionRestartAttempts++;
-        
-        setTimeout(() => {
-          if (this.isRecording && this.recognitionInstance) {
-            try {
-              this.recognitionInstance.start();
-            } catch (e) {
-              console.log('Could not restart recognition:', e);
-            }
-          }
-        }, 100);
-      }
-    };
-    
-    this.recognitionInstance = recognition;
-    return recognition;
+    await alert.present();
   }
 
   toggleInstructions() {
@@ -553,7 +310,6 @@ export class PracticePage implements OnInit, OnDestroy {
   toggleTips() {
     this.isTipsVisible = !this.isTipsVisible;
   }
-  
   setPracticeReady() {
     this.isPracticeReady = true;
     this.currentPracticeStep = 3;
@@ -649,18 +405,6 @@ export class PracticePage implements OnInit, OnDestroy {
   }
 
   async startStructuredPractice() {
-    // Check capabilities before starting
-    if (!this.browserCapabilities.hasSpeechRecognition || !this.browserCapabilities.hasMediaRecorder) {
-      await this.checkCompatibilityAndWarn();
-      return;
-    }
-    
-    // Request microphone permission
-    const hasPermission = await this.requestMicrophonePermission();
-    if (!hasPermission) {
-      return;
-    }
-    
     this.isPracticing = true;
     this.sessionResults = null;
     this.currentPracticeStep = 3;
@@ -695,25 +439,26 @@ export class PracticePage implements OnInit, OnDestroy {
             text: 'End Session',
             role: 'destructive',
             handler: () => {
-              if (this.sessionResults && this.currentStructuredPractice) {
-                const finalTranscript = this.userSpeechText || this.sessionResults.transcript || '';
-                const userWords = finalTranscript.split(/\s+/).filter((w: string) => w.length > 0).length;
-                const overallAccuracy = this.calculateOverallAccuracy({
-                  wordAccuracy: this.calculateWordAccuracy(finalTranscript, this.currentStructuredPractice.targetText),
-                  punctuationAccuracy: this.calculatePunctuationAccuracy(finalTranscript, this.currentStructuredPractice.targetText),
-                  confidence: this.sessionResults.confidence,
-                  duration: this.sessionResults.duration
-                });
+            // Show session complete when explicitly ending the session
+            if (this.sessionResults && this.currentStructuredPractice) {
+              const finalTranscript = this.userSpeechText || this.sessionResults.transcript || '';
+              const userWords = finalTranscript.split(/\s+/).filter((w: string) => w.length > 0).length;
+              const overallAccuracy = this.calculateOverallAccuracy({
+                wordAccuracy: this.calculateWordAccuracy(finalTranscript, this.currentStructuredPractice.targetText),
+                punctuationAccuracy: this.calculatePunctuationAccuracy(finalTranscript, this.currentStructuredPractice.targetText),
+                confidence: this.sessionResults.confidence,
+                duration: this.sessionResults.duration
+              });
 
-                this.showSessionComplete({
-                  accuracy: overallAccuracy,
-                  duration: (this.sessionResults.duration || 0) / 1000,
-                  wordsSpoken: userWords,
-                  previousAccuracy: this.previousSessionAccuracy,
-                  practiceType: this.selectedPracticeType
-                });
-              }
-              this.endPracticeSessionNow();
+              this.showSessionComplete({
+                accuracy: overallAccuracy,
+                duration: (this.sessionResults.duration || 0) / 1000,
+                wordsSpoken: userWords,
+                previousAccuracy: this.previousSessionAccuracy,
+                practiceType: this.selectedPracticeType
+              });
+            }
+            this.endPracticeSessionNow();
             }
           }
         ]
@@ -734,7 +479,7 @@ export class PracticePage implements OnInit, OnDestroy {
     this.timeRemaining = 0;
     this.currentPracticeStep = 1;
     this.practiceStateService.clearState();
-    this.cleanupAllResources();
+    this.cleanupAudioResources();
   }
 
   cleanWord(word: string): string {
@@ -877,21 +622,51 @@ export class PracticePage implements OnInit, OnDestroy {
       return;
     }
     this.isPlaybackStarting = true;
-    
     // Verify we have recording data
     if (!this.currentRecordingBlob && !this.currentRecordingUrl) {
+      const audioBlob = this.speechService.getAudioBlob();
+      const audioUrl = this.speechService.getAudioUrl();
+      
+      if (!audioBlob && !audioUrl) {
+        await this.errorHandler.showWarning(
+          'No audio recording available to play. Please record your speech first.'
+        );
+        this.isPlaybackStarting = false;
+        return;
+      }
+      
+      if (audioBlob) {
+        this.currentRecordingBlob = audioBlob;
+      }
+      if (audioUrl) {
+        if (this.currentRecordingUrl) {
+          URL.revokeObjectURL(this.currentRecordingUrl);
+        }
+        this.currentRecordingUrl = audioUrl;
+      }
+    }
+    
+    if (!this.currentRecordingBlob && !this.currentRecordingUrl) {
       await this.errorHandler.showWarning(
-        'No audio recording available to play. Please record your speech first.'
+        'Audio recording is not available. Please record again.'
       );
-      this.isPlaybackStarting = false;
       return;
     }
+    
+
 
     try {
       this.isPlayingRecording = true;
       this.cdr.detectChanges();
       
-      await this.playRecordingUniversal();
+      // Use different playback methods based on platform
+      if (this.isIOS) {
+        await this.playRecordingIOS();
+      } else if (this.isAndroid) {
+        await this.playRecordingAndroid();
+      } else {
+        await this.playRecordingDesktop();
+      }
       
       console.log('Recording playback completed');
     } catch (error: any) {
@@ -910,10 +685,11 @@ export class PracticePage implements OnInit, OnDestroy {
     }
   }
   
-  private async playRecordingUniversal(): Promise<void> {
+  private async playRecordingIOS(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        // Clean up previous audio element
+        // iOS requires direct user interaction for audio playback
+        // Create fresh audio element each time
         if (this.audioElement) {
           this.audioElement.pause();
           this.audioElement.src = '';
@@ -921,12 +697,79 @@ export class PracticePage implements OnInit, OnDestroy {
         
         this.audioElement = new Audio();
         
-        // Set source
+        // Use blob directly for iOS
         if (this.currentRecordingBlob) {
           const url = URL.createObjectURL(this.currentRecordingBlob);
           this.audioElement.src = url;
+        } else if (this.currentRecordingUrl) {
+          this.audioElement.src = this.currentRecordingUrl;
+        } else {
+          reject(new Error('No audio source available'));
+          return;
+        }
+        
+        // iOS-specific audio settings
+        this.audioElement.preload = 'auto';
+        this.audioElement.controls = false;
+        
+        // Set up event listeners
+        this.audioElement.onended = () => {
+          console.log('iOS audio playback ended');
+          resolve();
+        };
+        // Resolve also on manual pause/stop so toggle can replay immediately
+        this.audioElement.onpause = () => {
+          resolve();
+        };
+        
+        this.audioElement.onerror = (e) => {
+          console.error('iOS audio error:', e);
+          reject(new Error('iOS audio playback failed'));
+        };
+        
+        this.audioElement.oncanplaythrough = () => {
+          console.log('iOS audio can play through');
+        };
+        
+        // Load and play
+        this.audioElement.load();
+        
+        const playPromise = this.audioElement.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log('iOS audio playing successfully');
+            })
+            .catch(error => {
+              console.error('iOS play() failed:', error);
+              reject(error);
+            });
+        }
+      } catch (error) {
+        console.error('iOS playback setup failed:', error);
+        reject(error);
+      }
+    });
+  }
+  
+  private async playRecordingAndroid(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        // Android Chrome has specific audio handling
+        if (this.audioElement) {
+          this.audioElement.pause();
+          this.audioElement.src = '';
+        }
+        
+        this.audioElement = new Audio();
+        
+        if (this.currentRecordingBlob) {
+          // For Android, create a fresh URL each time
+          const url = URL.createObjectURL(this.currentRecordingBlob);
+          this.audioElement.src = url;
           
-          // Clean up old URL
+          // Clean up old URL after setting new one
           if (this.currentRecordingUrl && this.currentRecordingUrl !== url) {
             URL.revokeObjectURL(this.currentRecordingUrl);
           }
@@ -938,44 +781,67 @@ export class PracticePage implements OnInit, OnDestroy {
           return;
         }
         
-        // Configure audio element
-        this.audioElement.preload = 'auto';
-        this.audioElement.controls = false;
-        
-        // Event handlers
         this.audioElement.onended = () => {
-          console.log('Audio playback ended');
+          console.log('Android audio playback ended');
           resolve();
         };
-        
         this.audioElement.onpause = () => {
           resolve();
         };
         
         this.audioElement.onerror = (e) => {
-          console.error('Audio playback error:', e);
-          reject(new Error('Audio playback failed'));
+          console.error('Android audio error:', e);
+          reject(new Error('Android audio playback failed'));
         };
         
-        // Load and play
-        this.audioElement.load();
-        
-        const playPromise = this.audioElement.play();
-        
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              console.log('Audio playing successfully');
-            })
-            .catch(error => {
-              console.error('Play failed:', error);
-              reject(error);
-            });
-        }
+        // Android may need a slight delay
+        setTimeout(() => {
+          const playPromise = this.audioElement!.play();
+          
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                console.log('Android audio playing');
+              })
+              .catch(error => {
+                console.error('Android play() failed:', error);
+                reject(error);
+              });
+          }
+        }, 100);
       } catch (error) {
-        console.error('Audio setup failed:', error);
+        console.error('Android playback failed:', error);
         reject(error);
       }
+    });
+  }
+  
+  private async playRecordingDesktop(): Promise<void> {
+    // Always use a direct Audio element so we control the playing state
+    return new Promise((resolve, reject) => {
+      if (this.audioElement) {
+        this.audioElement.pause();
+        this.audioElement.src = '';
+      }
+      
+      this.audioElement = new Audio();
+      
+      if (this.currentRecordingUrl) {
+        this.audioElement.src = this.currentRecordingUrl;
+      } else if (this.currentRecordingBlob) {
+        const url = URL.createObjectURL(this.currentRecordingBlob);
+        this.audioElement.src = url;
+        this.currentRecordingUrl = url;
+      } else {
+        reject(new Error('No audio source'));
+        return;
+      }
+      
+      this.audioElement.onended = () => resolve();
+      this.audioElement.onpause = () => resolve();
+      this.audioElement.onerror = (e) => reject(e);
+      
+      this.audioElement.play().catch(reject);
     });
   }
   
@@ -987,6 +853,7 @@ export class PracticePage implements OnInit, OnDestroy {
         this.audioElement.pause();
         this.audioElement.currentTime = 0;
       }
+      this.speechService.stopPlaying();
       this.isPlayingRecording = false;
     } finally {
       this.isStoppingPlayback = false;
@@ -994,6 +861,7 @@ export class PracticePage implements OnInit, OnDestroy {
   }
 
   async togglePlayback() {
+    // Single toggle with spam protection; never block stopping
     if (this.isPlaybackStarting && !this.isPlayingRecording) return;
     if (this.isPlayingRecording) {
       this.stopPlayingRecording();
@@ -1075,6 +943,7 @@ export class PracticePage implements OnInit, OnDestroy {
       this.currentRecordingUrl = null;
     }
     this.currentRecordingBlob = null;
+    this.speechService.clearRecording();
     this.stopPlayingRecording();
   }
 
@@ -1172,6 +1041,7 @@ export class PracticePage implements OnInit, OnDestroy {
 
     await modal.present();
     this.showFeedback = true;
+    // No auto session-complete here; it will be shown only when the user ends the session
     const { data } = await modal.onDidDismiss();
     this.previousSessionAccuracy = overallAccuracy;
   }
@@ -1247,7 +1117,7 @@ export class PracticePage implements OnInit, OnDestroy {
   }
 
   async startRecording() {
-    if (!this.browserCapabilities.hasSpeechRecognition) {
+    if (!this.speechService.isSpeechRecognitionSupported() && !this.recognitionFallback) {
       await this.showSpeechRecognitionError();
       return;
     }
@@ -1351,25 +1221,30 @@ export class PracticePage implements OnInit, OnDestroy {
       return;
     }
     this.isStartingRecording = true;
+    // Check permissions first on mobile
+    if (this.isMobile) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop()); // Stop immediately, just checking permission
+        console.log('✓ Microphone permission granted');
+      } catch (error) {
+        console.error('Microphone permission denied:', error);
+        await this.showMicrophonePermissionError();
+        this.isStartingRecording = false;
+        return;
+      }
+    }
     
-    try {
-      // Request microphone permission first
-      const hasPermission = await this.requestMicrophonePermission();
-      if (!hasPermission) {
-        this.isStartingRecording = false;
-        return;
-      }
-      
-      // Check capabilities
-      if (!this.browserCapabilities.hasSpeechRecognition || !this.browserCapabilities.hasMediaRecorder) {
-        await this.showSpeechRecognitionError();
-        this.isStartingRecording = false;
-        return;
-      }
+    if (!this.speechService.isSpeechRecognitionSupported() && !this.recognitionFallback) {
+      await this.showSpeechRecognitionError();
+      this.isStartingRecording = false;
+      return;
+    }
 
-      // Reset state
+    try {
       this.userSpeechText = '';
       this.sessionResults = null;
+      // Ensure target text is visible (compact) while recording
       this.showTargetText = true;
       
       if (this.currentRecordingUrl) {
@@ -1377,27 +1252,23 @@ export class PracticePage implements OnInit, OnDestroy {
         this.currentRecordingUrl = null;
       }
       this.currentRecordingBlob = null;
+      this.speechService.clearTranscript();
       this.finalTranscript = '';
       this.interimTranscript = '';
       
-      // Start MediaRecorder for audio capture
+      if (this.currentStructuredPractice?.targetText) {
+        this.speechService.setTargetText(this.currentStructuredPractice.targetText);
+      }
+      
+      // Start MediaRecorder for audio capture (works on both platforms)
       await this.startMediaRecorder();
       
-      // Start speech recognition
-      const recognition = this.initializeSpeechRecognition();
-      if (recognition) {
-        try {
-          recognition.start();
-          console.log('✓ Speech recognition started');
-        } catch (e: any) {
-          if (e.message && e.message.includes('already started')) {
-            console.log('Recognition already running');
-          } else {
-            throw e;
-          }
-        }
+      // Start speech recognition (use fallback if available)
+      if (this.recognitionFallback) {
+        this.recognitionFallback.start();
+        console.log('Started fallback speech recognition');
       } else {
-        throw new Error('Could not initialize speech recognition');
+        await this.speechService.startRecording();
       }
       
       this.isRecording = true;
@@ -1405,7 +1276,6 @@ export class PracticePage implements OnInit, OnDestroy {
       this.recordingDuration = 0;
       this.wordCount = 0;
       
-      // Duration counter
       const durationInterval = setInterval(() => {
         if (this.isRecording) {
           this.recordingDuration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
@@ -1414,14 +1284,24 @@ export class PracticePage implements OnInit, OnDestroy {
         }
       }, 1000);
       
-      // Transcript updater
       const transcriptInterval = setInterval(() => {
         if (this.isRecording) {
-          const currentTranscript = (this.finalTranscript + this.interimTranscript).trim();
+          let currentTranscript = '';
+          
+          if (this.recognitionFallback) {
+            currentTranscript = (this.finalTranscript + this.interimTranscript).trim();
+          } else {
+            currentTranscript = this.speechService.getCurrentTranscript();
+          }
           
           if (currentTranscript) {
-            const formattedText = this.capitalizeFirstLetter(currentTranscript);
-            this.wordCount = formattedText.split(/\s+/).filter(w => w.length > 0).length;
+            const formattedText = currentTranscript.trim() !== '' 
+              ? this.capitalizeFirstLetter(currentTranscript)
+              : '🎤 Listening...';
+            
+            if (formattedText !== '🎤 Listening...') {
+              this.wordCount = formattedText.split(/\s+/).filter(w => w.length > 0).length;
+            }
             
             if (this.userSpeechText !== formattedText) {
               this.userSpeechText = formattedText;
@@ -1446,7 +1326,10 @@ export class PracticePage implements OnInit, OnDestroy {
       
       await this.errorHandler.showError(
         error,
-        ErrorType.RECORDING_FAILED
+        ErrorType.RECORDING_FAILED,
+        async () => {
+          await this.startStructuredRecording();
+        }
       );
     }
   }
@@ -1457,35 +1340,48 @@ export class PracticePage implements OnInit, OnDestroy {
   
   private async startMediaRecorder(): Promise<void> {
     try {
-      // Get audio stream with optimal settings
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 44100,
-          channelCount: 1
+          autoGainControl: true
         } 
       });
       
       this.audioChunks = [];
       
-      const mimeType = this.browserCapabilities.preferredAudioFormat;
+      // Use different MIME types based on platform
+      let mimeType = 'audio/webm';
+      
+      if (this.isIOS) {
+        // iOS Safari supports these formats
+        if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        } else if (MediaRecorder.isTypeSupported('audio/wav')) {
+          mimeType = 'audio/wav';
+        }
+      } else if (this.isAndroid) {
+        // Android Chrome prefers webm
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        }
+      }
+      
       console.log('Using MIME type:', mimeType);
       
-      // Create MediaRecorder with the best supported format
-      this.mediaRecorder = new MediaRecorder(this.mediaStream, { 
-        mimeType: mimeType
+      this.mediaRecorder = new MediaRecorder(stream, { 
+        mimeType: mimeType 
       });
       
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           this.audioChunks.push(event.data);
+          console.log('Audio chunk received:', event.data.size, 'bytes');
         }
       };
       
       this.mediaRecorder.onstop = () => {
-        console.log('MediaRecorder stopped, chunks:', this.audioChunks.length);
+        console.log('MediaRecorder stopped, total chunks:', this.audioChunks.length);
         
         if (this.audioChunks.length > 0) {
           const audioBlob = new Blob(this.audioChunks, { type: mimeType });
@@ -1498,9 +1394,12 @@ export class PracticePage implements OnInit, OnDestroy {
           
           console.log('✓ Audio blob created:', audioBlob.size, 'bytes');
         }
+        
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop());
       };
       
-      // Start recording with time slices
+      // Start recording with small time slices for better reliability
       this.mediaRecorder.start(100);
       console.log('✓ MediaRecorder started');
       
@@ -1511,9 +1410,6 @@ export class PracticePage implements OnInit, OnDestroy {
   }
 
   async stopStructuredRecording() {
-    if (this.isStoppingRecording) return;
-    this.isStoppingRecording = true;
-    
     this.isRecording = false;
     
     if ((this as any).transcriptInterval) {
@@ -1522,51 +1418,59 @@ export class PracticePage implements OnInit, OnDestroy {
     }
     
     try {
-      // Stop MediaRecorder
+      // Stop MediaRecorder first
       if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
         this.mediaRecorder.stop();
         console.log('MediaRecorder stopped');
         
-        // Wait for processing
+        // Wait for onstop event to process
         await new Promise(resolve => setTimeout(resolve, 500));
       }
       
       // Stop speech recognition
-      if (this.recognitionInstance) {
+      if (this.recognitionFallback) {
         try {
-          this.recognitionInstance.stop();
-          console.log('Speech recognition stopped');
+          this.recognitionFallback.stop();
         } catch (e) {
           console.log('Recognition already stopped');
         }
-      }
-      
-      // Stop media stream tracks
-      if (this.mediaStream) {
-        this.mediaStream.getTracks().forEach(track => track.stop());
-        this.mediaStream = null;
+      } else {
+        await this.speechService.stopRecording();
       }
       
       // Wait for final processing
       await new Promise(resolve => setTimeout(resolve, 300));
       
       // Get final transcript
-      const finalTranscript = (this.finalTranscript + this.interimTranscript).trim();
+      let finalTranscript = '';
+      
+      if (this.recognitionFallback) {
+        finalTranscript = (this.finalTranscript + this.interimTranscript).trim();
+      } else {
+        const result = this.speechService.getRecordingResult();
+        finalTranscript = this.speechService.getCurrentTranscript() || result.transcript;
+      }
       
       console.log('Final transcript:', finalTranscript);
-      console.log('Audio blob:', this.currentRecordingBlob?.size || 0, 'bytes');
       
-      if (!finalTranscript || finalTranscript === '') {
+      if (!finalTranscript || finalTranscript.trim() === '' || finalTranscript === '🎤 Listening...') {
         console.error('❌ Empty transcript detected!');
         this.userSpeechText = '';
         
         await this.errorHandler.showError(
-          new Error('No speech detected'),
-          ErrorType.EMPTY_TRANSCRIPT
+          new Error('Empty transcript'),
+          ErrorType.EMPTY_TRANSCRIPT,
+          async () => {
+            await this.startStructuredRecording();
+          }
         );
         
-        this.isStoppingRecording = false;
         return;
+      }
+      
+      // Verify audio blob (no intrusive warning; playback button will handle notification if needed)
+      if (this.currentRecordingBlob) {
+        console.log('✓ Audio available:', this.currentRecordingBlob.size, 'bytes');
       }
       
       this.userSpeechText = this.capitalizeFirstLetter(finalTranscript);
@@ -1580,34 +1484,43 @@ export class PracticePage implements OnInit, OnDestroy {
         audioUrl: this.currentRecordingUrl || undefined
       };
       
-      await this.handleStructuredRecordingResult(result);
+      this.handleStructuredRecordingResult(result);
       this.cdr.detectChanges();
       
     } catch (error) {
       console.error('Error stopping recording:', error);
       
       // Try to salvage transcript
-      const finalTranscript = (this.finalTranscript + this.interimTranscript).trim();
+      let finalTranscript = '';
       
-      if (finalTranscript) {
+      if (this.recognitionFallback) {
+        finalTranscript = (this.finalTranscript + this.interimTranscript).trim();
+      } else {
+        finalTranscript = this.speechService.getCurrentTranscript();
+      }
+      
+      if (finalTranscript && finalTranscript.trim() !== '') {
         this.userSpeechText = this.capitalizeFirstLetter(finalTranscript);
         
         await this.errorHandler.showWarning(
-          'Speech captured but audio recording may have failed. You can still get feedback.'
+          'Speech captured but audio recording failed. You can still get feedback.'
         );
         this.cdr.detectChanges();
       } else {
         await this.errorHandler.showError(
-          new Error('Recording failed'),
-          ErrorType.RECORDING_FAILED
+          new Error('Recording and transcript failed'),
+          ErrorType.RECORDING_FAILED,
+          async () => {
+            await this.startStructuredRecording();
+          }
         );
       }
-    } finally {
-      this.isStoppingRecording = false;
     }
   }
 
   private async handleStructuredRecordingResult(result: SpeechRecognitionResult) {
+    this.isRecording = false;
+    
     const finalTranscript = this.userSpeechText || result.transcript;
     
     this.sessionResults = {
@@ -1679,66 +1592,24 @@ export class PracticePage implements OnInit, OnDestroy {
     return text.split(/\s+/).filter(word => word.length > 0);
   }
   
-  private async showMicrophonePermissionError(error?: any) {
-    let message = '';
-    
-    if (this.isIOS) {
-      message = 'Microphone permission is required:\n\n';
-      message += '1. Go to iPhone Settings\n';
-      message += '2. Find Safari (or your browser)\n';
-      message += '3. Enable Microphone access\n';
-      message += '4. Reload this page';
-    } else if (this.isAndroid) {
-      if (this.browserName === 'chrome') {
-        message = 'Chrome needs microphone permission:\n\n';
-        message += '1. Tap the lock icon 🔒 in the address bar\n';
-        message += '2. Tap "Permissions"\n';
-        message += '3. Enable "Microphone"\n';
-        message += '4. Reload this page';
-      } else {
-        message = 'Please enable microphone permission in your browser settings and reload the page.';
-      }
-    } else {
-      message = 'Please allow microphone access when prompted by your browser.';
-    }
+  private async showMicrophonePermissionError() {
+    const message = this.isAndroid 
+      ? 'Please enable microphone permission in your browser settings:\n\n' +
+        '1. Tap the lock icon 🔒 in the address bar\n' +
+        '2. Enable "Microphone" permission\n' +
+        '3. Reload the page'
+      : 'Please enable microphone permission in Settings > Safari > Microphone';
     
     const alert = await this.alertController.create({
       header: 'Microphone Permission Required',
       message: message,
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel'
-        },
-        {
-          text: 'Reload Page',
-          handler: () => {
-            window.location.reload();
-          }
-        }
-      ]
+      buttons: ['OK']
     });
     
     await alert.present();
   }
 
   private async showSpeechRecognitionError() {
-    let message = 'Speech recognition is not available in this browser.\n\n';
-    message += 'Recommended browsers:\n';
-    
-    if (this.isIOS) {
-      message += '• Safari (iOS 14.5+)\n';
-      message += '• Chrome for iOS may have limited support';
-    } else if (this.isAndroid) {
-      message += '• Chrome (recommended)\n';
-      message += '• Firefox\n';
-      message += '• Edge';
-    } else {
-      message += '• Chrome\n';
-      message += '• Edge\n';
-      message += '• Safari (macOS)';
-    }
-    
     await this.errorHandler.showError(
       new Error('Speech Recognition not supported'),
       ErrorType.SPEECH_RECOGNITION_NOT_SUPPORTED
