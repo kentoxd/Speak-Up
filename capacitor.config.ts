@@ -4,29 +4,32 @@ const config: CapacitorConfig = {
   appId: 'com.speakup.app',
   appName: 'SpeakUp',
   webDir: 'dist',
+  bundledWebRuntime: false,
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    cleartext: true,             // ✅ allows http://localhost access during testing
+    allowNavigation: ['*']       // ✅ allows WebView to load local files
   },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
-      backgroundColor: "#3880ff",
-      androidSplashResourceName: "splash",
-      androidScaleType: "CENTER_CROP",
+      backgroundColor: '#3880ff',
+      androidSplashResourceName: 'splash',
+      androidScaleType: 'CENTER_CROP',
       showSpinner: false,
-      androidSpinnerStyle: "large",
-      iosSpinnerStyle: "small",
-      spinnerColor: "#ffffff",
+      androidSpinnerStyle: 'large',
+      iosSpinnerStyle: 'small',
+      spinnerColor: '#ffffff',
       splashFullScreen: true,
       splashImmersive: true,
-      layoutName: "launch_screen",
+      layoutName: 'launch_screen',
       useDialog: true,
     },
     StatusBar: {
-      style: "default",
-      backgroundColor: "#3880ff"
-    }
-  }
+      style: 'default',
+      backgroundColor: '#3880ff',
+    },
+  },
 };
 
 export default config;

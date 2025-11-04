@@ -13,7 +13,6 @@ export class SignInPageComponent implements OnInit {
   signInForm: FormGroup;
   showPassword = false;
   isLoading = false;
-  rememberMe = false;
   emailTouched = false;
   passwordTouched = false;
 
@@ -26,16 +25,24 @@ export class SignInPageComponent implements OnInit {
   ) {
     this.signInForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]]
+      password: ['', [Validators.required]],
+      rememberMe: [false]
     });
   }
 
   ngOnInit() {
-    // Load remembered email if exists
-    const rememberedEmail = localStorage.getItem('rememberedEmail');
-    if (rememberedEmail) {
-      this.signInForm.patchValue({ email: rememberedEmail });
-      this.rememberMe = true;
+    const rememberedData = localStorage.getItem('rememberedUser');
+    if (rememberedData) {
+      try {
+        const { email, password } = JSON.parse(rememberedData);
+        this.signInForm.patchValue({
+          email,
+          password,
+          rememberMe: true
+        });
+      } catch {
+        localStorage.removeItem('rememberedUser');
+      }
     }
   }
 
@@ -58,7 +65,7 @@ export class SignInPageComponent implements OnInit {
   async onSubmit() {
     if (this.signInForm.valid && !this.isLoading) {
       this.isLoading = true;
-      
+
       const loading = await this.loadingController.create({
         message: 'Signing you in...',
         spinner: 'crescent'
@@ -66,17 +73,18 @@ export class SignInPageComponent implements OnInit {
       await loading.present();
 
       try {
-        const { email, password } = this.signInForm.value;
-        
+        const { email, password, rememberMe } = this.signInForm.value;
+
         await this.firebaseAuthService.signIn(email, password);
-        
-        // Handle remember me
-        if (this.rememberMe) {
-          localStorage.setItem('rememberedEmail', email);
+
+        // ✅ Handle Remember Me for email + password
+        if (rememberMe) {
+          const encoded = btoa(JSON.stringify({ email, password }));
+          localStorage.setItem('rememberedUser', encoded);
         } else {
-          localStorage.removeItem('rememberedEmail');
+          localStorage.removeItem('rememberedUser');
         }
-        
+
         await loading.dismiss();
         this.isLoading = false;
 
@@ -88,7 +96,6 @@ export class SignInPageComponent implements OnInit {
         });
         await toast.present();
 
-        // Redirect to main app
         setTimeout(() => {
           this.router.navigate(['/tabs']);
         }, 1000);
@@ -97,9 +104,7 @@ export class SignInPageComponent implements OnInit {
         await loading.dismiss();
         this.isLoading = false;
 
-        console.log('Sign in error details:', error);
-        console.log('Error message:', error.message);
-        console.log('Error code:', error.code);
+        console.error('Sign in error:', error);
 
         const toast = await this.toastController.create({
           message: error.message || 'Sign in failed. Please try again.',
@@ -115,8 +120,7 @@ export class SignInPageComponent implements OnInit {
   getFieldError(fieldName: string): string {
     const field = this.signInForm.get(fieldName);
     if (!field) return '';
-    
-    // Show errors if field is touched or if form was submitted
+
     if (field.errors && (field.touched || this.isLoading)) {
       if (field.errors['required']) {
         return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
@@ -137,7 +141,6 @@ export class SignInPageComponent implements OnInit {
   }
 
   onEmailInput() {
-    // Validate on input for real-time feedback
     const emailField = this.signInForm.get('email');
     if (emailField && this.emailTouched) {
       emailField.updateValueAndValidity();
@@ -145,7 +148,6 @@ export class SignInPageComponent implements OnInit {
   }
 
   onPasswordInput() {
-    // Validate on input for real-time feedback
     const passwordField = this.signInForm.get('password');
     if (passwordField && this.passwordTouched) {
       passwordField.updateValueAndValidity();
@@ -155,7 +157,7 @@ export class SignInPageComponent implements OnInit {
   getPasswordStrength(): { strength: string; color: string } {
     const password = this.signInForm.get('password')?.value || '';
     if (!password) return { strength: '', color: '' };
-    
+
     if (password.length < 6) {
       return { strength: 'Weak', color: 'danger' };
     } else if (password.length < 8) {

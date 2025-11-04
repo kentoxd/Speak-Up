@@ -29,11 +29,11 @@
               (ionInput)="onEmailInput()">
             </ion-input>
           </ion-item>
-          <!-- Show requirements before user types -->
+
           <div class="help-text" *ngIf="!emailTouched && !signInForm.get('email')?.value">
             <small>Enter a valid email address (e.g., user&#64;example.com)</small>
           </div>
-          <!-- Show validation errors -->
+
           <div class="error-message" *ngIf="getFieldError('email') || (emailTouched && getEmailValidationMessage())">
             {{ getFieldError('email') || getEmailValidationMessage() }}
           </div>
@@ -57,25 +57,25 @@
               <ion-icon [name]="showPassword ? 'eye-off' : 'eye'" slot="icon-only"></ion-icon>
             </ion-button>
           </ion-item>
-          <!-- Show requirements before user types -->
+
           <div class="help-text" *ngIf="!passwordTouched && !signInForm.get('password')?.value">
             <small>Password is required (minimum 6 characters recommended)</small>
           </div>
-          <!-- Show password strength indicator -->
+
           <div class="password-strength" *ngIf="passwordTouched && signInForm.get('password')?.value">
             <small [attr.color]="getPasswordStrength().color">
               Strength: {{ getPasswordStrength().strength }}
             </small>
           </div>
-          <!-- Show validation errors -->
+
           <div class="error-message" *ngIf="getFieldError('password')">
             {{ getFieldError('password') }}
           </div>
         </div>
 
-        <!-- Remember Me -->
+        <!-- ✅ Remember Me -->
         <div class="remember-section">
-          <ion-checkbox [(ngModel)]="rememberMe" [ngModelOptions]="{standalone: true}"></ion-checkbox>
+          <ion-checkbox formControlName="rememberMe"></ion-checkbox>
           <ion-label>Remember me</ion-label>
         </div>
 

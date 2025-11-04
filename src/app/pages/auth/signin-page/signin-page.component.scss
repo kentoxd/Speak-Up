@@ -49,7 +49,7 @@ ion-item ion-button[slot="end"] {
 
 .form-group {
   margin-bottom: 1.5rem;
-
+  
   ion-item {
     --border-radius: 8px;
     --background: #FFFFFF;
@@ -57,15 +57,12 @@ ion-item ion-button[slot="end"] {
     --border-width: 1px;
     --border-style: solid;
     --padding-start: 1rem;
-    --padding-end: 0.5rem; /* reduce right padding */
+    --padding-end: 1rem;
     --padding-top: 0.75rem;
-    --padding-bottom: 0.75rem;
-    margin-bottom: 0.5rem;
+    --padding-bottom: 0.90rem;
+    margin-bottom: 1rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-
-    display: flex;
-    align-items: center; /* ensures vertical alignment of input + icon */
-
+    
     ion-label {
       font-family: 'Inter', sans-serif;
       font-weight: 500;
@@ -73,7 +70,7 @@ ion-item ion-button[slot="end"] {
       color: #1a1a1a;
       margin-bottom: 0.5rem;
     }
-
+    
     ion-input {
       --padding-top: 0.5rem;
       --padding-bottom: 0.5rem;
@@ -83,21 +80,12 @@ ion-item ion-button[slot="end"] {
       font-size: 16px;
     }
 
-    ion-button[slot="end"] {
-      margin: 0;
-      padding: 0;
-      height: auto;
-      align-self: flex-end; /* aligns button with input line */
-      transform: translateY(2px); /* fine-tune vertical centering */
-    }
-
-    ion-icon {
-      font-size: 1.2rem;
-      color: #666;
+    ion-buttpn {
+      margin-bottom: 30px;
     }
   }
+  
 }
-
 
 .help-text {
   font-family: 'Noto Sans', sans-serif;
