@@ -351,10 +351,37 @@
     <!-- Structured Practice Session -->
     <div *ngIf="isPracticing" class="structured-practice-session">
       
-      <!-- Session Header -->
       <div class="session-header">
-        <h2>{{ currentStructuredPractice?.title }}</h2>
+        <div class="title-container">
+          <h2>{{ currentStructuredPractice?.title }}</h2>
+        </div>
       </div>
+
+      <!-- Tips Card -->
+      <ion-card class="tips-card" *ngIf="currentStructuredPractice?.tips && currentStructuredPractice?.tips.length > 0">
+        <ion-card-header>
+          <ion-card-title>
+            <div class="title-container">
+              <h2>Tips for {{ currentStructuredPractice?.title }}</h2>
+              <!-- Tips Info Button (Toggle Tips) -->
+              <ion-button 
+                fill="clear" 
+                size="small" 
+                slot="end"
+                (click)="toggleTips()">
+                <ion-icon [name]="isTipsVisible ? 'chevron-up' : 'chevron-down'" slot="icon-only"></ion-icon>
+              </ion-button>
+            </div>
+          </ion-card-title>
+        </ion-card-header>
+
+        <!-- Tips Content -->
+        <ion-card-content *ngIf="isTipsVisible">
+          <ul>
+            <li *ngFor="let tip of currentStructuredPractice?.tips">{{ tip }}</li>
+          </ul>
+        </ion-card-content>
+      </ion-card>
 
       <!-- Target Text Container (Sticky during recording) -->
       <ion-card class="target-text-card" [class.sticky]="isRecording" [class.collapsed]="isRecording && !showTargetText">
@@ -480,20 +507,7 @@
         </ion-card-content>
       </ion-card>
 
-      <!-- Tips Card -->
-      <ion-card class="tips-card" *ngIf="currentStructuredPractice?.tips && shouldShowTips()">
-        <ion-card-header>
-          <ion-card-title>
-            <ion-icon name="bulb" color="warning"></ion-icon>
-            Tips for {{ currentStructuredPractice?.title }}
-          </ion-card-title>
-        </ion-card-header>
-        <ion-card-content>
-          <ul>
-            <li *ngFor="let tip of currentStructuredPractice?.tips">{{ tip }}</li>
-          </ul>
-        </ion-card-content>
-      </ion-card>
+    
 
       <!-- Feedback Button -->
       <div class="feedback-section" *ngIf="userSpeechText && userSpeechText.trim() !== '' && !isRecording">

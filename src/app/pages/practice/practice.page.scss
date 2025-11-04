@@ -425,11 +425,11 @@ ion-content {
     h2 {
       margin: 0;
       color: #2c3e50;
-      font-size: 1.4rem;
+      font-size: 1.5rem;
       font-weight: 700;
-      text-align: center;
     }
   }
+  
 
   .target-text-card,
   .speech-input-card,
@@ -545,6 +545,17 @@ ion-content {
         height: 44px;
       }
     }
+  }
+      .title-container {
+      font-size: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      
+        .h2 {
+          font-size: .5rem;
+        }
   }
 
   .speech-input-card {

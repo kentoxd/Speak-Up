@@ -45,7 +45,7 @@ export class PracticePage implements OnInit, OnDestroy {
   
   selectedPracticeType = 'monologue';
   selectedDifficulty = 'beginner';
-  currentStructuredPractice?: StructuredPractice;
+  currentStructuredPractice: any = {}; 
   
   useCustomText = false;
   customTargetText = '';
@@ -67,6 +67,7 @@ export class PracticePage implements OnInit, OnDestroy {
   showFeedback = false;
   recordingTimer: any = null;
   showInstructions = false;
+  isTipsVisible = false;
   highlightedWord: string | null = null;
   phoneticGuide: string = '';
   isPlayingRecording = false;
@@ -306,6 +307,9 @@ export class PracticePage implements OnInit, OnDestroy {
     this.showInstructions = !this.showInstructions;
   }
 
+  toggleTips() {
+    this.isTipsVisible = !this.isTipsVisible;
+  }
   setPracticeReady() {
     this.isPracticeReady = true;
     this.currentPracticeStep = 3;
@@ -612,7 +616,7 @@ export class PracticePage implements OnInit, OnDestroy {
     this.speechService.stopSpeaking();
     this.isListeningToText = false;
   }
-
+  
   async listenToRecording() {
     if (this.isPlaybackStarting || this.isPlayingRecording) {
       return;
@@ -649,6 +653,8 @@ export class PracticePage implements OnInit, OnDestroy {
       return;
     }
     
+
+
     try {
       this.isPlayingRecording = true;
       this.cdr.detectChanges();
