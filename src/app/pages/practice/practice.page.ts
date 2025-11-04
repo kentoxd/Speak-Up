@@ -1,7 +1,6 @@
-// practice.page.ts (updated for improved cross-browser/device compatibility)
-// Based on user's original file. See notes in chat for details.
 
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { AlertController, ToastController, ModalController, Platform } from '@ionic/angular';
 import { DataService, PracticeExercise, StructuredPractice } from '../../services/data.service';
 import { SpeechService, SpeechRecognitionResult } from '../../services/speech.service';
@@ -18,6 +17,7 @@ import { SessionCompleteComponent } from '../../components/session-complete/sess
 import { PracticeHistoryModalComponent } from './practice-history-modal.component';
 import speechRecognitionPolyfill from 'speech-recognition-polyfill';
 
+declare const window: any;
 export interface SavedCustomText {
   id: string;
   name: string;
@@ -100,6 +100,10 @@ export class PracticePage implements OnInit, OnDestroy {
   private hasPermissionsAPI = !!(navigator && (navigator as any).permissions && (navigator as any).permissions.query);
   private hasNativeSpeechRecognition = !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
 
+  recognizedText = '';
+  isListening = false;
+  private recognition: any;
+
   constructor(
     private dataService: DataService,
     private speechService: SpeechService,
@@ -115,7 +119,8 @@ export class PracticePage implements OnInit, OnDestroy {
     private undoService: UndoService,
     private preferencesService: PreferencesService,
     private keyboardShortcuts: KeyboardShortcutsService,
-    private platform: Platform
+    private platform: Platform,
+    private zone: NgZone // ✅ added — fixes "zone does not exist" error
   ) { }
 
   async ngOnInit() {
@@ -135,6 +140,8 @@ export class PracticePage implements OnInit, OnDestroy {
       await this.initializeAudioContext();
     }
 
+    this.initializeSpeechRecognition();
+    
     this.exercises = this.dataService.getPracticeExercises();
     await this.loadPracticeHistory();
     await this.loadSavedCustomTexts();
@@ -178,6 +185,104 @@ export class PracticePage implements OnInit, OnDestroy {
       clearInterval((this as any).transcriptInterval);
     }
     this.cleanupAudioResources();
+  }
+  private initializeSpeechRecognition() {
+    if ((window as any).plugins?.speechRecognition) {
+      console.log('✅ Using Cordova SpeechRecognition');
+    } else if ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) {
+      console.log('✅ Using Web SpeechRecognition');
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      this.recognition = new SpeechRecognition();
+      this.recognition.lang = 'en-US';
+      this.recognition.continuous = false;
+      this.recognition.interimResults = false;
+
+      this.recognition.onresult = (event: any) => {
+        this.zone.run(() => {
+          this.recognizedText = event.results[0][0].transcript;
+          console.log('Recognized (Web):', this.recognizedText);
+        });
+      };
+
+      this.recognition.onerror = (err: any) =>
+        console.error('Web Speech error:', err);
+    } else {
+      console.warn('❌ Speech recognition not supported on this platform');
+    }
+  }
+
+  async startSpeechRecognition() {
+    if (this.isListening) return;
+
+    if ((window as any).plugins?.speechRecognition) {
+      // --- Cordova (Android APK) ---
+      try {
+        const hasPerm = await window.plugins.speechRecognition.hasPermission();
+        if (!hasPerm) {
+          await window.plugins.speechRecognition.requestPermission();
+        }
+
+        this.isListening = true;
+        window.plugins.speechRecognition.startListening(
+          (matches: string[]) => {
+            this.zone.run(() => {
+              this.isListening = false;
+              this.recognizedText = matches && matches.length ? matches[0] : '';
+              console.log('Recognized (Cordova):', this.recognizedText);
+            });
+          },
+          (err: any) => {
+            console.error('Cordova speech error:', err);
+            this.isListening = false;
+          },
+          {
+            language: 'en-US',
+            matches: 1,
+            showPopup: true,
+            prompt: 'Speak now...',
+          }
+        );
+      } catch (e) {
+        console.error('Cordova startListening failed:', e);
+      }
+
+    } else if (this.recognition) {
+      // --- Web Speech API ---
+      try {
+        this.isListening = true;
+        this.recognition.start();
+      } catch (e) {
+        console.error('Web Speech start failed:', e);
+        this.isListening = false;
+      }
+
+    } else {
+      const toast = await this.toastController.create({
+        message: 'Speech recognition not supported on this device.',
+        duration: 3000,
+        color: 'warning',
+      });
+      await toast.present();
+    }
+  }
+
+  // ✅ Stop Listening (separate method)
+  stopSpeechRecognition() {
+    if ((window as any).plugins?.speechRecognition) {
+      try {
+        window.plugins.speechRecognition.stopListening();
+      } catch (e) {
+        console.warn('Cordova stopListening error:', e);
+      }
+    } else if (this.recognition && this.isListening) {
+      try {
+        this.recognition.stop();
+      } catch (e) {
+        console.warn('Web stopListening error:', e);
+      }
+    }
+    this.isListening = false;
   }
 
   private async detectCapabilities(): Promise<void> {
