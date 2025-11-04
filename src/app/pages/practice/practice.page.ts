@@ -306,7 +306,10 @@ export class PracticePage implements OnInit, OnDestroy {
       issues.push('Microphone access is not supported in this browser');
     }
     
+    // Only show warning if there are ACTUAL issues
     if (issues.length > 0) {
+      console.warn('Browser compatibility issues detected:', issues);
+      
       let message = 'Some features may not work:\n\n';
       message += issues.join('\n');
       message += '\n\nRecommended browsers:\n';
@@ -328,6 +331,9 @@ export class PracticePage implements OnInit, OnDestroy {
       });
       
       await alert.present();
+    } else {
+      // All features supported - just log success
+      console.log('✓ All browser features supported:', this.browserCapabilities);
     }
   }
   
