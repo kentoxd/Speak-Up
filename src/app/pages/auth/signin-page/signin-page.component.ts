@@ -34,7 +34,8 @@ export class SignInPageComponent implements OnInit {
     const rememberedData = localStorage.getItem('rememberedUser');
     if (rememberedData) {
       try {
-        const { email, password } = JSON.parse(rememberedData);
+        const decoded = atob(rememberedData);
+        const { email, password } = JSON.parse(decoded);
         this.signInForm.patchValue({
           email,
           password,
@@ -44,6 +45,14 @@ export class SignInPageComponent implements OnInit {
         localStorage.removeItem('rememberedUser');
       }
     }
+    
+    // Watch for remember me changes and update autocomplete accordingly
+    this.signInForm.get('rememberMe')?.valueChanges.subscribe((rememberMe) => {
+      if (!rememberMe) {
+        // When remember me is unchecked, clear password and prevent browser from saving
+        // The autocomplete attribute will be updated via the template binding
+      }
+    });
   }
 
   goBack() {

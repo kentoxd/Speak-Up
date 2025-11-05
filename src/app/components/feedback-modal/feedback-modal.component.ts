@@ -146,7 +146,36 @@ import { ModalController } from '@ionic/angular';
         <!-- User Speech -->
         <div class="text-section">
           <h3 class="section-title">🗣️ Your Speech</h3>
-          <div class="text-display user-speech">"{{ userSpeech }}"</div>
+          <div class="text-display user-speech">
+            <span *ngFor="let word of getHighlightedWords(); let i = index">
+              <span 
+                [class.word-correct]="word.type === 'correct'"
+                [class.word-wrong]="word.type === 'wrong'"
+                [class.word-added]="word.type === 'added'"
+                [class.word-missing]="word.type === 'missing'"
+                [attr.title]="getWordTooltip(word)">
+                {{ word.text }}
+              </span><span *ngIf="i < getHighlightedWords().length - 1">&nbsp;</span>
+            </span>
+          </div>
+          <div class="word-legend" *ngIf="hasDifferences()">
+            <div class="legend-item">
+              <span class="legend-color correct"></span>
+              <span>Correct word</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color wrong"></span>
+              <span>Wrong word</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color added"></span>
+              <span>Extra word (not in target)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color missing"></span>
+              <span>Missing word (should be here)</span>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -262,6 +291,87 @@ import { ModalController } from '@ionic/angular';
       font-style: italic;
       border-left: 3px solid var(--ion-color-primary);
       margin: 0.5rem 0;
+      line-height: 1.8;
+      word-wrap: break-word;
+    }
+
+    .word-correct {
+      background-color: #d4edda;
+      color: #155724;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+
+    .word-wrong {
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 2px 4px;
+      border-radius: 3px;
+      text-decoration: line-through;
+      font-weight: 600;
+    }
+
+    .word-added {
+      background-color: #fff3cd;
+      color: #856404;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-weight: 600;
+      border: 1px solid #ffc107;
+    }
+
+    .word-missing {
+      background-color: #e2e3e5;
+      color: #383d41;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-style: italic;
+      text-decoration: underline;
+      border: 1px dashed #6c757d;
+    }
+
+    .word-legend {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background-color: #f8f9fa;
+      border-radius: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.875rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    .legend-color.correct {
+      background-color: #d4edda;
+      border: 1px solid #28a745;
+    }
+
+    .legend-color.wrong {
+      background-color: #f8d7da;
+      border: 1px solid #dc3545;
+    }
+
+    .legend-color.added {
+      background-color: #fff3cd;
+      border: 1px solid #ffc107;
+    }
+
+    .legend-color.missing {
+      background-color: #e2e3e5;
+      border: 1px dashed #6c757d;
     }
 
     .close-button {
@@ -533,5 +643,143 @@ export class FeedbackModalComponent {
       { name: 'Repetition', value: breakdown.repetition },
       { name: 'Rhythm', value: breakdown.rhythm }
     ];
+  }
+
+  /**
+   * Normalize text by removing punctuation and converting to lowercase
+   */
+  private normalizeWord(word: string): string {
+    return word.toLowerCase().replace(/[.,!?;:]/g, '').trim();
+  }
+
+  /**
+   * Split text into words while preserving punctuation
+   */
+  private splitIntoWords(text: string): string[] {
+    if (!text) return [];
+    // Split by whitespace but keep the words with their punctuation
+    return text.trim().split(/\s+/).filter(w => w.length > 0);
+  }
+
+  /**
+   * Compare target text and user speech word by word
+   * Returns an array of word objects with type and text
+   */
+  getHighlightedWords(): Array<{text: string, type: 'correct' | 'wrong' | 'added' | 'missing'}> {
+    if (!this.targetText || !this.userSpeech) {
+      // If either is empty, return all user speech words as "added"
+      const userWords = this.splitIntoWords(this.userSpeech);
+      return userWords.map(word => ({ text: word, type: 'added' as const }));
+    }
+
+    const targetWords = this.splitIntoWords(this.targetText);
+    const userWords = this.splitIntoWords(this.userSpeech);
+    const result: Array<{text: string, type: 'correct' | 'wrong' | 'added' | 'missing'}> = [];
+
+    let targetIndex = 0;
+    let userIndex = 0;
+
+    // Use a simple matching algorithm
+    while (targetIndex < targetWords.length || userIndex < userWords.length) {
+      if (targetIndex >= targetWords.length) {
+        // All target words processed, remaining user words are "added"
+        result.push({ text: userWords[userIndex], type: 'added' });
+        userIndex++;
+      } else if (userIndex >= userWords.length) {
+        // All user words processed, remaining target words are "missing"
+        result.push({ text: `[${targetWords[targetIndex]}]`, type: 'missing' });
+        targetIndex++;
+      } else {
+        const targetNormalized = this.normalizeWord(targetWords[targetIndex]);
+        const userNormalized = this.normalizeWord(userWords[userIndex]);
+
+        if (targetNormalized === userNormalized) {
+          // Exact match
+          result.push({ text: userWords[userIndex], type: 'correct' });
+          targetIndex++;
+          userIndex++;
+        } else {
+          // Check if we can find a match ahead
+          let foundMatch = false;
+          let lookAhead = 1;
+          const maxLookAhead = 3; // Look ahead up to 3 words
+
+          // Look ahead in user words to find target word
+          while (lookAhead <= maxLookAhead && userIndex + lookAhead < userWords.length) {
+            const aheadNormalized = this.normalizeWord(userWords[userIndex + lookAhead]);
+            if (aheadNormalized === targetNormalized) {
+              // Found match ahead - mark intermediate words as added
+              for (let i = 0; i < lookAhead; i++) {
+                result.push({ text: userWords[userIndex + i], type: 'added' });
+              }
+              userIndex += lookAhead;
+              result.push({ text: userWords[userIndex], type: 'correct' });
+              targetIndex++;
+              userIndex++;
+              foundMatch = true;
+              break;
+            }
+            lookAhead++;
+          }
+
+          if (!foundMatch) {
+            // Check if we can find target word ahead in user words
+            let targetAhead = 1;
+            const maxTargetAhead = 3;
+
+            while (targetAhead <= maxTargetAhead && targetIndex + targetAhead < targetWords.length) {
+              const targetAheadNormalized = this.normalizeWord(targetWords[targetIndex + targetAhead]);
+              if (targetAheadNormalized === userNormalized) {
+                // Target word is ahead - mark user word as wrong and add missing target words
+                result.push({ text: userWords[userIndex], type: 'wrong' });
+                for (let i = 0; i < targetAhead; i++) {
+                  result.push({ text: `[${targetWords[targetIndex + i]}]`, type: 'missing' });
+                }
+                targetIndex += targetAhead + 1;
+                userIndex++;
+                foundMatch = true;
+                break;
+              }
+              targetAhead++;
+            }
+
+            if (!foundMatch) {
+              // No match found - mark as wrong
+              result.push({ text: userWords[userIndex], type: 'wrong' });
+              targetIndex++;
+              userIndex++;
+            }
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Check if there are any differences between target and user speech
+   */
+  hasDifferences(): boolean {
+    const words = this.getHighlightedWords();
+    return words.some(word => word.type !== 'correct');
+  }
+
+  /**
+   * Get tooltip text for a word
+   */
+  getWordTooltip(word: {text: string, type: string}): string {
+    switch (word.type) {
+      case 'correct':
+        return 'Correct word';
+      case 'wrong':
+        return 'Incorrect word - does not match target';
+      case 'added':
+        return 'Extra word - not in target text';
+      case 'missing':
+        return 'Missing word - should be in your speech';
+      default:
+        return '';
+    }
   }
 }

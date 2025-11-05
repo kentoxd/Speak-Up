@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { AlertController, ToastController, ModalController, Platform } from '@ionic/angular';
 import { DataService, PracticeExercise, StructuredPractice } from '../../services/data.service';
 import { SpeechService, SpeechRecognitionResult } from '../../services/speech.service';
@@ -211,16 +211,23 @@ export class PracticePage implements OnInit, OnDestroy {
   
   private async initializeAudioContext() {
     try {
-      // @ts-ignore - webkit prefix for iOS
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      // Try standard API first
+      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+      
+      if (!AudioContextClass) {
+        console.warn('AudioContext not supported in this browser');
+        return;
+      }
+      
       this.audioContext = new AudioContextClass();
       
       // iOS requires user interaction to unlock audio context
-      if (this.audioContext.state === 'suspended') {
+      if (this.audioContext && this.audioContext.state === 'suspended') {
         console.log('Audio context suspended, will resume on user interaction');
       }
     } catch (error) {
       console.error('Failed to initialize audio context:', error);
+      // Don't throw - audio context is optional for basic functionality
     }
   }
   
@@ -228,22 +235,56 @@ export class PracticePage implements OnInit, OnDestroy {
     const isSupported = this.speechService.isSpeechRecognitionSupported();
     
     if (!isSupported) {
-      // Check for alternative speech recognition
-      // @ts-ignore
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      
-      if (SpeechRecognition) {
-        console.log('Alternative speech recognition available');
-        this.recognitionFallback = new SpeechRecognition();
-        this.setupFallbackRecognition();
-      } else {
-        console.warn('No speech recognition available on this device');
+      // Check for alternative speech recognition with better error handling
+      try {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         
-        if (this.isAndroid) {
-          await this.showAndroidRecordingInstructions();
+        if (SpeechRecognition) {
+          console.log('Alternative speech recognition available');
+          this.recognitionFallback = new SpeechRecognition();
+          this.setupFallbackRecognition();
+        } else {
+          console.warn('No speech recognition available on this device');
+          
+          // Show browser-specific instructions
+          if (this.isAndroid) {
+            await this.showAndroidRecordingInstructions();
+          } else if (this.isIOS) {
+            await this.showIOSRecordingInstructions();
+          } else {
+            // Desktop browsers
+            await this.showDesktopRecordingInstructions();
+          }
         }
+      } catch (error) {
+        console.error('Error setting up speech recognition fallback:', error);
+        console.warn('Speech recognition not available');
       }
     }
+  }
+  
+  private async showIOSRecordingInstructions() {
+    const alert = await this.alertController.create({
+      header: 'Speech Recognition Not Available',
+      message: 'Speech recognition is not available in Safari on iOS. Please use Chrome or another supported browser, or use the app on a desktop computer.',
+      buttons: ['OK']
+    });
+    
+    await alert.present();
+  }
+  
+  private async showDesktopRecordingInstructions() {
+    const alert = await this.alertController.create({
+      header: 'Speech Recognition Not Available',
+      message: 'Speech recognition requires a supported browser:\n\n' +
+               '• Chrome (recommended)\n' +
+               '• Edge\n' +
+               '• Safari (macOS)\n\n' +
+               'Firefox does not support speech recognition natively.',
+      buttons: ['OK']
+    });
+    
+    await alert.present();
   }
   
   private setupFallbackRecognition() {
@@ -1224,12 +1265,44 @@ export class PracticePage implements OnInit, OnDestroy {
     // Check permissions first on mobile
     if (this.isMobile) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        let stream: MediaStream;
+        
+        // Try modern API first
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } else {
+          // Fallback to legacy API
+          const getUserMedia = (navigator as any).getUserMedia || 
+                              (navigator as any).webkitGetUserMedia || 
+                              (navigator as any).mozGetUserMedia || 
+                              (navigator as any).msGetUserMedia;
+          
+          if (!getUserMedia) {
+            throw new Error('getUserMedia not supported');
+          }
+          
+          stream = await new Promise<MediaStream>((resolve, reject) => {
+            getUserMedia.call(navigator, { audio: true }, resolve, reject);
+          });
+        }
+        
         stream.getTracks().forEach(track => track.stop()); // Stop immediately, just checking permission
         console.log('✓ Microphone permission granted');
-      } catch (error) {
+      } catch (error: any) {
         console.error('Microphone permission denied:', error);
-        await this.showMicrophonePermissionError();
+        
+        // Provide specific error message
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+          await this.showMicrophonePermissionError();
+        } else if (error.name === 'NotFoundError') {
+          await this.errorHandler.showError(
+            new Error('No microphone found. Please connect a microphone and try again.'),
+            ErrorType.RECORDING_FAILED
+          );
+        } else {
+          await this.showMicrophonePermissionError();
+        }
+        
         this.isStartingRecording = false;
         return;
       }
@@ -1340,41 +1413,79 @@ export class PracticePage implements OnInit, OnDestroy {
   
   private async startMediaRecorder(): Promise<void> {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        } 
-      });
+      // Check if getUserMedia is available
+      let stream: MediaStream;
+      
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        // Fallback to legacy API for older browsers
+        console.warn('Using legacy getUserMedia API');
+        const getUserMedia = (navigator as any).getUserMedia || 
+                            (navigator as any).webkitGetUserMedia || 
+                            (navigator as any).mozGetUserMedia || 
+                            (navigator as any).msGetUserMedia;
+        
+        if (!getUserMedia) {
+          throw new Error('getUserMedia not supported in this browser');
+        }
+        
+        stream = await new Promise<MediaStream>((resolve, reject) => {
+          getUserMedia.call(navigator, { 
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          }, resolve, reject);
+        });
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          } 
+        });
+      }
+      
+      // Check if MediaRecorder is supported
+      if (typeof MediaRecorder === 'undefined') {
+        console.warn('MediaRecorder not supported, audio recording disabled');
+        stream.getTracks().forEach(track => track.stop());
+        throw new Error('MediaRecorder not supported in this browser');
+      }
       
       this.audioChunks = [];
       
-      // Use different MIME types based on platform
-      let mimeType = 'audio/webm';
+      // Determine best MIME type for this browser
+      const mimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/ogg',
+        'audio/mp4',
+        'audio/wav',
+        'audio/aac'
+      ];
       
-      if (this.isIOS) {
-        // iOS Safari supports these formats
-        if (MediaRecorder.isTypeSupported('audio/mp4')) {
-          mimeType = 'audio/mp4';
-        } else if (MediaRecorder.isTypeSupported('audio/wav')) {
-          mimeType = 'audio/wav';
-        }
-      } else if (this.isAndroid) {
-        // Android Chrome prefers webm
-        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-          mimeType = 'audio/webm;codecs=opus';
+      let selectedMimeType = 'audio/webm'; // Default fallback
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          break;
         }
       }
       
-      console.log('Using MIME type:', mimeType);
+      console.log('Using MIME type:', selectedMimeType);
+      
+      // Store MIME type for use in onstop callback
+      const finalMimeType = selectedMimeType;
       
       this.mediaRecorder = new MediaRecorder(stream, { 
-        mimeType: mimeType 
+        mimeType: finalMimeType 
       });
       
       this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
           this.audioChunks.push(event.data);
           console.log('Audio chunk received:', event.data.size, 'bytes');
         }
@@ -1384,7 +1495,7 @@ export class PracticePage implements OnInit, OnDestroy {
         console.log('MediaRecorder stopped, total chunks:', this.audioChunks.length);
         
         if (this.audioChunks.length > 0) {
-          const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+          const audioBlob = new Blob(this.audioChunks, { type: finalMimeType });
           this.currentRecordingBlob = audioBlob;
           
           if (this.currentRecordingUrl) {
@@ -1403,9 +1514,19 @@ export class PracticePage implements OnInit, OnDestroy {
       this.mediaRecorder.start(100);
       console.log('✓ MediaRecorder started');
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to start MediaRecorder:', error);
-      throw error;
+      
+      // Provide user-friendly error message
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        throw new Error('Microphone permission denied. Please allow microphone access and try again.');
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        throw new Error('No microphone found. Please connect a microphone and try again.');
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        throw new Error('Microphone is already in use by another application.');
+      } else {
+        throw error;
+      }
     }
   }
 
@@ -1610,9 +1731,30 @@ export class PracticePage implements OnInit, OnDestroy {
   }
 
   private async showSpeechRecognitionError() {
-    await this.errorHandler.showError(
-      new Error('Speech Recognition not supported'),
-      ErrorType.SPEECH_RECOGNITION_NOT_SUPPORTED
-    );
+    let message = 'Speech recognition is not available in this browser.\n\n';
+    message += 'Recommended browsers:\n';
+    
+    if (this.isIOS) {
+      message += '• Chrome for iOS\n';
+      message += '• Note: Safari on iOS does not support speech recognition';
+    } else if (this.isAndroid) {
+      message += '• Chrome (recommended)\n';
+      message += '• Edge\n';
+      message += '• Note: Firefox on Android has limited support';
+    } else {
+      message += '• Chrome (recommended)\n';
+      message += '• Edge\n';
+      message += '• Safari (macOS)\n';
+      message += '• Note: Firefox does not support speech recognition';
+    }
+    
+    const alert = await this.alertController.create({
+      header: 'Speech Recognition Not Supported',
+      message: message,
+      buttons: ['OK']
+    });
+    
+    await alert.present();
   }
+  
 }

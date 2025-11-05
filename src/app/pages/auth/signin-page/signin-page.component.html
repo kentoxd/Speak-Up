@@ -16,7 +16,7 @@
         <p>Sign in to continue your journey</p>
       </div>
 
-      <form [formGroup]="signInForm" (ngSubmit)="onSubmit()">
+      <form [formGroup]="signInForm" (ngSubmit)="onSubmit()" autocomplete="off">
         <!-- Email -->
         <div class="form-group">
           <ion-item>
@@ -25,6 +25,7 @@
               type="email"
               formControlName="email"
               placeholder="Enter your email"
+              [autocomplete]="signInForm.get('rememberMe')?.value ? 'email' : 'off'"
               (blur)="onEmailBlur()"
               (ionInput)="onEmailInput()">
             </ion-input>
@@ -47,6 +48,7 @@
               [type]="showPassword ? 'text' : 'password'"
               formControlName="password"
               placeholder="Enter your password"
+              [autocomplete]="signInForm.get('rememberMe')?.value ? 'current-password' : 'new-password'"
               (blur)="onPasswordBlur()"
               (ionInput)="onPasswordInput()">
             </ion-input>

@@ -44,13 +44,33 @@ export class SpeechService {
   }
 
   private initSpeechRecognition() {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      this.recognition = new SpeechRecognition();
-      this.recognition.continuous = true;
-      this.recognition.interimResults = true;
-      this.recognition.lang = 'en-US';
-      this.recognition.maxAlternatives = 1;
+    // Try standard API first (Chrome, Edge)
+    if ('SpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).SpeechRecognition;
+      try {
+        this.recognition = new SpeechRecognition();
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+        this.recognition.lang = 'en-US';
+        this.recognition.maxAlternatives = 1;
+        return;
+      } catch (error) {
+        console.warn('Failed to initialize SpeechRecognition:', error);
+      }
+    }
+    
+    // Fallback to webkit prefix (Safari, older Chrome)
+    if ('webkitSpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition;
+      try {
+        this.recognition = new SpeechRecognition();
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+        this.recognition.lang = 'en-US';
+        this.recognition.maxAlternatives = 1;
+      } catch (error) {
+        console.warn('Failed to initialize webkitSpeechRecognition:', error);
+      }
     }
   }
 
@@ -73,12 +93,68 @@ export class SpeechService {
     
     // Start audio recording with MediaRecorder
     try {
-      this.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.mediaRecorder = new MediaRecorder(this.audioStream);
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.warn('getUserMedia not available, falling back to legacy API');
+        const getUserMedia = (navigator as any).getUserMedia || 
+                            (navigator as any).webkitGetUserMedia || 
+                            (navigator as any).mozGetUserMedia || 
+                            (navigator as any).msGetUserMedia;
+        
+        if (getUserMedia) {
+          this.audioStream = await new Promise<MediaStream>((resolve, reject) => {
+            getUserMedia.call(navigator, { audio: true }, resolve, reject);
+          });
+        } else {
+          throw new Error('getUserMedia not supported in this browser');
+        }
+      } else {
+        this.audioStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+      }
+      
+      // Check if MediaRecorder is supported
+      if (typeof MediaRecorder === 'undefined') {
+        console.warn('MediaRecorder not supported, audio recording disabled');
+        throw new Error('MediaRecorder not supported');
+      }
+      
+      // Determine best MIME type for this browser
+      const mimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/ogg',
+        'audio/mp4',
+        'audio/wav',
+        'audio/aac'
+      ];
+      
+      let selectedMimeType = 'audio/webm'; // Default fallback
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          break;
+        }
+      }
+      
+      console.log('Using MIME type:', selectedMimeType);
+      
+      // Store MIME type for use in onstop callback
+      const finalMimeType = selectedMimeType;
+      
+      this.mediaRecorder = new MediaRecorder(this.audioStream, {
+        mimeType: finalMimeType
+      });
       this.audioChunks = [];
       
       this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
           this.audioChunks.push(event.data);
         }
       };
@@ -87,20 +163,8 @@ export class SpeechService {
         // Ensure we have chunks before creating blob
         if (this.audioChunks.length > 0) {
           try {
-            // Create blob from chunks - try webm first, fallback to generic audio
-            let mimeType = 'audio/webm';
-            if (!MediaRecorder.isTypeSupported('audio/webm')) {
-              // Try alternatives
-              if (MediaRecorder.isTypeSupported('audio/ogg')) {
-                mimeType = 'audio/ogg';
-              } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-                mimeType = 'audio/mp4';
-              } else {
-                mimeType = 'audio/webm'; // Default fallback
-              }
-            }
-            
-            this.currentAudioBlob = new Blob(this.audioChunks, { type: mimeType });
+            // Use the MIME type we selected
+            this.currentAudioBlob = new Blob(this.audioChunks, { type: finalMimeType });
             
             // Clean up previous URL if exists
             if (this.currentAudioUrl) {
@@ -110,7 +174,7 @@ export class SpeechService {
             
             console.log('Audio recording saved:', {
               blobSize: this.currentAudioBlob.size,
-              mimeType: mimeType,
+              mimeType: finalMimeType,
               url: this.currentAudioUrl
             });
           } catch (error) {
@@ -133,10 +197,12 @@ export class SpeechService {
         }
       };
       
-      this.mediaRecorder.start();
+      // Start recording with small time slices for better reliability
+      this.mediaRecorder.start(100);
     } catch (error) {
       console.error('Error starting audio recording:', error);
       // Continue with speech recognition even if audio recording fails
+      // The user can still use speech recognition without audio playback
     }
 
     this.recognition.onstart = () => {
@@ -501,12 +567,31 @@ export class SpeechService {
   }
 
   isSpeechRecognitionSupported(): boolean {
-    return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+    // Check for standard API
+    if ('SpeechRecognition' in window) {
+      return true;
+    }
+    // Check for webkit prefix (Safari, older Chrome)
+    if ('webkitSpeechRecognition' in window) {
+      return true;
+    }
+    return false;
   }
 
   isMediaRecorderSupported(): boolean {
-    return typeof MediaRecorder !== 'undefined' && 
-           !!navigator.mediaDevices?.getUserMedia;
+    // Check if MediaRecorder exists
+    if (typeof MediaRecorder === 'undefined') {
+      return false;
+    }
+    
+    // Check if getUserMedia is available (modern or legacy)
+    const hasModernAPI = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    const hasLegacyAPI = !!(navigator as any).getUserMedia || 
+                         !!(navigator as any).webkitGetUserMedia || 
+                         !!(navigator as any).mozGetUserMedia || 
+                         !!(navigator as any).msGetUserMedia;
+    
+    return hasModernAPI || hasLegacyAPI;
   }
 
   isTextToSpeechSupported(): boolean {

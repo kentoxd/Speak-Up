@@ -278,50 +278,113 @@ export class StorageService {
     return progress;
   }
 
-  // Saved Custom Texts methods
+  // Saved Custom Texts methods - Uses Firebase when user is logged in
   async getSavedCustomTexts(): Promise<SavedCustomText[]> {
-    try {
-      const texts = await this._storage?.get(this.SAVED_CUSTOM_TEXTS_KEY);
-      return texts || [];
-    } catch (error) {
-      console.error('Error loading saved custom texts:', error);
-      return [];
+    // Check if user is logged in
+    const user = await this.authService.getCurrentUser().pipe(take(1)).toPromise();
+    
+    if (user) {
+      // Use Firebase
+      try {
+        return await this.userProgressionService.getCustomTexts();
+      } catch (error) {
+        console.error('Error loading saved custom texts from Firebase:', error);
+        return [];
+      }
+    } else {
+      // Fallback to local storage
+      try {
+        const texts = await this._storage?.get(this.SAVED_CUSTOM_TEXTS_KEY);
+        return texts || [];
+      } catch (error) {
+        console.error('Error loading saved custom texts:', error);
+        return [];
+      }
     }
   }
 
   async addSavedCustomText(customText: SavedCustomText): Promise<void> {
-    try {
-      const texts = await this.getSavedCustomTexts();
-      texts.unshift(customText); // Add to beginning of array
-      await this._storage?.set(this.SAVED_CUSTOM_TEXTS_KEY, texts);
-    } catch (error) {
-      console.error('Error saving custom text:', error);
-      throw error;
+    // Check if user is logged in
+    const user = await this.authService.getCurrentUser().pipe(take(1)).toPromise();
+    
+    if (user) {
+      // Use Firebase
+      try {
+        // Ensure createdAt is set
+        const textToSave = {
+          ...customText,
+          createdAt: customText.createdAt || new Date().toISOString()
+        };
+        const firebaseId = await this.userProgressionService.addCustomText(textToSave);
+        // Update the ID to match Firebase document ID
+        customText.id = firebaseId;
+      } catch (error) {
+        console.error('Error saving custom text to Firebase:', error);
+        throw error;
+      }
+    } else {
+      // Fallback to local storage
+      try {
+        const texts = await this.getSavedCustomTexts();
+        texts.unshift(customText); // Add to beginning of array
+        await this._storage?.set(this.SAVED_CUSTOM_TEXTS_KEY, texts);
+      } catch (error) {
+        console.error('Error saving custom text:', error);
+        throw error;
+      }
     }
   }
 
   async deleteSavedCustomText(id: string): Promise<void> {
-    try {
-      const texts = await this.getSavedCustomTexts();
-      const filteredTexts = texts.filter(text => text.id !== id);
-      await this._storage?.set(this.SAVED_CUSTOM_TEXTS_KEY, filteredTexts);
-    } catch (error) {
-      console.error('Error deleting custom text:', error);
-      throw error;
+    // Check if user is logged in
+    const user = await this.authService.getCurrentUser().pipe(take(1)).toPromise();
+    
+    if (user) {
+      // Use Firebase
+      try {
+        await this.userProgressionService.deleteCustomText(id);
+      } catch (error) {
+        console.error('Error deleting custom text from Firebase:', error);
+        throw error;
+      }
+    } else {
+      // Fallback to local storage
+      try {
+        const texts = await this.getSavedCustomTexts();
+        const filteredTexts = texts.filter(text => text.id !== id);
+        await this._storage?.set(this.SAVED_CUSTOM_TEXTS_KEY, filteredTexts);
+      } catch (error) {
+        console.error('Error deleting custom text:', error);
+        throw error;
+      }
     }
   }
 
   async updateSavedCustomText(id: string, updatedText: Partial<SavedCustomText>): Promise<void> {
-    try {
-      const texts = await this.getSavedCustomTexts();
-      const index = texts.findIndex(text => text.id === id);
-      if (index !== -1) {
-        texts[index] = { ...texts[index], ...updatedText };
-        await this._storage?.set(this.SAVED_CUSTOM_TEXTS_KEY, texts);
+    // Check if user is logged in
+    const user = await this.authService.getCurrentUser().pipe(take(1)).toPromise();
+    
+    if (user) {
+      // Use Firebase
+      try {
+        await this.userProgressionService.updateCustomText(id, updatedText);
+      } catch (error) {
+        console.error('Error updating custom text in Firebase:', error);
+        throw error;
       }
-    } catch (error) {
-      console.error('Error updating custom text:', error);
-      throw error;
+    } else {
+      // Fallback to local storage
+      try {
+        const texts = await this.getSavedCustomTexts();
+        const index = texts.findIndex(text => text.id === id);
+        if (index !== -1) {
+          texts[index] = { ...texts[index], ...updatedText };
+          await this._storage?.set(this.SAVED_CUSTOM_TEXTS_KEY, texts);
+        }
+      } catch (error) {
+        console.error('Error updating custom text:', error);
+        throw error;
+      }
     }
   }
 

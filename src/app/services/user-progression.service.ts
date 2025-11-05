@@ -5,6 +5,14 @@ import { Observable, BehaviorSubject, combineLatest, of } from 'rxjs';
 import { map, switchMap, take } from 'rxjs/operators';
 import { UserProgression, AccuracyRecord, Achievement, WeeklyProgress, MonthlyProgress } from '../models/user-progression.model';
 
+export interface SavedCustomText {
+  id: string;
+  name: string;
+  text: string;
+  createdAt: string;
+  userId?: string;
+}
+
 export interface LessonProgress {
   lessonId: string;
   completed: boolean;
@@ -643,5 +651,127 @@ export class UserProgressionService {
     
     await this.setTopicProgress(topicId, topicProgress);
     return topicProgress;
+  }
+
+  // ==========================================
+  // Custom Texts Methods (Firebase)
+  // ==========================================
+
+  async getCustomTexts(): Promise<SavedCustomText[]> {
+    const user = await this.currentUser$.pipe(take(1)).toPromise();
+    if (!user) return [];
+
+    try {
+      const snapshot = await this.firestore.collection('customTexts', ref =>
+        ref.where('userId', '==', user.uid).orderBy('createdAt', 'desc')
+      ).get().toPromise();
+      
+      return snapshot?.docs.map((doc: any) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name,
+          text: data.text,
+          createdAt: data.createdAt
+        };
+      }) || [];
+    } catch (error) {
+      console.error('Error getting custom texts:', error);
+      // If ordering fails (no index), try without ordering
+      try {
+        const snapshot = await this.firestore.collection('customTexts', ref =>
+          ref.where('userId', '==', user.uid)
+        ).get().toPromise();
+        
+        const texts = snapshot?.docs.map((doc: any) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name,
+            text: data.text,
+            createdAt: data.createdAt
+          };
+        }) || [];
+        
+        // Sort by createdAt descending manually
+        return texts.sort((a, b) => {
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          return dateB - dateA;
+        });
+      } catch (fallbackError) {
+        console.error('Error getting custom texts (fallback):', fallbackError);
+        return [];
+      }
+    }
+  }
+
+  async addCustomText(customText: SavedCustomText): Promise<string> {
+    const user = await this.currentUser$.pipe(take(1)).toPromise();
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      const customTextData = {
+        name: customText.name,
+        text: customText.text,
+        userId: user.uid,
+        createdAt: customText.createdAt || new Date().toISOString()
+      };
+      
+      const docRef = await this.firestore.collection('customTexts').add(customTextData);
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding custom text:', error);
+      throw error;
+    }
+  }
+
+  async deleteCustomText(id: string): Promise<void> {
+    const user = await this.currentUser$.pipe(take(1)).toPromise();
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      // Verify the custom text belongs to the user
+      const doc = await this.firestore.collection('customTexts').doc(id).get().toPromise();
+      if (doc?.exists) {
+        const data = doc.data() as any;
+        if (data?.userId === user.uid) {
+          await this.firestore.collection('customTexts').doc(id).delete();
+        } else {
+          throw new Error('Custom text not found or access denied');
+        }
+      } else {
+        throw new Error('Custom text not found');
+      }
+    } catch (error) {
+      console.error('Error deleting custom text:', error);
+      throw error;
+    }
+  }
+
+  async updateCustomText(id: string, updatedText: Partial<SavedCustomText>): Promise<void> {
+    const user = await this.currentUser$.pipe(take(1)).toPromise();
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      // Verify the custom text belongs to the user
+      const doc = await this.firestore.collection('customTexts').doc(id).get().toPromise();
+      if (doc?.exists) {
+        const data = doc.data() as any;
+        if (data?.userId === user.uid) {
+          const updateData: any = {};
+          if (updatedText.name !== undefined) updateData.name = updatedText.name;
+          if (updatedText.text !== undefined) updateData.text = updatedText.text;
+          await this.firestore.collection('customTexts').doc(id).update(updateData);
+        } else {
+          throw new Error('Custom text not found or access denied');
+        }
+      } else {
+        throw new Error('Custom text not found');
+      }
+    } catch (error) {
+      console.error('Error updating custom text:', error);
+      throw error;
+    }
   }
 }
