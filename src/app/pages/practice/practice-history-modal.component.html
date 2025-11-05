@@ -1,57 +1,151 @@
+<!-- practice-history-modal.component.html -->
 <ion-header>
-  <ion-toolbar color="primary">
+  <ion-toolbar>
     <ion-title>Practice History</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="dismiss()">Close</ion-button>
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close"></ion-icon>
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
-  <ion-list>
-    <!-- The *ngFor defines both "session" and "i" -->
-    <ng-container *ngFor="let session of sessions; let i = index">
-      <ion-item
-        button
-        (click)="toggleExpand(i)"
-        [color]="getAccuracyColor(session.analysis?.overallAccuracy || session.accuracy)"
-      >
-        <ion-label>
-          <h2>{{ formatDate(session.timestamp) }}</h2>
-          <p>
-            {{ getPracticeTypeLabel(session.practiceType) }} •
-            Accuracy:
-            {{ session.analysis?.overallAccuracy || session.accuracy | number:'1.0-0' }}%
-          </p>
-        </ion-label>
-      </ion-item>
-
-      <!-- Expanded details (inside same ngFor scope!) -->
-      <div *ngIf="expandedIndex === i" class="session-details ion-padding">
-        <p><strong>Transcript:</strong> {{ session.transcript }}</p>
-        <p><strong>Word Accuracy:</strong> {{ session.analysis?.wordAccuracy | number:'1.0-0' }}%</p>
-        <p><strong>Punctuation Accuracy:</strong> {{ session.analysis?.punctuationAccuracy | number:'1.0-0' }}%</p>
-        <p><strong>Overall Accuracy:</strong> {{ session.analysis?.overallAccuracy || session.accuracy | number:'1.0-0' }}%</p>
-        <p><strong>Confidence:</strong> {{ session.confidence | percent:'1.0-0' }}</p>
-
-        <div *ngIf="session.analysis?.fillerAnalysis">
-          <h3>Filler Words</h3>
-          <ul>
-            <li *ngFor="let filler of session.analysis.fillerAnalysis.words">
-              {{ filler.word }} — {{ filler.count }} times
-            </li>
-          </ul>
+<ion-content class="history-modal-content">
+  <!-- Summary Stats -->
+  <ion-card class="summary-card">
+    <ion-card-content>
+      <div class="summary-stats">
+        <div class="stat-item">
+          <div class="stat-value">{{ sessions.length }}</div>
+          <div class="stat-label">Total Sessions</div>
         </div>
-
-        <div *ngIf="session.analysis?.clarityAnalysis">
-          <h3>Clarity Feedback</h3>
-          <ul>
-            <li *ngFor="let feedback of session.analysis.clarityAnalysis.feedbackArray">
-              {{ feedback }}
-            </li>
-          </ul>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <div class="stat-value">{{ getTotalDuration() }} min</div>
+          <div class="stat-label">Total Practice</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <div class="stat-value">{{ getAverageAccuracy() }}%</div>
+          <div class="stat-label">Avg Accuracy</div>
         </div>
       </div>
-    </ng-container>
-  </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Sessions List -->
+  <div class="sessions-list" *ngIf="sessions.length > 0">
+    <ion-card 
+      *ngFor="let session of sessions; let i = index; trackBy: trackBySessionId"
+      class="session-card"
+      [class.expanded]="expandedIndex === i">
+      
+      <ion-card-header (click)="toggleExpand(i)">
+        <div class="session-header">
+          <div class="session-info">
+            <ion-card-title>
+              {{ getPracticeTypeLabel(session.practiceType) }}
+              <ion-chip 
+                [color]="session.difficulty === 'beginner' ? 'success' : session.difficulty === 'intermediate' ? 'warning' : 'danger'"
+                size="small"
+                outline>
+                {{ session.difficulty | titlecase }}
+              </ion-chip>
+            </ion-card-title>
+            <ion-card-subtitle>
+              {{ formatDate(session.timestamp) }}
+            </ion-card-subtitle>
+          </div>
+          
+          <div class="session-actions">
+            <!-- Accuracy Badge -->
+            <ion-chip 
+              [color]="getAccuracyColor(getSessionAccuracy(session))"
+              class="accuracy-chip">
+              {{ getSessionAccuracy(session) }}%
+            </ion-chip>
+            
+            <!-- Expand Icon -->
+            <ion-icon 
+              [name]="expandedIndex === i ? 'chevron-up' : 'chevron-down'"
+              class="expand-icon">
+            </ion-icon>
+          </div>
+        </div>
+      </ion-card-header>
+
+      <ion-card-content *ngIf="expandedIndex === i" class="expanded-content">
+        <!-- Detailed Metrics -->
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric-label">Word Accuracy</div>
+            <div class="metric-value">{{ session.analysis?.wordAccuracy || 0 }}%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Punctuation</div>
+            <div class="metric-value">{{ session.analysis?.punctuationAccuracy || 0 }}%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Words/Min</div>
+            <div class="metric-value">{{ session.analysis?.wordsPerMinute || 0 }}</div>
+          </div>
+        </div>
+
+        <!-- Clarity Score -->
+        <div class="clarity-section" *ngIf="session.analysis?.clarityScore">
+          <div class="section-title">Clarity Score</div>
+          <div class="clarity-bar-container">
+            <div 
+              class="clarity-bar" 
+              [class]="getClarityClass(session.analysis.clarityScore)"
+              [style.width.%]="session.analysis.clarityScore">
+              {{ session.analysis.clarityScore }}%
+            </div>
+          </div>
+        </div>
+
+        <!-- Filler Words -->
+        <div class="filler-section" *ngIf="session.analysis?.fillerCount > 0">
+          <div class="section-title">Filler Words ({{ session.analysis.fillerCount }})</div>
+          <div class="filler-chips">
+            <ion-chip 
+              *ngFor="let filler of session.analysis.fillerWords"
+              color="warning"
+              size="small">
+              {{ filler.word }} ({{ filler.count }})
+            </ion-chip>
+          </div>
+        </div>
+
+        <!-- Transcript -->
+        <div class="transcript-section" *ngIf="session.transcript">
+          <div class="section-title">Transcript</div>
+          <div class="transcript-text">
+            {{ session.transcript }}
+          </div>
+        </div>
+
+        <!-- Target Text -->
+        <div class="target-section" *ngIf="session.targetText">
+          <div class="section-title">Target Text</div>
+          <div class="target-text">
+            {{ session.targetText }}
+          </div>
+        </div>
+
+        <!-- Full Timestamp -->
+        <div class="timestamp-section">
+          <ion-icon name="time"></ion-icon>
+          <span>{{ formatFullDateTime(session.timestamp) }}</span>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="sessions.length === 0">
+    <ion-icon name="time"></ion-icon>
+    <h3>No Practice History</h3>
+    <p>Your practice sessions will appear here. Start practicing and use the "Add to History" button in the feedback modal to save your progress!</p>
+  </div>
 </ion-content>

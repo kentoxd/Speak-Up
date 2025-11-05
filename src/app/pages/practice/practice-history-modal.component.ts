@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 
 @Component({
@@ -6,9 +6,11 @@ import { ModalController } from '@ionic/angular';
   templateUrl: './practice-history-modal.component.html',
   styleUrls: ['./practice-history-modal.component.scss']
 })
-export class PracticeHistoryModalComponent implements OnInit {
+export class PracticeHistoryModalComponent implements OnInit, OnDestroy {
   @Input() sessions: any[] = [];
   expandedIndex: number | null = null;
+  playingSessionIndex: number | null = null;
+  private currentAudio: HTMLAudioElement | null = null;
 
   constructor(private modalController: ModalController) {}
 
@@ -17,6 +19,13 @@ export class PracticeHistoryModalComponent implements OnInit {
     this.sessions.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }
 
+  ngOnDestroy() {
+
+  }
+
+  dismiss() {
+    this.modalController.dismiss();
+  }
   toggleExpand(index: number) {
     this.expandedIndex = this.expandedIndex === index ? null : index;
   }
@@ -61,10 +70,12 @@ export class PracticeHistoryModalComponent implements OnInit {
   getPracticeTypeLabel(type: string): string {
     const typeMap: { [key: string]: string } = {
       'monologue': 'Monologue',
+      'public-speaking': 'Public Speaking',
       'publicSpeaking': 'Public Speaking',
+      'debate-speech': 'Debate Speech',
       'debate': 'Debate Speech'
     };
-    return typeMap[type] || type;
+    return typeMap[type] || type || 'Unknown';
   }
 
   getAccuracyColor(accuracy: number): string {
@@ -73,7 +84,31 @@ export class PracticeHistoryModalComponent implements OnInit {
     return 'danger';
   }
 
-  dismiss() {
-    this.modalController.dismiss();
+  getSessionAccuracy(session: any): number {
+    // Try multiple sources for accuracy
+    const accuracy = session.analysis?.overallAccuracy || 
+                     session.accuracy || 
+                     session.analysis?.accuracy || 
+                     0;
+    
+    // If accuracy is 0 or undefined, try to calculate from word and punctuation accuracy
+    if (accuracy === 0 && session.analysis) {
+      const wordAccuracy = session.analysis.wordAccuracy || 0;
+      const punctuationAccuracy = session.analysis.punctuationAccuracy || 0;
+      if (wordAccuracy > 0 || punctuationAccuracy > 0) {
+        // Calculate overall accuracy: 70% word + 30% punctuation
+        return Math.round((wordAccuracy * 0.7) + (punctuationAccuracy * 0.3));
+      }
+    }
+    
+    return Math.round(accuracy);
   }
+
+  getClarityClass(score: number): string {
+    if (score >= 80) return 'excellent';
+    if (score >= 60) return 'good';
+    return 'poor';
+  }
+
+
 }
