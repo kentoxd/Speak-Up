@@ -653,6 +653,14 @@ export class FeedbackModalComponent {
   }
 
   /**
+   * Normalize text by removing punctuation, hyphens, and converting to lowercase
+   * Used for comparing compound words
+   */
+  private normalizeWordForComparison(word: string): string {
+    return word.toLowerCase().replace(/[.,!?;:\-]/g, '').trim();
+  }
+
+  /**
    * Split text into words while preserving punctuation
    */
   private splitIntoWords(text: string): string[] {
@@ -662,7 +670,43 @@ export class FeedbackModalComponent {
   }
 
   /**
+   * Try to match combined user words against target word
+   * Returns the number of user words that match when combined, or 0 if no match
+   */
+  private tryCombinedMatch(targetWord: string, userWords: string[], startIndex: number, maxCombine: number = 3): number {
+    const targetNormalized = this.normalizeWordForComparison(targetWord);
+    
+    // Try combining 1, 2, 3, etc. user words
+    for (let combineCount = 1; combineCount <= maxCombine && startIndex + combineCount <= userWords.length; combineCount++) {
+      const combined = userWords.slice(startIndex, startIndex + combineCount)
+        .map(w => this.normalizeWordForComparison(w))
+        .join('');
+      
+      if (combined === targetNormalized) {
+        return combineCount;
+      }
+    }
+    
+    return 0;
+  }
+
+  /**
+   * Check if target word contains hyphens and might be split in user speech
+   */
+  private isHyphenatedWord(word: string): boolean {
+    return word.includes('-');
+  }
+
+  /**
+   * Get parts of hyphenated word (for matching against split user words)
+   */
+  private getHyphenatedParts(word: string): string[] {
+    return word.split('-').filter(part => part.length > 0);
+  }
+
+  /**
    * Compare target text and user speech word by word
+   * Handles compound words and hyphenated words that might be split
    * Returns an array of word objects with type and text
    */
   getHighlightedWords(): Array<{text: string, type: 'correct' | 'wrong' | 'added' | 'missing'}> {
@@ -679,7 +723,7 @@ export class FeedbackModalComponent {
     let targetIndex = 0;
     let userIndex = 0;
 
-    // Use a simple matching algorithm
+    // Enhanced matching algorithm that handles compound and hyphenated words
     while (targetIndex < targetWords.length || userIndex < userWords.length) {
       if (targetIndex >= targetWords.length) {
         // All target words processed, remaining user words are "added"
@@ -690,71 +734,159 @@ export class FeedbackModalComponent {
         result.push({ text: `[${targetWords[targetIndex]}]`, type: 'missing' });
         targetIndex++;
       } else {
-        const targetNormalized = this.normalizeWord(targetWords[targetIndex]);
-        const userNormalized = this.normalizeWord(userWords[userIndex]);
+        const targetWord = targetWords[targetIndex];
+        const targetNormalized = this.normalizeWordForComparison(targetWord);
+        const userNormalized = this.normalizeWordForComparison(userWords[userIndex]);
 
+        // Check for exact match first
         if (targetNormalized === userNormalized) {
-          // Exact match
           result.push({ text: userWords[userIndex], type: 'correct' });
           targetIndex++;
           userIndex++;
         } else {
-          // Check if we can find a match ahead
-          let foundMatch = false;
-          let lookAhead = 1;
-          const maxLookAhead = 3; // Look ahead up to 3 words
-
-          // Look ahead in user words to find target word
-          while (lookAhead <= maxLookAhead && userIndex + lookAhead < userWords.length) {
-            const aheadNormalized = this.normalizeWord(userWords[userIndex + lookAhead]);
-            if (aheadNormalized === targetNormalized) {
-              // Found match ahead - mark intermediate words as added
-              for (let i = 0; i < lookAhead; i++) {
-                result.push({ text: userWords[userIndex + i], type: 'added' });
-              }
-              userIndex += lookAhead;
-              result.push({ text: userWords[userIndex], type: 'correct' });
-              targetIndex++;
-              userIndex++;
-              foundMatch = true;
-              break;
+          // Try to match combined user words (e.g., "nano" + "silver" = "nanosilver")
+          const combinedMatchCount = this.tryCombinedMatch(targetWord, userWords, userIndex, 3);
+          
+          if (combinedMatchCount > 0) {
+            // Found a match when combining user words
+            // Mark all combined words as correct
+            for (let i = 0; i < combinedMatchCount; i++) {
+              result.push({ text: userWords[userIndex + i], type: 'correct' });
             }
-            lookAhead++;
-          }
-
-          if (!foundMatch) {
-            // Check if we can find target word ahead in user words
-            let targetAhead = 1;
-            const maxTargetAhead = 3;
-
-            while (targetAhead <= maxTargetAhead && targetIndex + targetAhead < targetWords.length) {
-              const targetAheadNormalized = this.normalizeWord(targetWords[targetIndex + targetAhead]);
-              if (targetAheadNormalized === userNormalized) {
-                // Target word is ahead - mark user word as wrong and add missing target words
-                result.push({ text: userWords[userIndex], type: 'wrong' });
-                for (let i = 0; i < targetAhead; i++) {
-                  result.push({ text: `[${targetWords[targetIndex + i]}]`, type: 'missing' });
+            userIndex += combinedMatchCount;
+            targetIndex++;
+          } else if (this.isHyphenatedWord(targetWord)) {
+            // Target word is hyphenated (e.g., "longer-lasting")
+            // Try to match against hyphenated parts
+            const hyphenatedParts = this.getHyphenatedParts(targetWord);
+            const combinedParts = hyphenatedParts.map(p => this.normalizeWordForComparison(p)).join('');
+            
+            // Try matching combined user words against hyphenated target
+            const hyphenatedMatchCount = this.tryCombinedMatch(combinedParts, userWords, userIndex, 3);
+            
+            if (hyphenatedMatchCount > 0) {
+              // Match found - mark combined words as correct
+              for (let i = 0; i < hyphenatedMatchCount; i++) {
+                result.push({ text: userWords[userIndex + i], type: 'correct' });
+              }
+              userIndex += hyphenatedMatchCount;
+              targetIndex++;
+            } else {
+              // Try matching individual parts of hyphenated word
+              let partMatchFound = false;
+              let partsMatched = 0;
+              
+              for (let partIndex = 0; partIndex < hyphenatedParts.length; partIndex++) {
+                const partNormalized = this.normalizeWordForComparison(hyphenatedParts[partIndex]);
+                const currentUserNormalized = this.normalizeWordForComparison(userWords[userIndex + partsMatched]);
+                
+                if (partNormalized === currentUserNormalized) {
+                  result.push({ text: userWords[userIndex + partsMatched], type: 'correct' });
+                  partsMatched++;
+                  partMatchFound = true;
+                } else {
+                  break;
                 }
-                targetIndex += targetAhead + 1;
-                userIndex++;
-                foundMatch = true;
-                break;
               }
-              targetAhead++;
+              
+              if (partMatchFound && partsMatched === hyphenatedParts.length) {
+                // All parts matched
+                userIndex += partsMatched;
+                targetIndex++;
+              } else {
+                // Couldn't match hyphenated word - try standard fallback
+                const matchResult = this.handleNoMatch(targetWords, userWords, targetIndex, userIndex, result);
+                targetIndex = matchResult.newTargetIndex;
+                userIndex = matchResult.newUserIndex;
+              }
             }
-
-            if (!foundMatch) {
-              // No match found - mark as wrong
-              result.push({ text: userWords[userIndex], type: 'wrong' });
-              targetIndex++;
-              userIndex++;
-            }
+          } else {
+            // No direct match - try standard fallback
+            const matchResult = this.handleNoMatch(targetWords, userWords, targetIndex, userIndex, result);
+            targetIndex = matchResult.newTargetIndex;
+            userIndex = matchResult.newUserIndex;
           }
         }
       }
     }
 
     return result;
+  }
+
+  /**
+   * Handle case where no direct match is found
+   * Returns an object with updated indices and whether a match was found
+   */
+  private handleNoMatch(
+    targetWords: string[],
+    userWords: string[],
+    targetIndex: number,
+    userIndex: number,
+    result: Array<{text: string, type: 'correct' | 'wrong' | 'added' | 'missing'}>
+  ): { foundMatch: boolean; newTargetIndex: number; newUserIndex: number } {
+    // Look ahead in user words to find target word
+    const maxLookAhead = 3;
+    for (let lookAhead = 1; lookAhead <= maxLookAhead && userIndex + lookAhead < userWords.length; lookAhead++) {
+      const targetNormalized = this.normalizeWordForComparison(targetWords[targetIndex]);
+      const aheadNormalized = this.normalizeWordForComparison(userWords[userIndex + lookAhead]);
+      
+      if (targetNormalized === aheadNormalized) {
+        // Found match ahead - mark intermediate words as added
+        for (let i = 0; i < lookAhead; i++) {
+          result.push({ text: userWords[userIndex + i], type: 'added' });
+        }
+        result.push({ text: userWords[userIndex + lookAhead], type: 'correct' });
+        return {
+          foundMatch: true,
+          newTargetIndex: targetIndex + 1,
+          newUserIndex: userIndex + lookAhead + 1
+        };
+      }
+      
+      // Also try combined match starting from lookAhead position
+      const combinedMatch = this.tryCombinedMatch(targetWords[targetIndex], userWords, userIndex + lookAhead, 2);
+      if (combinedMatch > 0) {
+        for (let i = 0; i < lookAhead; i++) {
+          result.push({ text: userWords[userIndex + i], type: 'added' });
+        }
+        for (let i = 0; i < combinedMatch; i++) {
+          result.push({ text: userWords[userIndex + lookAhead + i], type: 'correct' });
+        }
+        return {
+          foundMatch: true,
+          newTargetIndex: targetIndex + 1,
+          newUserIndex: userIndex + lookAhead + combinedMatch
+        };
+      }
+    }
+
+    // Check if target word is ahead in user words
+    const maxTargetAhead = 3;
+    for (let targetAhead = 1; targetAhead <= maxTargetAhead && targetIndex + targetAhead < targetWords.length; targetAhead++) {
+      const targetAheadNormalized = this.normalizeWordForComparison(targetWords[targetIndex + targetAhead]);
+      const userNormalized = this.normalizeWordForComparison(userWords[userIndex]);
+      
+      if (targetAheadNormalized === userNormalized) {
+        // Target word is ahead - mark user word as wrong and add missing target words
+        result.push({ text: userWords[userIndex], type: 'wrong' });
+        for (let i = 0; i < targetAhead; i++) {
+          result.push({ text: `[${targetWords[targetIndex + i]}]`, type: 'missing' });
+        }
+        return {
+          foundMatch: true,
+          newTargetIndex: targetIndex + targetAhead + 1,
+          newUserIndex: userIndex + 1
+        };
+      }
+    }
+    
+    // No match found - mark as wrong
+    result.push({ text: userWords[userIndex], type: 'wrong' });
+    return {
+      foundMatch: false,
+      newTargetIndex: targetIndex + 1,
+      newUserIndex: userIndex + 1
+    };
   }
 
   /**

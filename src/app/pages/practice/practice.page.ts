@@ -1686,14 +1686,124 @@ export class PracticePage implements OnInit, OnDestroy {
 
   private calculateWordAccuracy(userText: string, targetText: string): number {
     if (!userText || !targetText) return 0;
-    const normalize = (text: string) => text.toLowerCase().replace(/\s+/g, ' ').trim().split(' ');
-    const userWords = normalize(userText);
-    const targetWords = normalize(targetText);
+    
+    // Normalize word by removing punctuation and hyphens for comparison
+    const normalizeWordForComparison = (word: string): string => {
+      return word.toLowerCase().replace(/[.,!?;:\-]/g, '').trim();
+    };
+    
+    // Split text into words
+    const splitIntoWords = (text: string): string[] => {
+      if (!text) return [];
+      return text.trim().split(/\s+/).filter(w => w.length > 0);
+    };
+    
+    const targetWords = splitIntoWords(targetText);
+    const userWords = splitIntoWords(userText);
+    
     let correct = 0;
-    for (let i = 0; i < Math.min(userWords.length, targetWords.length); i++) {
-      if (userWords[i] === targetWords[i]) correct++;
+    let targetIndex = 0;
+    let userIndex = 0;
+    
+    // Enhanced matching algorithm that handles compound and hyphenated words
+    while (targetIndex < targetWords.length && userIndex < userWords.length) {
+      const targetWord = targetWords[targetIndex];
+      const targetNormalized = normalizeWordForComparison(targetWord);
+      const userNormalized = normalizeWordForComparison(userWords[userIndex]);
+      
+      // Check for exact match
+      if (targetNormalized === userNormalized) {
+        correct++;
+        targetIndex++;
+        userIndex++;
+      } else {
+        // Try to match combined user words (e.g., "nano" + "silver" = "nanosilver")
+        let combinedMatchCount = 0;
+        const maxCombine = 3;
+        
+        // Try combining 1, 2, 3 user words
+        for (let combineCount = 1; combineCount <= maxCombine && userIndex + combineCount <= userWords.length; combineCount++) {
+          const combined = userWords.slice(userIndex, userIndex + combineCount)
+            .map(w => normalizeWordForComparison(w))
+            .join('');
+          
+          if (combined === targetNormalized) {
+            combinedMatchCount = combineCount;
+            break;
+          }
+        }
+        
+        if (combinedMatchCount > 0) {
+          // Found a match when combining user words
+          correct++;
+          targetIndex++;
+          userIndex += combinedMatchCount;
+        } else if (targetWord.includes('-')) {
+          // Target word is hyphenated (e.g., "longer-lasting")
+          // Try matching combined user words against hyphenated target
+          const hyphenatedParts = targetWord.split('-').filter(p => p.length > 0);
+          const combinedParts = hyphenatedParts.map(p => normalizeWordForComparison(p)).join('');
+          
+          let hyphenatedMatchCount = 0;
+          for (let combineCount = 1; combineCount <= maxCombine && userIndex + combineCount <= userWords.length; combineCount++) {
+            const combined = userWords.slice(userIndex, userIndex + combineCount)
+              .map(w => normalizeWordForComparison(w))
+              .join('');
+            
+            if (combined === combinedParts) {
+              hyphenatedMatchCount = combineCount;
+              break;
+            }
+          }
+          
+          if (hyphenatedMatchCount > 0) {
+            // Match found
+            correct++;
+            targetIndex++;
+            userIndex += hyphenatedMatchCount;
+          } else {
+            // Try matching individual parts
+            let allPartsMatched = true;
+            let partsMatched = 0;
+            
+            for (let partIndex = 0; partIndex < hyphenatedParts.length; partIndex++) {
+              const partNormalized = normalizeWordForComparison(hyphenatedParts[partIndex]);
+              if (userIndex + partsMatched < userWords.length) {
+                const currentUserNormalized = normalizeWordForComparison(userWords[userIndex + partsMatched]);
+                
+                if (partNormalized === currentUserNormalized) {
+                  partsMatched++;
+                } else {
+                  allPartsMatched = false;
+                  break;
+                }
+              } else {
+                allPartsMatched = false;
+                break;
+              }
+            }
+            
+            if (allPartsMatched && partsMatched === hyphenatedParts.length) {
+              // All parts matched
+              correct++;
+              targetIndex++;
+              userIndex += partsMatched;
+            } else {
+              // No match - advance both
+              targetIndex++;
+              userIndex++;
+            }
+          }
+        } else {
+          // No match found - advance both
+          targetIndex++;
+          userIndex++;
+        }
+      }
     }
-    return (correct / targetWords.length) * 100;
+    
+    // Calculate accuracy based on target words (what should have been said)
+    return targetWords.length > 0 ? (correct / targetWords.length) * 100 : 0;
   }
 
   private calculatePunctuationAccuracy(userText: string, targetText: string): number {
