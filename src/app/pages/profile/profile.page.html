@@ -35,7 +35,6 @@
             <h2>{{ userProfile.name }}</h2>
             <p *ngIf="userProfile.email">{{ userProfile.email }}</p>
             <p *ngIf="userProfile.bio" class="bio">{{ userProfile.bio }}</p>
-            <p class="join-date">Member for {{ getJoinedDaysAgo() }} days</p>
           </div>
         </div>
       </ion-card-content>
@@ -247,8 +246,9 @@
       
       <div class="achievements-list">
         <ion-card 
-          *ngFor="let achievement of progression.achievements || []" 
-          class="achievement-item">
+          *ngFor="let achievement of getAllAchievements()" 
+          class="achievement-item"
+          [class.earned]="hasAchievement(progression, achievement.id)">
           <ion-card-content>
             <div class="achievement-header">
               <div class="achievement-info">
@@ -256,17 +256,14 @@
                 <p>{{ achievement.description }}</p>
               </div>
               <div class="achievement-status">
-                <ion-icon name="checkmark-circle" color="success"></ion-icon>
+                <ion-icon 
+                  [name]="hasAchievement(progression, achievement.id) ? 'checkmark-circle' : 'ellipse-outline'"
+                  [color]="hasAchievement(progression, achievement.id) ? 'success' : 'medium'">
+                </ion-icon>
               </div>
             </div>
           </ion-card-content>
         </ion-card>
-        
-        <!-- Show message if no achievements yet -->
-        <div *ngIf="!progression.achievements || progression.achievements.length === 0" class="no-achievements">
-          <ion-icon name="trophy-outline" color="medium"></ion-icon>
-          <p>Complete lessons and practice sessions to earn achievements!</p>
-        </div>
       </div>
     </div>
 

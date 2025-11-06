@@ -18,7 +18,7 @@
         "headers": [
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; media-src 'self' blob: data: mediastream:; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https:; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self' blob:; frame-src 'self' https:;"
+            "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.googletagmanager.com; script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; media-src 'self' blob: data: mediastream:; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://www.googletagmanager.com wss://*.firebaseio.com https:; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self' blob:; frame-src 'self' https:;"
           },
           {
             "key": "Permissions-Policy",
@@ -61,7 +61,7 @@
         ]
       },
       {
-        "source": "manifest.json",
+        "source": "manifest.webmanifest",
         "headers": [
           {
             "key": "Cache-Control",

@@ -407,11 +407,12 @@ export class UserProgressionService {
     }
 
     // Streak Achievements
-    if (progression.currentStreak >= 7 && !existingAchievementIds.includes('week_warrior')) {
+    // Week Warrior: unlock after 7 total practice sessions (no daily streak requirement)
+    if (progression.totalPracticeSessions >= 7 && !existingAchievementIds.includes('week_warrior')) {
       newAchievements.push({
         id: 'week_warrior',
         name: 'Week Warrior',
-        description: 'Practiced for 7 consecutive days!',
+        description: 'Completed 7 practice sessions!',
         icon: '🔥',
         unlockedAt: new Date(),
         points: 150,

@@ -30,6 +30,83 @@ export class SpeechService {
   private lastProcessedWordIndex = 0;
   private lastFinalResult = ''; // Track last final result to prevent duplicates on Android
   
+  // Merge logic to avoid duplicate/cumulative final results from browsers (esp. Android)
+  private mergeFinalSegment(newText: string): void {
+    const normalize = (s: string) => s.replace(/\s+/g, ' ').trim();
+    const stripPunctuation = (s: string) => normalize(s).replace(/[.,!?]/g, '');
+    const incoming = normalize(newText);
+    if (!incoming) return;
+
+    const current = normalize(this.currentTranscript);
+    const incomingNoPunc = stripPunctuation(incoming);
+    const currentNoPunc = stripPunctuation(current);
+
+    // If exact duplicate at the end, skip
+    if (current.endsWith(incoming)) {
+      this.lastFinalResult = incoming;
+      return;
+    }
+
+    // Global cumulative refinement: if the new snapshot contains the whole current (ignoring punctuation), replace all
+    if (incomingNoPunc.length > currentNoPunc.length && incomingNoPunc.includes(currentNoPunc)) {
+      this.currentTranscript = incoming;
+      this.lastFinalResult = incoming;
+      return;
+    }
+
+    // Work at the sentence level: replace the last sentence if incoming is a cumulative refinement
+    const sentenceSplitRegex = /([.!?])\s+/; // split keeper for punctuation
+    const parts = current.split(sentenceSplitRegex);
+    // Rebuild sentences keeping delimiters
+    const sentences: string[] = [];
+    for (let i = 0; i < parts.length; i += 2) {
+      const text = (parts[i] || '').trim();
+      const delim = parts[i + 1] || '';
+      if (text) sentences.push(`${text}${delim}`.trim());
+    }
+
+    const previous = sentences.length > 0 ? sentences[sentences.length - 1] : '';
+
+    const prevNorm = normalize(previous);
+    const prevNoPunc = stripPunctuation(previous);
+    // If incoming is refinement/extension of previous, replace last sentence
+    const isRefinement = prevNorm && (
+      incoming.startsWith(prevNorm) ||
+      prevNorm.startsWith(incoming) ||
+      incomingNoPunc.startsWith(prevNoPunc) ||
+      prevNoPunc.startsWith(incomingNoPunc)
+    );
+
+    if (isRefinement) {
+      // Replace last sentence with the refined incoming text
+      if (sentences.length > 0) {
+        sentences[sentences.length - 1] = incoming;
+        this.currentTranscript = sentences.join(' ');
+      } else {
+        this.currentTranscript = incoming;
+      }
+      this.lastFinalResult = incoming;
+      return;
+    }
+
+    // Attempt overlap merge (avoid duplicating overlapping tails/heads)
+    const maxOverlap = Math.min(current.length, incoming.length);
+    let overlapLen = 0;
+    for (let k = Math.min(100, maxOverlap); k > 0; k--) { // cap overlap search to 100 chars for safety
+      if (current.endsWith(incoming.slice(0, k))) {
+        overlapLen = k;
+        break;
+      }
+    }
+    const toAppend = incoming.slice(overlapLen);
+    if (!toAppend) {
+      this.lastFinalResult = incoming;
+      return;
+    }
+    this.currentTranscript = current ? `${current} ${toAppend}`.trim() : incoming;
+    this.lastFinalResult = incoming;
+  }
+  
   // Audio recording properties
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
@@ -237,12 +314,8 @@ export class SpeechService {
             // If transcript already ends with this text, it's a duplicate
             console.log(`⏭️ Skipping duplicate - transcript already ends with: "${transcript}"`);
           } else {
-            // Append to current transcript with space
-            if (this.currentTranscript && !this.currentTranscript.endsWith(' ')) {
-              this.currentTranscript += ' ';
-            }
-            this.currentTranscript += transcript;
-            this.lastFinalResult = normalizedNewText; // Update last processed result
+            // Merge intelligently to avoid duplicates/cumulative repeats
+            this.mergeFinalSegment(transcript);
             console.log(`Updated currentTranscript: "${this.currentTranscript}"`);
           }
         } else {
@@ -290,7 +363,7 @@ export class SpeechService {
    * Start ONLY speech recognition without MediaRecorder
    * Use this when MediaRecorder is managed externally (e.g., in practice page)
    */
-  async startRecognitionOnly(): Promise<void> {
+  async startRecognitionOnly(autoRestart: boolean = false, shouldContinue?: () => boolean): Promise<void> {
     if (!this.isSpeechRecognitionSupported()) {
       console.error('Speech Recognition not supported');
       return;
@@ -334,12 +407,8 @@ export class SpeechService {
             // If transcript already ends with this text, it's a duplicate
             console.log(`⏭️ Skipping duplicate - transcript already ends with: "${transcript}"`);
           } else {
-            // Append to current transcript with space
-            if (this.currentTranscript && !this.currentTranscript.endsWith(' ')) {
-              this.currentTranscript += ' ';
-            }
-            this.currentTranscript += transcript;
-            this.lastFinalResult = normalizedNewText; // Update last processed result
+            // Merge intelligently to avoid duplicates/cumulative repeats
+            this.mergeFinalSegment(transcript);
             console.log(`Updated currentTranscript: "${this.currentTranscript}"`);
           }
         } else {
@@ -372,9 +441,17 @@ export class SpeechService {
     };
 
     this.recognition.onend = () => {
-      // Auto-restart if still recording (but we don't track isRecording in this mode)
-      // The practice page will handle restart logic
-      console.log('Speech recognition ended (will be restarted by practice page if needed)');
+      if (autoRestart && (!shouldContinue || shouldContinue())) {
+        try {
+          setTimeout(() => {
+            if (!shouldContinue || shouldContinue()) {
+              try { this.recognition.start(); } catch {}
+            }
+          }, 150);
+        } catch {}
+      } else {
+        console.log('Speech recognition ended (will be restarted by practice page if needed)');
+      }
     };
 
     try {
@@ -956,44 +1033,31 @@ export class SpeechService {
   }
 
   /**
-   * Calculate comprehensive clarity score based on multiple metrics
+   * Calculate clarity score based on accuracy and repetition only (no pace/rhythm).
    * @param transcript The speech transcript
    * @param accuracy Accuracy score (0-100)
-   * @param pace Words per minute
-   * @returns Object with clarity score and breakdown
    */
-  calculateClarityScore(transcript: string, accuracy: number, pace: number): {
+  calculateClarityScore(transcript: string, accuracy: number): {
     clarityScore: number;
-    breakdown: { accuracy: number; pace: number; repetition: number; rhythm: number };
+    breakdown: { accuracy: number; repetition: number };
   } {
-    // Get repeated words count
     const repeatedWords = this.detectRepeatedWords(transcript);
     const repeatCount = repeatedWords.count;
 
-    // Get rhythm analysis
-    const rhythmAnalysis = this.analyzeSpeakingRhythm(transcript);
-    const rhythmScore = rhythmAnalysis.rhythmScore;
+    // Normalize to 0-1 scale
+    const accuracyScore = Math.max(0, Math.min(1, accuracy / 100));
+    // Penalize repetitions: each repeat reduces score; clamp to [0, 1]
+    const repetitionScore = Math.max(0, Math.min(1, 1 - repeatCount * 0.08));
 
-    // Normalize all scores to 0-1 scale
-    const accuracyScore = accuracy / 100;
-    const paceScore = Math.min(pace / 150, 1); // Ideal WPM = 150
-    const repetitionScore = Math.max(1 - (repeatCount * 0.05), 0.5); // Penalty per repeat, min 0.5
+    // Weights: Accuracy 70%, Repetition 30%
+    const weighted = (accuracyScore * 0.7) + (repetitionScore * 0.3);
+    const finalClarityScore = Math.round(weighted * 100);
 
-    // Apply weights (must add to 100%)
-    // Accuracy: 35%, Pace: 25%, Repetition: 20%, Rhythm: 20%
-    const clarityScore = (accuracyScore * 0.35) + (paceScore * 0.25) + (repetitionScore * 0.2) + (rhythmScore * 0.2);
-
-    // Convert to 0-100 scale and round to 2 decimals
-    const finalClarityScore = Math.round(clarityScore * 100 * 100) / 100;
-
-    // Return all individual scores also scaled to 0-100
     return {
       clarityScore: finalClarityScore,
       breakdown: {
         accuracy: Math.round(accuracyScore * 100),
-        pace: Math.round(paceScore * 100),
-        repetition: Math.round(repetitionScore * 100),
-        rhythm: Math.round(rhythmScore * 100)
+        repetition: Math.round(repetitionScore * 100)
       }
     };
   }
@@ -1005,7 +1069,7 @@ export class SpeechService {
    * @param rhythmFeedback Rhythm feedback text
    * @returns Array of feedback strings
    */
-  getClarityFeedback(clarityScore: number, repeatedCount: number, rhythmFeedback: string): string[] {
+  getClarityFeedback(clarityScore: number, repeatedCount: number): string[] {
     const feedback: string[] = [];
 
     // Add opening feedback based on score
@@ -1022,8 +1086,12 @@ export class SpeechService {
       feedback.push(`Avoid repeating words - detected ${repeatedCount} instances.`);
     }
 
-    // Always add rhythm feedback
-    feedback.push(rhythmFeedback);
+    // Add repetition guidance
+    if (repeatedCount === 0) {
+      feedback.push('Great flow — no repeated words detected.');
+    } else {
+      feedback.push('Vary wording to avoid repeated words and keep clarity high.');
+    }
 
     return feedback;
   }

@@ -28,6 +28,8 @@ body {
   color: #000000;
 }
 
+/* (reverted) Remove forced full-viewport and body overflow rules */
+
 /** TYPOGRAPHY - Inter & Noto Sans Hierarchy **/
 
 app-step-indicator {
@@ -221,6 +223,13 @@ ion-tab-button ion-icon {
 /* Content Background */
 ion-content {
   --background: var(--ion-background-color);
+}
+
+/* (reverted) Remove scroll container stretching */
+
+/* Optional utility for page wrappers */
+.page-container {
+  width: 100%;
 }
 
 /* Items */

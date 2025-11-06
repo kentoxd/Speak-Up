@@ -30,6 +30,14 @@ export class ProfilePage implements OnInit {
   // Make Math available in template
   Math = Math;
 
+  // All available achievements to display (earned ones will be highlighted)
+  private allAchievements: Achievement[] = [
+    { id: 'first_practice', name: 'First Steps', description: 'Completed your first practice session!', icon: '🎯', unlockedAt: new Date(), points: 25, category: 'milestone' },
+    { id: 'accuracy_master', name: 'Accuracy Master', description: 'Achieved 90% accuracy in a practice session!', icon: '🎯', unlockedAt: new Date(), points: 100, category: 'accuracy' },
+    { id: 'week_warrior', name: 'Week Warrior', description: 'Completed 7 practice sessions!', icon: '🔥', unlockedAt: new Date(), points: 150, category: 'streak' },
+    { id: 'level_up_5', name: 'Rising Star', description: 'Reached level 5!', icon: '⭐', unlockedAt: new Date(), points: 200, category: 'milestone' }
+  ];
+
   constructor(
     private storageService: StorageService,
     private userProgressionService: UserProgressionService,
@@ -247,9 +255,22 @@ export class ProfilePage implements OnInit {
   }
 
   private async uploadAvatarImage(base64Image: string, userId: string): Promise<string> {
-  // Convert base64 string to Blob
-  const response = await fetch(base64Image);
-  const blob = await response.blob();
+  // Convert data URL to Blob without fetch to satisfy CSP
+  let blob: Blob;
+  if (base64Image.startsWith('data:')) {
+    const [meta, data] = base64Image.split(',');
+    const mimeMatch = /data:(.*?);base64/.exec(meta || '');
+    const contentType = (mimeMatch && mimeMatch[1]) || 'image/jpeg';
+    const binaryString = atob(data || '');
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+    blob = new Blob([bytes], { type: contentType });
+  } else {
+    // Fallback: treat as URL
+    const response = await fetch(base64Image);
+    blob = await response.blob();
+  }
 
   // Define a storage path for the user's avatar
   const filePath = `avatars/${userId}.jpg`;
@@ -359,9 +380,18 @@ export class ProfilePage implements OnInit {
 
   getAchievementProgress(progression: UserProgression | null): number {
     if (!progression || !progression.achievements) return 0;
-    const totalPossible = 10;
+    const totalPossible = this.allAchievements.length;
     const earned = progression.achievements.length;
     return Math.round((earned / totalPossible) * 100);
+  }
+
+  getAllAchievements(): Achievement[] {
+    return this.allAchievements;
+  }
+
+  hasAchievement(progression: UserProgression | null, id: string): boolean {
+    if (!progression) return false;
+    return (progression.achievements || []).some(a => a.id === id);
   }
 
   getLevelProgress(progression: UserProgression | null): number {

@@ -601,7 +601,7 @@ export class FeedbackModalComponent {
   } | null = null;
   @Input() clarityAnalysis: {
     clarityScore: number;
-    breakdown: { accuracy: number; pace: number; repetition: number; rhythm: number };
+    breakdown: { accuracy: number; repetition: number; };
     feedbackArray: string[];
   } | null = null;
 

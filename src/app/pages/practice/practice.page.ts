@@ -140,19 +140,12 @@ export class PracticePage implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
-    // Detect platform
+    // Detect platform (treat any non‑iOS mobile as Android for browser handling)
     this.isIOS = this.platform.is('ios');
-    this.isAndroid = this.platform.is('android');
-    this.isMobile = this.platform.is('mobile');
-    if (this.isAndroid || this.isMobile) {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/eruda';
-      script.onload = () => {
-        (window as any).eruda.init();
-        console.log('Eruda console initialized for Android debugging');
-      };
-      document.body.appendChild(script);
-    }
+    const ua = navigator.userAgent || '';
+    const isUAAndroid = /Android/i.test(ua);
+    this.isMobile = this.platform.is('mobile') || /Android|iPhone|iPad|iPod/i.test(ua);
+    this.isAndroid = this.platform.is('android') || (!this.isIOS && this.isMobile) || isUAAndroid;
     console.log('Platform detection:', {
       isIOS: this.isIOS,
       isAndroid: this.isAndroid,
@@ -380,19 +373,7 @@ export class PracticePage implements OnInit, OnDestroy {
         }
       }
       
-      // ANDROID FIX: Restart recognition after each final result
-      if (this.isAndroid && event.results[event.results.length - 1].isFinal) {
-        console.log('🔄 Auto-restarting recognition for continuous capture...');
-        setTimeout(() => {
-          if (this.isRecording && this.recognitionFallback) {
-            try {
-              this.recognitionFallback.start();
-            } catch (e) {
-              console.warn('Could not restart recognition:', e);
-            }
-          }
-        }, 150);
-      }
+      // NOTE: Do not restart here to avoid duplicate restart loops; handled in onend
     };
     
     this.recognitionFallback.onspeechend = () => {
@@ -1230,17 +1211,13 @@ export class PracticePage implements OnInit, OnDestroy {
   
     const clarityScore = this.speechService.calculateClarityScore(
       userTranscript,
-      overallAccuracy,
-      analysis.wordsPerMinute
+      overallAccuracy
     );
   
     const repeatedWords = this.speechService.detectRepeatedWords(userTranscript);
-    const rhythmAnalysis = this.speechService.analyzeSpeakingRhythm(userTranscript);
-    
     const clarityFeedbackArray = this.speechService.getClarityFeedback(
       clarityScore.clarityScore,
-      repeatedWords.count,
-      rhythmAnalysis.feedback
+      repeatedWords.count
     );
   
     const clarityAnalysis = {
@@ -1416,6 +1393,11 @@ export class PracticePage implements OnInit, OnDestroy {
   }
 
   async startRecording() {
+    // ANDROID: Use structured transcription-only flow to avoid MediaRecorder conflicts
+    if (this.isAndroid) {
+      await this.startStructuredRecording();
+      return;
+    }
     if (!this.speechService.isSpeechRecognitionSupported() && !this.recognitionFallback) {
       await this.showSpeechRecognitionError();
       return;
@@ -1453,9 +1435,13 @@ export class PracticePage implements OnInit, OnDestroy {
   }
 
   stopRecording() {
+    // ANDROID: Use structured stop to match the safe flow
+    if (this.isAndroid) {
+      this.stopStructuredRecording();
+      return;
+    }
     this.speechService.stopRecording();
     this.isRecording = false;
-    
     const result = this.speechService.getRecordingResult();
     this.userSpeechText = result.transcript;
     this.handleRecordingResult(result);
@@ -1758,8 +1744,11 @@ export class PracticePage implements OnInit, OnDestroy {
       }
     } else {
       try {
-        await this.speechService.startRecognitionOnly();
-        console.log('✓ Started transcription-only via speech service');
+        await this.speechService.startRecognitionOnly(
+          true,
+          () => this.isRecording && !this.speechRecognitionDisabled
+        );
+        console.log('✓ Started transcription-only via speech service (auto-restart)');
       } catch (error: any) {
         console.error('Failed to start speech service:', error);
         throw error;

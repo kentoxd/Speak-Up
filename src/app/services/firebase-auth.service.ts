@@ -260,18 +260,17 @@ export class FirebaseAuthService {
     }
   }
 
-  // Check if email exists by attempting password reset
+  // Check if email exists without sending emails
   private async checkEmailExists(email: string): Promise<string> {
     try {
-      // Try to send password reset email - this will fail if email doesn't exist
-      await this.afAuth.sendPasswordResetEmail(email);
-      // If we get here, email exists but password is wrong
-      return 'Invalid password';
-    } catch (error: any) {
-      if (error.code === 'auth/user-not-found') {
+      const methods = await this.afAuth.fetchSignInMethodsForEmail(email);
+      if (!methods || methods.length === 0) {
         return 'No account found';
       }
-      // If it's a different error, assume email exists but password is wrong
+      // Email exists, credentials were invalid
+      return 'Invalid password';
+    } catch (error: any) {
+      // Network or format errors shouldn't leak; default to invalid credentials
       return 'Invalid password';
     }
   }
