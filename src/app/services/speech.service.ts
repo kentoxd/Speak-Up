@@ -28,6 +28,7 @@ export class SpeechService {
   private recordingStartTime = 0;
   private targetText = '';
   private lastProcessedWordIndex = 0;
+  private lastFinalResult = ''; // Track last final result to prevent duplicates on Android
   
   // Audio recording properties
   private mediaRecorder: MediaRecorder | null = null;
@@ -89,6 +90,7 @@ export class SpeechService {
     this.interimTranscript = '';
     this.recordingStartTime = Date.now();
     this.lastProcessedWordIndex = 0;
+    this.lastFinalResult = ''; // Reset duplicate tracking
     this.audioChunks = [];
     
     // Start audio recording with MediaRecorder
@@ -223,13 +225,26 @@ export class SpeechService {
           transcript = this.addPunctuationToAllWords(transcript);
           console.log(`After punctuation: "${transcript}"`);
           
-          // Append to current transcript with space
-          if (this.currentTranscript && !this.currentTranscript.endsWith(' ')) {
-            this.currentTranscript += ' ';
-          }
-          this.currentTranscript += transcript;
+          // ANDROID FIX: Prevent duplicate appending
+          // Check if transcript already ends with this exact segment (ignoring trailing spaces)
+          const normalizedTranscript = this.currentTranscript.trim();
+          const normalizedNewText = transcript.trim();
           
-          console.log(`Updated currentTranscript: "${this.currentTranscript}"`);
+          // Skip if this exact text was just added (same as last result)
+          if (normalizedNewText === this.lastFinalResult) {
+            console.log(`⏭️ Skipping duplicate final result: "${transcript}"`);
+          } else if (normalizedTranscript.endsWith(normalizedNewText)) {
+            // If transcript already ends with this text, it's a duplicate
+            console.log(`⏭️ Skipping duplicate - transcript already ends with: "${transcript}"`);
+          } else {
+            // Append to current transcript with space
+            if (this.currentTranscript && !this.currentTranscript.endsWith(' ')) {
+              this.currentTranscript += ' ';
+            }
+            this.currentTranscript += transcript;
+            this.lastFinalResult = normalizedNewText; // Update last processed result
+            console.log(`Updated currentTranscript: "${this.currentTranscript}"`);
+          }
         } else {
           // For interim results, show live with punctuation
           const enhancedInterim = this.addPunctuationToAllWords(transcript, true);
@@ -243,6 +258,13 @@ export class SpeechService {
 
     this.recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
+      
+      // ANDROID FIX: Handle audio-capture error gracefully
+      if (event.error === 'audio-capture') {
+        console.warn('Audio capture error - microphone may be in use by another process');
+        // Don't stop recording, just warn
+        return;
+      }
     };
 
     this.recognition.onend = () => {
@@ -251,7 +273,7 @@ export class SpeechService {
           this.recognition.start();
         } catch (error) {
           console.error('Failed to restart recognition:', error);
-          this.isRecording = false;
+          // Don't set isRecording to false on error - allow recording to continue
         }
       }
     };
@@ -260,7 +282,111 @@ export class SpeechService {
       this.recognition.start();
     } catch (error) {
       console.error('Failed to start recognition:', error);
-      this.isRecording = false;
+      // Don't set isRecording to false - allow recording to continue
+    }
+  }
+
+  /**
+   * Start ONLY speech recognition without MediaRecorder
+   * Use this when MediaRecorder is managed externally (e.g., in practice page)
+   */
+  async startRecognitionOnly(): Promise<void> {
+    if (!this.isSpeechRecognitionSupported()) {
+      console.error('Speech Recognition not supported');
+      return;
+    }
+
+    // Reset transcripts
+    this.currentTranscript = '';
+    this.interimTranscript = '';
+    this.recordingStartTime = Date.now();
+    this.lastProcessedWordIndex = 0;
+    this.lastFinalResult = ''; // Reset duplicate tracking
+
+    // Set up event handlers
+    this.recognition.onstart = () => {
+      console.log('Speech recognition started (recognition only mode)');
+    };
+
+    this.recognition.onresult = (event: any) => {
+      let interimText = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        let transcript = event.results[i][0].transcript.trim();
+        const isFinal = event.results[i].isFinal;
+
+        console.log(`Result ${i}: "${transcript}" | isFinal: ${isFinal}`);
+
+        if (isFinal) {
+          // Add punctuation to all words in final result
+          transcript = this.addPunctuationToAllWords(transcript);
+          console.log(`After punctuation: "${transcript}"`);
+          
+          // ANDROID FIX: Prevent duplicate appending
+          // Check if transcript already ends with this exact segment (ignoring trailing spaces)
+          const normalizedTranscript = this.currentTranscript.trim();
+          const normalizedNewText = transcript.trim();
+          
+          // Skip if this exact text was just added (same as last result)
+          if (normalizedNewText === this.lastFinalResult) {
+            console.log(`⏭️ Skipping duplicate final result: "${transcript}"`);
+          } else if (normalizedTranscript.endsWith(normalizedNewText)) {
+            // If transcript already ends with this text, it's a duplicate
+            console.log(`⏭️ Skipping duplicate - transcript already ends with: "${transcript}"`);
+          } else {
+            // Append to current transcript with space
+            if (this.currentTranscript && !this.currentTranscript.endsWith(' ')) {
+              this.currentTranscript += ' ';
+            }
+            this.currentTranscript += transcript;
+            this.lastFinalResult = normalizedNewText; // Update last processed result
+            console.log(`Updated currentTranscript: "${this.currentTranscript}"`);
+          }
+        } else {
+          // For interim results, show live with punctuation
+          const enhancedInterim = this.addPunctuationToAllWords(transcript, true);
+          interimText += enhancedInterim + ' ';
+        }
+      }
+
+      // Set interim for real-time preview
+      this.interimTranscript = interimText.trim();
+    };
+
+    this.recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      
+      // ANDROID FIX: Handle audio-capture error gracefully - don't fail completely
+      if (event.error === 'audio-capture') {
+        console.warn('⚠️ Audio capture error - MediaRecorder may have exclusive microphone access');
+        console.warn('⚠️ Audio recording will continue, but transcription may not work');
+        // Don't stop - allow recording to continue
+        return;
+      }
+      
+      // For other errors, also don't stop recording
+      if (event.error === 'no-speech') {
+        // Normal - just continue
+        return;
+      }
+    };
+
+    this.recognition.onend = () => {
+      // Auto-restart if still recording (but we don't track isRecording in this mode)
+      // The practice page will handle restart logic
+      console.log('Speech recognition ended (will be restarted by practice page if needed)');
+    };
+
+    try {
+      this.recognition.start();
+      console.log('✓ Speech recognition started (recognition only)');
+    } catch (error: any) {
+      console.error('Failed to start recognition:', error);
+      if (error.name === 'InvalidStateError') {
+        console.warn('Recognition already running');
+      } else {
+        throw error;
+      }
     }
   }
 

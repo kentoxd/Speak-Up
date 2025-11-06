@@ -175,6 +175,24 @@
               </ion-chip>
             </div>
             
+            <!-- Android Recording Mode Toggle -->
+            <div *ngIf="isAndroid && !isPracticing" class="android-recording-mode-toggle">
+              <ion-item lines="none">
+                <ion-label>
+                  <h3>Android Recording</h3>
+                  <p>Text transcription only</p>
+                </ion-label>
+              </ion-item>
+              <ion-item lines="none" class="mode-description">
+                <ion-label class="ion-text-wrap">
+                  <p>
+                    <ion-icon name="information-circle" color="primary"></ion-icon>
+                    Shows what you said in real-time. Audio playback is not available on Android. Use iOS for full features including audio recording and playback.
+                  </p>
+                </ion-label>
+              </ion-item>
+            </div>
+            
             <ion-button 
               expand="block" 
               fill="solid" 
@@ -305,6 +323,24 @@
             
             <div class="custom-preview-text">
               {{ currentStructuredPractice?.targetText }}
+            </div>
+            
+            <!-- Android Recording Mode Toggle -->
+            <div *ngIf="isAndroid && !isPracticing" class="android-recording-mode-toggle">
+              <ion-item lines="none">
+                <ion-label>
+                  <h3>Android Recording</h3>
+                  <p>Text transcription only</p>
+                </ion-label>
+              </ion-item>
+              <ion-item lines="none" class="mode-description">
+                <ion-label class="ion-text-wrap">
+                  <p>
+                    <ion-icon name="information-circle" color="primary"></ion-icon>
+                    Shows what you said in real-time. Audio playback is not available on Android. Use iOS for full features including audio recording and playback.
+                  </p>
+                </ion-label>
+              </ion-item>
             </div>
             
             <ion-button 
