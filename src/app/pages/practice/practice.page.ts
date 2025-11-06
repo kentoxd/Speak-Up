@@ -416,6 +416,10 @@ private setupFallbackRecognition() {
   toggleTips() {
     this.isTipsVisible = !this.isTipsVisible;
   }
+
+  toggleTargetText() {
+    this.showTargetText = !this.showTargetText;
+  }
   setPracticeReady() {
     this.isPracticeReady = true;
     this.currentPracticeStep = 3;
