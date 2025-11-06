@@ -290,48 +290,110 @@ export class PracticePage implements OnInit, OnDestroy {
     await alert.present();
   }
   
-  private setupFallbackRecognition() {
-    if (!this.recognitionFallback) return;
+private setupFallbackRecognition() {
+  if (!this.recognitionFallback) return;
+  
+  this.recognitionFallback.continuous = true;
+  this.recognitionFallback.interimResults = true;
+  this.recognitionFallback.lang = 'en-US';
+  
+  // ANDROID FIX: Add maxAlternatives for better recognition
+  if (this.isAndroid) {
+    this.recognitionFallback.maxAlternatives = 1;
+  }
+  
+  this.recognitionFallback.onstart = () => {
+    alert('✓ Speech recognition started');
+  };
+  
+  this.recognitionFallback.onresult = (event: any) => {
+    console.log('Speech recognition result received, results:', event.results.length);
     
-    this.recognitionFallback.continuous = true;
-    this.recognitionFallback.interimResults = true;
-    this.recognitionFallback.lang = 'en-US';
+    // CRITICAL FIX: Reset interim on each result event
+    this.interimTranscript = '';
     
-    this.recognitionFallback.onresult = (event: any) => {
-      this.interimTranscript = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
       
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        
-        if (event.results[i].isFinal) {
-          this.finalTranscript += transcript + ' ';
-        } else {
-          this.interimTranscript += transcript;
-        }
+      if (event.results[i].isFinal) {
+        console.log('Final result:', transcript);
+        this.finalTranscript += transcript + ' ';
+      } else {
+        console.log('Interim result:', transcript);
+        this.interimTranscript += transcript;
       }
+    }
+    
+    // ANDROID FIX: Immediately update UI
+    const fullTranscript = (this.finalTranscript + this.interimTranscript).trim();
+    if (fullTranscript) {
+      this.userSpeechText = this.capitalizeFirstLetter(fullTranscript);
+      this.wordCount = fullTranscript.split(/\s+/).filter(w => w.length > 0).length;
       
-      const fullTranscript = (this.finalTranscript + this.interimTranscript).trim();
-      if (fullTranscript) {
-        this.userSpeechText = this.capitalizeFirstLetter(fullTranscript);
-        this.wordCount = fullTranscript.split(/\s+/).filter(w => w.length > 0).length;
+      // Force change detection on Android
+      if (this.isAndroid) {
+        setTimeout(() => {
+          this.cdr.detectChanges();
+        }, 0);
+      } else {
         this.cdr.detectChanges();
       }
-    };
+    }
+  };
+  
+  this.recognitionFallback.onerror = (event: any) => {
+    console.error('Fallback recognition error:', event.error);
     
-    this.recognitionFallback.onerror = (event: any) => {
-      console.error('Fallback recognition error:', event.error);
-      
-      if (event.error === 'no-speech') {
-        // Don't show error for no-speech, just continue
-        return;
-      }
-      
-      this.errorHandler.showError(
-        new Error(event.error),
-        ErrorType.RECORDING_FAILED
-      );
-    };
-  }
+    if (event.error === 'no-speech') {
+      // Don't show error for no-speech, just continue
+      return;
+    }
+    
+    // ANDROID FIX: Handle network errors gracefully
+    if (event.error === 'network') {
+      console.warn('Network error in speech recognition, continuing...');
+      return;
+    }
+    
+    // ANDROID FIX: Auto-restart on aborted error
+    if (event.error === 'aborted' && this.isRecording) {
+      console.log('Recognition aborted, restarting...');
+      setTimeout(() => {
+        if (this.isRecording && this.recognitionFallback) {
+          try {
+            this.recognitionFallback.start();
+          } catch (e) {
+            console.error('Failed to restart recognition:', e);
+          }
+        }
+      }, 100);
+      return;
+    }
+    
+    this.errorHandler.showError(
+      new Error(event.error),
+      ErrorType.RECORDING_FAILED
+    );
+  };
+  
+  this.recognitionFallback.onend = () => {
+    console.log('Speech recognition ended');
+    
+    // ANDROID FIX: Auto-restart if still recording
+    if (this.isRecording) {
+      console.log('Auto-restarting speech recognition...');
+      setTimeout(() => {
+        if (this.isRecording && this.recognitionFallback) {
+          try {
+            this.recognitionFallback.start();
+          } catch (e) {
+            console.error('Failed to restart recognition:', e);
+          }
+        }
+      }, 100);
+    }
+  };
+}
   
   private async showAndroidRecordingInstructions() {
     const alert = await this.alertController.create({
@@ -1331,161 +1393,157 @@ export class PracticePage implements OnInit, OnDestroy {
     await modal.present();
   }
 
-  async startStructuredRecording() {
-    if (this.isStartingRecording || this.isRecording) {
-      return;
-    }
-    this.isStartingRecording = true;
-    // Check permissions first on mobile
-    if (this.isMobile) {
-      try {
-        let stream: MediaStream;
+
+async startStructuredRecording() {
+  if (this.isStartingRecording || this.isRecording) {
+    return;
+  }
+  this.isStartingRecording = true;
+  
+  // Check permissions first on mobile
+  if (this.isMobile) {
+    try {
+      let stream: MediaStream;
+      
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } else {
+        const getUserMedia = (navigator as any).getUserMedia || 
+                            (navigator as any).webkitGetUserMedia || 
+                            (navigator as any).mozGetUserMedia || 
+                            (navigator as any).msGetUserMedia;
         
-        // Try modern API first
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } else {
-          // Fallback to legacy API
-          const getUserMedia = (navigator as any).getUserMedia || 
-                              (navigator as any).webkitGetUserMedia || 
-                              (navigator as any).mozGetUserMedia || 
-                              (navigator as any).msGetUserMedia;
-          
-          if (!getUserMedia) {
-            throw new Error('getUserMedia not supported');
-          }
-          
-          stream = await new Promise<MediaStream>((resolve, reject) => {
-            getUserMedia.call(navigator, { audio: true }, resolve, reject);
-          });
+        if (!getUserMedia) {
+          throw new Error('getUserMedia not supported');
         }
         
-        stream.getTracks().forEach(track => track.stop()); // Stop immediately, just checking permission
-        console.log('✓ Microphone permission granted');
-      } catch (error: any) {
-        console.error('Microphone permission denied:', error);
-        
-        // Provide specific error message
-        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-          await this.showMicrophonePermissionError();
-        } else if (error.name === 'NotFoundError') {
-          await this.errorHandler.showError(
-            new Error('No microphone found. Please connect a microphone and try again.'),
-            ErrorType.RECORDING_FAILED
-          );
-        } else {
-          await this.showMicrophonePermissionError();
-        }
-        
-        this.isStartingRecording = false;
-        return;
+        stream = await new Promise<MediaStream>((resolve, reject) => {
+          getUserMedia.call(navigator, { audio: true }, resolve, reject);
+        });
       }
-    }
-    
-    if (!this.speechService.isSpeechRecognitionSupported() && !this.recognitionFallback) {
-      await this.showSpeechRecognitionError();
+      
+      stream.getTracks().forEach(track => track.stop());
+      console.log('✓ Microphone permission granted');
+    } catch (error: any) {
+      console.error('Microphone permission denied:', error);
+      
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        await this.showMicrophonePermissionError();
+      } else if (error.name === 'NotFoundError') {
+        await this.errorHandler.showError(
+          new Error('No microphone found. Please connect a microphone and try again.'),
+          ErrorType.RECORDING_FAILED
+        );
+      } else {
+        await this.showMicrophonePermissionError();
+      }
+      
       this.isStartingRecording = false;
       return;
     }
+  }
+  
+  if (!this.speechService.isSpeechRecognitionSupported() && !this.recognitionFallback) {
+    await this.showSpeechRecognitionError();
+    this.isStartingRecording = false;
+    return;
+  }
 
-    try {
-      this.userSpeechText = '';
-      this.sessionResults = null;
-      this.showTargetText = true;
-      
-      if (this.currentRecordingUrl) {
-        URL.revokeObjectURL(this.currentRecordingUrl);
-        this.currentRecordingUrl = null;
-      }
-      this.currentRecordingBlob = null;
-      this.speechService.clearTranscript();
+  try {
+    this.userSpeechText = '🎤 Listening...';
+    this.sessionResults = null;
+    this.showTargetText = true;
+    
+    if (this.currentRecordingUrl) {
+      URL.revokeObjectURL(this.currentRecordingUrl);
+      this.currentRecordingUrl = null;
+    }
+    this.currentRecordingBlob = null;
+    this.speechService.clearTranscript();
+    this.finalTranscript = '';
+    this.interimTranscript = '';
+    
+    if (this.currentStructuredPractice?.targetText) {
+      this.speechService.setTargetText(this.currentStructuredPractice.targetText);
+    }
+    
+    await this.startMediaRecorder();
+    
+    // CRITICAL FIX: Start speech recognition AFTER setting isRecording flag
+    this.isRecording = true;
+    this.recordingStartTime = Date.now();
+    this.recordingDuration = 0;
+    this.wordCount = 0;
+    
+    // Start speech recognition (use fallback if available)
+    if (this.recognitionFallback) {
+      // Reset transcripts before starting
       this.finalTranscript = '';
       this.interimTranscript = '';
-      
-      if (this.currentStructuredPractice?.targetText) {
-        this.speechService.setTargetText(this.currentStructuredPractice.targetText);
-      }
-      
-      await this.startMediaRecorder();
-      
-      // Start speech recognition (use fallback if available)
-      if (this.recognitionFallback) {
-        this.recognitionFallback.start();
-        console.log('Started fallback speech recognition');
+      this.recognitionFallback.start();
+      console.log('Started fallback speech recognition');
+    } else {
+      await this.speechService.startRecording();
+    }
+    
+    const durationInterval = setInterval(() => {
+      if (this.isRecording) {
+        this.recordingDuration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
       } else {
-        await this.speechService.startRecording();
+        clearInterval(durationInterval);
       }
-      
-      this.isRecording = true;
-      this.recordingStartTime = Date.now();
-      this.recordingDuration = 0;
-      this.wordCount = 0;
-      
-      const durationInterval = setInterval(() => {
-        if (this.isRecording) {
-          this.recordingDuration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+    }, 1000);
+    
+    // CRITICAL FIX: More aggressive transcript polling for Android
+    const transcriptInterval = setInterval(() => {
+      if (this.isRecording) {
+        let currentTranscript = '';
+        
+        if (this.recognitionFallback) {
+          // ANDROID FIX: Combine both final and interim transcripts
+          currentTranscript = (this.finalTranscript + ' ' + this.interimTranscript).trim();
+          console.log('Android transcript update:', currentTranscript.substring(0, 50));
         } else {
-          clearInterval(durationInterval);
+          currentTranscript = this.speechService.getCurrentTranscript();
         }
-      }, 1000);
-      
-      const transcriptInterval = setInterval(() => {
-        if (this.isRecording) {
-          let currentTranscript = '';
+        
+        if (currentTranscript && currentTranscript.trim() !== '') {
+          const formattedText = this.capitalizeFirstLetter(currentTranscript);
+          this.wordCount = formattedText.split(/\s+/).filter(w => w.length > 0).length;
           
-          if (this.recognitionFallback) {
-            currentTranscript = (this.finalTranscript + this.interimTranscript).trim();
-          } else {
-            currentTranscript = this.speechService.getCurrentTranscript();
+          if (this.userSpeechText !== formattedText) {
+            this.userSpeechText = formattedText;
+            this.cdr.detectChanges();
           }
-          
-          if (currentTranscript) {
-            const formattedText = currentTranscript.trim() !== '' 
-              ? this.capitalizeFirstLetter(currentTranscript)
-              : '🎤 Listening...';
-            
-            if (formattedText !== '🎤 Listening...') {
-              this.wordCount = formattedText.split(/\s+/).filter(w => w.length > 0).length;
-            }
-            
-            if (this.userSpeechText !== formattedText) {
-              this.userSpeechText = formattedText;
-              this.cdr.detectChanges();
-            }
-          } else if (!this.userSpeechText || this.userSpeechText === '') {
+        } else if (this.userSpeechText !== '🎤 Listening...') {
+          // Only reset to listening if we don't have text yet
+          if (!this.finalTranscript || this.finalTranscript.trim() === '') {
             this.userSpeechText = '🎤 Listening...';
             this.cdr.detectChanges();
           }
-        } else {
-          clearInterval(transcriptInterval);
         }
-      }, 100);
-      
-      (this as any).transcriptInterval = transcriptInterval;
-      this.isStartingRecording = false;
-      
-    } catch (error) {
-      console.error('Recording error:', error);
-      this.isRecording = false;
-      this.isStartingRecording = false;
-      
-      await this.errorHandler.showError(
-        error,
-        ErrorType.RECORDING_FAILED,
-        async () => {
-          await this.startStructuredRecording();
-        }
-      );
-    }
+      } else {
+        clearInterval(transcriptInterval);
+      }
+    }, 100); // Keep at 100ms for responsive updates
+    
+    (this as any).transcriptInterval = transcriptInterval;
+    this.isStartingRecording = false;
+    
+  } catch (error) {
+    console.error('Recording error:', error);
+    this.isRecording = false;
+    this.isStartingRecording = false;
+    
+    await this.errorHandler.showError(
+      error,
+      ErrorType.RECORDING_FAILED,
+      async () => {
+        await this.startStructuredRecording();
+      }
+    );
   }
-
-  toggleTargetText() {
-    this.showTargetText = !this.showTargetText;
-  }
-  
-// Replace your startMediaRecorder and stopStructuredRecording methods with these:
-
-// Replace your startMediaRecorder and stopStructuredRecording methods with these:
+}
 
 private async startMediaRecorder(): Promise<void> {
   try {
@@ -1640,19 +1698,43 @@ async stopStructuredRecording() {
   }
   
   try {
-    // STEP 1: Stop MediaRecorder and wait for completion (CRITICAL FOR ANDROID)
+    // STEP 1: Stop speech recognition FIRST to capture final transcript
+    if (this.recognitionFallback) {
+      try {
+        this.recognitionFallback.stop();
+        console.log('Recognition fallback stopped');
+        
+        // ANDROID FIX: Wait for onend to fire
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } catch (e) {
+        console.log('Recognition already stopped');
+      }
+    } else {
+      await this.speechService.stopRecording();
+      console.log('Speech service stopped');
+    }
+    
+    // STEP 2: Get transcript before stopping media recorder
+    let finalTranscript = '';
+    
+    if (this.recognitionFallback) {
+      finalTranscript = (this.finalTranscript + ' ' + this.interimTranscript).trim();
+      console.log('Final transcript from fallback:', finalTranscript.substring(0, 100));
+    } else {
+      const result = this.speechService.getRecordingResult();
+      finalTranscript = this.speechService.getCurrentTranscript() || result.transcript;
+    }
+    
+    // STEP 3: Now stop MediaRecorder
     const audioStopPromise = new Promise<void>((resolve) => {
       if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-        // Store reference to avoid null issues
         const recorder = this.mediaRecorder;
         
-        // Set up one-time listener for stop completion
         const onStopHandler = () => {
           console.log('MediaRecorder onstop fired');
           resolve();
         };
         
-        // Replace existing onstop temporarily
         const originalOnStop = recorder.onstop;
         recorder.onstop = (event) => {
           if (originalOnStop) {
@@ -1661,7 +1743,6 @@ async stopStructuredRecording() {
           onStopHandler();
         };
         
-        // Request data one final time before stopping (Android fix)
         if (this.isAndroid) {
           recorder.requestData();
         }
@@ -1669,7 +1750,6 @@ async stopStructuredRecording() {
         recorder.stop();
         console.log('MediaRecorder.stop() called');
         
-        // Timeout fallback for Android
         setTimeout(() => {
           console.warn('MediaRecorder stop timeout, forcing resolve');
           resolve();
@@ -1679,39 +1759,11 @@ async stopStructuredRecording() {
       }
     });
     
-    // Wait for audio to complete
     await audioStopPromise;
     console.log('✓ MediaRecorder stopped and processed');
     
-    // STEP 2: Small delay for Android to ensure chunks are collected
     if (this.isAndroid) {
       await new Promise(resolve => setTimeout(resolve, 300));
-    }
-    
-    // STEP 3: Now stop speech recognition
-    if (this.recognitionFallback) {
-      try {
-        this.recognitionFallback.stop();
-        console.log('Recognition fallback stopped');
-      } catch (e) {
-        console.log('Recognition already stopped');
-      }
-    } else {
-      await this.speechService.stopRecording();
-      console.log('Speech service stopped');
-    }
-    
-    // STEP 4: Wait for final transcript processing
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    // Get final transcript
-    let finalTranscript = '';
-    
-    if (this.recognitionFallback) {
-      finalTranscript = (this.finalTranscript + this.interimTranscript).trim();
-    } else {
-      const result = this.speechService.getRecordingResult();
-      finalTranscript = this.speechService.getCurrentTranscript() || result.transcript;
     }
     
     console.log('Final transcript length:', finalTranscript.length);
@@ -1732,7 +1784,6 @@ async stopStructuredRecording() {
       return;
     }
     
-    // Verify audio blob
     if (this.currentRecordingBlob) {
       console.log('✓ Audio available:', this.currentRecordingBlob.size, 'bytes');
     } else {
@@ -1741,7 +1792,6 @@ async stopStructuredRecording() {
     
     this.userSpeechText = this.capitalizeFirstLetter(finalTranscript);
     
-    // Create result object
     const result: SpeechRecognitionResult = {
       transcript: finalTranscript,
       confidence: 0.9,
@@ -1756,7 +1806,6 @@ async stopStructuredRecording() {
   } catch (error) {
     console.error('Error stopping recording:', error);
     
-    // Try to salvage transcript
     let finalTranscript = '';
     
     if (this.recognitionFallback) {

@@ -25,7 +25,7 @@ import { firebaseConfig } from '../environments/firebase.config';
     AppRoutingModule,
     IonicStorageModule.forRoot(),
     HttpClientModule,
-    // Firebase modules
+
     AngularFireModule.initializeApp(firebaseConfig),
     AngularFirestoreModule,
     AngularFireAuthModule,
