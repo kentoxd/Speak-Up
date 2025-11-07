@@ -78,7 +78,7 @@ export class LessonContentPage implements OnInit {
     await this.storageService.setLessonProgress(this.lesson.id, this.lessonProgress);
   }
 
-  nextContent() {
+  async nextContent() {
     if (!this.lesson) return;
     
     if (this.currentContentIndex < this.lesson.content.length - 1) {
@@ -86,10 +86,29 @@ export class LessonContentPage implements OnInit {
       this.currentContentIndex++;
       this.updateProgress();
     } else if (this.lesson.quiz && !this.showQuiz) {
-      // Show quiz after last content section
-      this.showQuiz = true;
-      this.selectedAnswers = new Array(this.lesson.quiz.questions.length).fill(-1);
-      this.updateProgress();
+      // Show confirmation prompt before starting quiz
+      const quiz = this.lesson.quiz;
+      const alert = await this.alertController.create({
+        header: 'Start Quiz?',
+        message: `Are you ready to start the quiz? This quiz contains ${quiz.questions.length} questions.`,
+        buttons: [
+          {
+            text: 'Cancel',
+            role: 'cancel'
+          },
+          {
+            text: 'Continue',
+            handler: () => {
+              if (quiz) {
+                this.showQuiz = true;
+                this.selectedAnswers = new Array(quiz.questions.length).fill(-1);
+                this.updateProgress();
+              }
+            }
+          }
+        ]
+      });
+      await alert.present();
     }
     // If no quiz exists and we're at the last content, the "Complete Lesson" button handles it
   }

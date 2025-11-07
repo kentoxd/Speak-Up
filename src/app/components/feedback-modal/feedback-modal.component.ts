@@ -52,125 +52,153 @@ import { ModalController } from '@ionic/angular';
         </div>
 
         <!-- Analysis Section -->
-        <div class="analysis-section">
-          <h3 class="section-title">💡 Analysis</h3>
-          <ul class="analysis-list">
-            <li class="analysis-item">
-              <strong>Overall:</strong> {{ getOverallPerformanceText() }}
-            </li>
-            <li class="analysis-item">
-              <strong>Word Recognition:</strong> {{ getWordRecognitionText() }}
-            </li>
-            <li class="analysis-item">
-              <strong>Punctuation:</strong> {{ getPunctuationText() }}
-            </li>
-          </ul>
+        <div class="analysis-section collapsible-section">
+          <div class="section-header" (click)="toggleSection('analysis')">
+            <h3 class="section-title">💡 Analysis</h3>
+            <ion-icon [name]="showAnalysis ? 'chevron-up' : 'chevron-down'"></ion-icon>
+          </div>
+          <div class="section-content" *ngIf="showAnalysis">
+            <ul class="analysis-list">
+              <li class="analysis-item">
+                <strong>Overall:</strong> {{ getOverallPerformanceText() }}
+              </li>
+              <li class="analysis-item">
+                <strong>Word Recognition:</strong> {{ getWordRecognitionText() }}
+              </li>
+              <li class="analysis-item">
+                <strong>Punctuation:</strong> {{ getPunctuationText() }}
+              </li>
+            </ul>
+          </div>
         </div>
 
         <!-- Filler Words Analysis Section -->
-        <div class="filler-words-section" *ngIf="fillerAnalysis">
-          <h3 class="section-title">🗣️ Filler Words Analysis</h3>
-          
-          <div class="stat-card">
-            <span class="label">Filler Words Found</span>
-            <span class="value">{{ fillerAnalysis.fillerCount }}</span>
+        <div class="filler-words-section collapsible-section" *ngIf="fillerAnalysis">
+          <div class="section-header" (click)="toggleSection('fillerWords')">
+            <h3 class="section-title">🗣️ Filler Words Analysis</h3>
+            <ion-icon [name]="showFillerWords ? 'chevron-up' : 'chevron-down'"></ion-icon>
           </div>
-          
-          <div class="stat-card">
-            <span class="label">Percentage of Speech</span>
-            <span class="value">{{ fillerAnalysis.fillerPercentage }}%</span>
-          </div>
-          
-          <div class="feedback-text" [ngClass]="getFeedbackClass(fillerAnalysis.fillerPercentage)">
-            {{ fillerAnalysis.fillerFeedback }}
-          </div>
-          
-          <div class="breakdown" *ngIf="fillerAnalysis.fillerBreakdown.length > 0">
-            <p class="label">Breakdown:</p>
-            <div *ngFor="let item of fillerAnalysis.fillerBreakdown" class="breakdown-item">
-              {{ item }}
+          <div class="section-content" *ngIf="showFillerWords">
+            <div class="stat-card">
+              <span class="label">Filler Words Found</span>
+              <span class="value">{{ fillerAnalysis.fillerCount }}</span>
+            </div>
+            
+            <div class="stat-card">
+              <span class="label">Percentage of Speech</span>
+              <span class="value">{{ fillerAnalysis.fillerPercentage }}%</span>
+            </div>
+            
+            <div class="feedback-text" [ngClass]="getFeedbackClass(fillerAnalysis.fillerPercentage)">
+              {{ fillerAnalysis.fillerFeedback }}
+            </div>
+            
+            <div class="breakdown" *ngIf="fillerAnalysis.fillerBreakdown.length > 0">
+              <p class="label">Breakdown:</p>
+              <div *ngFor="let item of fillerAnalysis.fillerBreakdown" class="breakdown-item">
+                {{ item }}
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Clarity Analysis Section -->
-        <div class="clarity-section" *ngIf="clarityAnalysis">
-          <h3 class="section-title">🎯 Clarity Analysis</h3>
-          
-          <div class="clarity-score">
-            <div class="score-circle" [ngClass]="getClarityClass(clarityAnalysis.clarityScore)">
-              <span class="score-value">{{ clarityAnalysis.clarityScore }}</span>
-              <span class="score-label">/ 100</span>
-            </div>
+        <div class="clarity-section collapsible-section" *ngIf="clarityAnalysis">
+          <div class="section-header" (click)="toggleSection('clarity')">
+            <h3 class="section-title">🎯 Clarity Analysis</h3>
+            <ion-icon [name]="showClarity ? 'chevron-up' : 'chevron-down'"></ion-icon>
           </div>
-          
-          <div class="metric-breakdown">
-            <div class="metric" *ngFor="let metric of getMetrics(clarityAnalysis.breakdown)">
-              <span class="metric-name">{{ metric.name }}</span>
-              <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="metric.value"></div>
+          <div class="section-content" *ngIf="showClarity">
+            <div class="clarity-score">
+              <div class="score-circle" [ngClass]="getClarityClass(clarityAnalysis.clarityScore)">
+                <span class="score-value">{{ clarityAnalysis.clarityScore }}</span>
+                <span class="score-label">/ 100</span>
               </div>
-              <span class="metric-value">{{ metric.value }}%</span>
             </div>
-          </div>
-          
-          <div class="feedback-items">
-            <div *ngFor="let feedback of clarityAnalysis.feedbackArray" class="feedback-item">
-              <ion-icon name="checkmark-circle-outline"></ion-icon>
-              <span>{{ feedback }}</span>
+            
+            <div class="metric-breakdown">
+              <div class="metric" *ngFor="let metric of getMetrics(clarityAnalysis.breakdown)">
+                <span class="metric-name">{{ metric.name }}</span>
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="metric.value"></div>
+                </div>
+                <span class="metric-value">{{ metric.value }}%</span>
+              </div>
+            </div>
+            
+            <div class="feedback-items">
+              <div *ngFor="let feedback of clarityAnalysis.feedbackArray" class="feedback-item">
+                <ion-icon name="checkmark-circle-outline"></ion-icon>
+                <span>{{ feedback }}</span>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Recommendations Section -->
-        <div class="recommendations-section">
-          <h3 class="section-title">🎯 Recommendations</h3>
-          <ul class="recommendations-list">
-            <li class="recommendation-item">Practice speaking more slowly and clearly</li>
-            <li class="recommendation-item">Focus on pronunciation of difficult words</li>
-            <li class="recommendation-item">Use the Listen feature to hear proper pronunciation</li>
-            <li class="recommendation-item">Break down the text into smaller sections for practice</li>
-            <li class="recommendation-item">{{ getFinalRecommendation() }}</li>
-          </ul>
+        <div class="recommendations-section collapsible-section">
+          <div class="section-header" (click)="toggleSection('recommendations')">
+            <h3 class="section-title">🎯 Recommendations</h3>
+            <ion-icon [name]="showRecommendations ? 'chevron-up' : 'chevron-down'"></ion-icon>
+          </div>
+          <div class="section-content" *ngIf="showRecommendations">
+            <ul class="recommendations-list">
+              <li class="recommendation-item">Practice speaking more slowly and clearly</li>
+              <li class="recommendation-item">Focus on pronunciation of difficult words</li>
+              <li class="recommendation-item">Use the Listen feature to hear proper pronunciation</li>
+              <li class="recommendation-item">Break down the text into smaller sections for practice</li>
+              <li class="recommendation-item">{{ getFinalRecommendation() }}</li>
+            </ul>
+          </div>
         </div>
 
         <!-- Target Text -->
-        <div class="text-section">
-          <h3 class="section-title">📚 Target Text</h3>
-          <div class="text-display target-text">"{{ targetText }}"</div>
+        <div class="text-section collapsible-section">
+          <div class="section-header" (click)="toggleSection('targetText')">
+            <h3 class="section-title">📚 Target Text</h3>
+            <ion-icon [name]="showTargetText ? 'chevron-up' : 'chevron-down'"></ion-icon>
+          </div>
+          <div class="section-content" *ngIf="showTargetText">
+            <div class="text-display target-text">"{{ targetText }}"</div>
+          </div>
         </div>
 
         <!-- User Speech -->
-        <div class="text-section">
-          <h3 class="section-title">🗣️ Your Speech</h3>
-          <div class="text-display user-speech">
-            <span *ngFor="let word of getHighlightedWords(); let i = index">
-              <span 
-                [class.word-correct]="word.type === 'correct'"
-                [class.word-wrong]="word.type === 'wrong'"
-                [class.word-added]="word.type === 'added'"
-                [class.word-missing]="word.type === 'missing'"
-                [attr.title]="getWordTooltip(word)">
-                {{ word.text }}
-              </span><span *ngIf="i < getHighlightedWords().length - 1">&nbsp;</span>
-            </span>
+        <div class="text-section collapsible-section">
+          <div class="section-header" (click)="toggleSection('userSpeech')">
+            <h3 class="section-title">🗣️ Your Speech</h3>
+            <ion-icon [name]="showUserSpeech ? 'chevron-up' : 'chevron-down'"></ion-icon>
           </div>
-          <div class="word-legend" *ngIf="hasDifferences()">
-            <div class="legend-item">
-              <span class="legend-color correct"></span>
-              <span>Correct word</span>
+          <div class="section-content" *ngIf="showUserSpeech">
+            <div class="text-display user-speech">
+              <span *ngFor="let word of getHighlightedWords(); let i = index">
+                <span 
+                  [class.word-correct]="word.type === 'correct'"
+                  [class.word-wrong]="word.type === 'wrong'"
+                  [class.word-added]="word.type === 'added'"
+                  [class.word-missing]="word.type === 'missing'"
+                  [attr.title]="getWordTooltip(word)">
+                  {{ word.text }}
+                </span><span *ngIf="i < getHighlightedWords().length - 1">&nbsp;</span>
+              </span>
             </div>
-            <div class="legend-item">
-              <span class="legend-color wrong"></span>
-              <span>Wrong word</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-color added"></span>
-              <span>Extra word (not in target)</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-color missing"></span>
-              <span>Missing word (should be here)</span>
+            <div class="word-legend" *ngIf="hasDifferences()">
+              <div class="legend-item">
+                <span class="legend-color correct"></span>
+                <span>Correct word</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color wrong"></span>
+                <span>Wrong word</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color added"></span>
+                <span>Extra word (not in target)</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color missing"></span>
+                <span>Missing word (should be here)</span>
+              </div>
             </div>
           </div>
         </div>
@@ -213,10 +241,51 @@ import { ModalController } from '@ionic/angular';
     }
 
     .section-title {
-      color: var(--ion-color-primary);
+      color: var(--ion-color-dark);
       font-size: 1.1rem;
       font-weight: 600;
-      margin: 1.5rem 0 0.75rem 0;
+      margin: 0;
+    }
+
+    .collapsible-section {
+      margin-bottom: 1rem;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      padding: 0.75rem;
+      background-color: var(--ion-color-light);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      transition: background-color 0.2s;
+    }
+
+    .section-header:hover {
+      background-color: var(--ion-color-light-shade);
+    }
+
+    .section-header ion-icon {
+      color: var(--ion-color-primary);
+      font-size: 1.2rem;
+    }
+
+    .section-content {
+      padding: 0.75rem;
+      animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .accuracy-section {
@@ -388,178 +457,162 @@ import { ModalController } from '@ionic/angular';
     }
 
     .filler-words-section {
-      margin-top: 20px;
-      padding: 15px;
-      background-color: #f8f9fa;
-      border-radius: 8px;
-      
-      h3 {
-        margin-top: 0;
-        color: #333;
-      }
-      
-      .stat-card {
-        display: flex;
-        justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid #ddd;
+      .section-content {
+        .stat-card {
+          display: flex;
+          justify-content: space-between;
+          padding: 10px 0;
+          border-bottom: 1px solid #ddd;
+          
+          .label {
+            font-size: 14px;
+            color: #666;
+          }
+          
+          .value {
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+          }
+        }
         
-        .label {
+        .feedback-text {
+          margin: 15px 0;
+          padding: 12px;
+          border-left: 4px solid #ffc107;
+          border-radius: 4px;
           font-size: 14px;
-          color: #666;
+          
+          &.excellent {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+          }
+          
+          &.good {
+            border-left-color: #ffc107;
+            background-color: #fff3cd;
+          }
+          
+          &.warning {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+          }
         }
         
-        .value {
-          font-weight: bold;
-          font-size: 16px;
-          color: #333;
-        }
-      }
-      
-      .feedback-text {
-        margin: 15px 0;
-        padding: 12px;
-        border-left: 4px solid #ffc107;
-        border-radius: 4px;
-        font-size: 14px;
-        
-        &.excellent {
-          border-left-color: #28a745;
-          background-color: #d4edda;
-        }
-        
-        &.good {
-          border-left-color: #ffc107;
-          background-color: #fff3cd;
-        }
-        
-        &.warning {
-          border-left-color: #dc3545;
-          background-color: #f8d7da;
-        }
-      }
-      
-      .breakdown {
-        margin-top: 12px;
-        font-size: 13px;
-        
-        .label {
-          font-weight: bold;
-          color: #666;
-          margin-bottom: 8px;
-        }
-        
-        .breakdown-item {
-          padding: 5px 0;
-          color: #555;
+        .breakdown {
+          margin-top: 12px;
+          font-size: 13px;
+          
+          .label {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 8px;
+          }
+          
+          .breakdown-item {
+            padding: 5px 0;
+            color: #555;
+          }
         }
       }
     }
 
     .clarity-section {
-      margin-top: 20px;
-      padding: 15px;
-      background-color: #f8f9fa;
-      border-radius: 8px;
-      
-      h3 {
-        margin-top: 0;
-        color: #333;
-      }
-      
-      .clarity-score {
-        display: flex;
-        justify-content: center;
-        margin: 20px 0;
-        
-        .score-circle {
-          width: 120px;
-          height: 120px;
-          border-radius: 50%;
+      .section-content {
+        .clarity-score {
           display: flex;
-          flex-direction: column;
           justify-content: center;
-          align-items: center;
-          font-weight: bold;
-          color: white;
+          margin: 20px 0;
           
-          &.excellent {
-            background-color: #28a745;
-          }
-          
-          &.good {
-            background-color: #ffc107;
-          }
-          
-          &.poor {
-            background-color: #dc3545;
-          }
-          
-          .score-value {
-            font-size: 36px;
-            line-height: 1;
-          }
-          
-          .score-label {
-            font-size: 14px;
-            opacity: 0.9;
-          }
-        }
-      }
-      
-      .metric-breakdown {
-        margin: 20px 0;
-        
-        .metric {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin-bottom: 15px;
-          
-          .metric-name {
-            min-width: 80px;
-            font-size: 13px;
-            font-weight: 500;
-            color: #666;
-          }
-          
-          .progress-bar {
-            flex: 1;
-            height: 8px;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            overflow: hidden;
+          .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: white;
             
-            .progress-fill {
-              height: 100%;
-              background-color: #007bff;
-              transition: width 0.3s ease;
+            &.excellent {
+              background-color: #28a745;
+            }
+            
+            &.good {
+              background-color: #ffc107;
+            }
+            
+            &.poor {
+              background-color: #dc3545;
+            }
+            
+            .score-value {
+              font-size: 36px;
+              line-height: 1;
+            }
+            
+            .score-label {
+              font-size: 14px;
+              opacity: 0.9;
             }
           }
+        }
+        
+        .metric-breakdown {
+          margin: 20px 0;
           
-          .metric-value {
-            min-width: 30px;
-            text-align: right;
-            font-size: 13px;
-            font-weight: bold;
-            color: #333;
+          .metric {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            
+            .metric-name {
+              min-width: 80px;
+              font-size: 13px;
+              font-weight: 500;
+              color: #666;
+            }
+            
+            .progress-bar {
+              flex: 1;
+              height: 8px;
+              background-color: #e0e0e0;
+              border-radius: 4px;
+              overflow: hidden;
+              
+              .progress-fill {
+                height: 100%;
+                background-color: #007bff;
+                transition: width 0.3s ease;
+              }
+            }
+            
+            .metric-value {
+              min-width: 30px;
+              text-align: right;
+              font-size: 13px;
+              font-weight: bold;
+              color: #333;
+            }
           }
         }
-      }
-      
-      .feedback-items {
-        margin-top: 15px;
         
-        .feedback-item {
-          display: flex;
-          gap: 10px;
-          padding: 8px 0;
-          font-size: 13px;
-          color: #555;
+        .feedback-items {
+          margin-top: 15px;
           
-          ion-icon {
-            min-width: 20px;
-            color: #28a745;
+          .feedback-item {
+            display: flex;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 13px;
+            color: #555;
+            
+            ion-icon {
+              min-width: 20px;
+              color: #28a745;
+            }
           }
         }
       }
@@ -605,7 +658,38 @@ export class FeedbackModalComponent {
     feedbackArray: string[];
   } | null = null;
 
+  // Collapsible section states
+  showAnalysis = false;
+  showFillerWords = false;
+  showClarity = false;
+  showRecommendations = false;
+  showTargetText = false;
+  showUserSpeech = false;
+
   constructor(private modalController: ModalController) {}
+
+  toggleSection(section: string) {
+    switch(section) {
+      case 'analysis':
+        this.showAnalysis = !this.showAnalysis;
+        break;
+      case 'fillerWords':
+        this.showFillerWords = !this.showFillerWords;
+        break;
+      case 'clarity':
+        this.showClarity = !this.showClarity;
+        break;
+      case 'recommendations':
+        this.showRecommendations = !this.showRecommendations;
+        break;
+      case 'targetText':
+        this.showTargetText = !this.showTargetText;
+        break;
+      case 'userSpeech':
+        this.showUserSpeech = !this.showUserSpeech;
+        break;
+    }
+  }
 
   dismiss() {
     this.modalController.dismiss();

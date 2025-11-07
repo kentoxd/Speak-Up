@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { DataService, Topic, Lesson } from '../../services/data.service';
 import { StorageService, TopicProgress, LessonProgress } from '../../services/storage.service';
 import { Subscription } from 'rxjs';
+import { AlertController } from '@ionic/angular';
 
 @Component({
   selector: 'app-lessons',
@@ -22,7 +23,8 @@ export class LessonsPage implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private dataService: DataService,
-    private storageService: StorageService
+    private storageService: StorageService,
+    private alertController: AlertController
   ) { }
 
   async ngOnInit() {
@@ -114,7 +116,23 @@ export class LessonsPage implements OnInit, OnDestroy {
     return this.totalTopics;
   }
 
-  startQuiz(topic: Topic) {
-    this.router.navigate(['/topic-quiz', topic.id]);
+  async startQuiz(topic: Topic) {
+    const alert = await this.alertController.create({
+      header: 'Take Exam?',
+      message: `Are you ready to take the exam for "${topic.title}"? This exam contains 50 questions.`,
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel'
+        },
+        {
+          text: 'Continue',
+          handler: () => {
+            this.router.navigate(['/topic-quiz', topic.id]);
+          }
+        }
+      ]
+    });
+    await alert.present();
   }
 }

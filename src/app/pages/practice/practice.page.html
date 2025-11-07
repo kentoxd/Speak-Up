@@ -329,12 +329,12 @@
 
       
       <!-- Practice History Summary -->
-      <ion-card class="history-summary" *ngIf="practiceHistory.length > 0">
+      <ion-card class="history-summary">
         <ion-card-header>
           <ion-card-title>Recent Activity</ion-card-title>
         </ion-card-header>
         <ion-card-content>
-          <div class="history-stats">
+          <div class="history-stats" *ngIf="practiceHistory.length > 0">
             <div class="stat">
               <span class="stat-number">{{ practiceHistory.length }}</span>
               <span class="stat-label"> Sessions</span>

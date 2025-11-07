@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DataService, Topic, Lesson } from '../../services/data.service';
 import { StorageService, TopicProgress, LessonProgress } from '../../services/storage.service';
-import { ToastController } from '@ionic/angular';
+import { ToastController, AlertController } from '@ionic/angular';
 
 @Component({
   selector: 'app-topic-lessons',
@@ -20,7 +20,8 @@ export class TopicLessonsPage implements OnInit {
     private router: Router,
     private dataService: DataService,
     private storageService: StorageService,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private alertController: AlertController
   ) { }
 
   async ngOnInit() {
@@ -122,10 +123,26 @@ export class TopicLessonsPage implements OnInit {
     return this.topicProgress?.quizUnlocked || false;
   }
 
-  startQuiz() {
-    if (this.topic) {
-      this.router.navigate(['/topic-quiz', this.topic.id]);
-    }
+  async startQuiz() {
+    if (!this.topic) return;
+    
+    const alert = await this.alertController.create({
+      header: 'Start Exam?',
+      message: 'Are you ready to start the exam? This exam contains 50 questions about the topic.',
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel'
+        },
+        {
+          text: 'Continue',
+          handler: () => {
+            this.router.navigate(['/topic-quiz', this.topic!.id]);
+          }
+        }
+      ]
+    });
+    await alert.present();
   }
 
   goBack() {

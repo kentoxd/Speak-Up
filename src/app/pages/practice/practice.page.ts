@@ -121,6 +121,8 @@ export class PracticePage implements OnInit, OnDestroy {
   private isStartingRecording = false;
   private isStoppingRecording = false;
 
+  // Custom text
+  private isSavingCustomText = false;
   constructor(
     private dataService: DataService,
     private speechService: SpeechService,
@@ -196,6 +198,8 @@ export class PracticePage implements OnInit, OnDestroy {
   async ionViewWillEnter() {
     await this.loadPracticeHistory();
     await this.loadSavedCustomTexts();
+    // Force change detection to update view history button visibility
+    this.cdr.detectChanges();
   }
 
   ngOnDestroy() {
@@ -711,43 +715,48 @@ export class PracticePage implements OnInit, OnDestroy {
     }
   }
 
-  async saveCustomText() {
-    if (this.customTargetText.trim().length < 10 || this.customTextName.trim().length === 0) {
-      await this.errorHandler.showWarning('Please enter both a name and text (minimum 10 characters)');
-      return;
-    }
-
-    const nameExists = this.savedCustomTexts.some(
-      saved => saved.name.toLowerCase() === this.customTextName.trim().toLowerCase()
-    );
-
-    if (nameExists) {
-      await this.errorHandler.showWarning('A custom text with this name already exists. Please use a different name.');
-      return;
-    }
-
-    const contentExists = this.savedCustomTexts.some(
-      saved => saved.text.trim() === this.customTargetText.trim()
-    );
-
-    if (contentExists) {
-      await this.errorHandler.showWarning('This text content has already been saved. Please enter different text.');
-      return;
-    }
-
-    const newCustomText: SavedCustomText = {
-      id: Date.now().toString(),
-      name: this.customTextName.trim(),
-      text: this.customTargetText.trim(),
-      createdAt: new Date().toISOString()
-    };
-
-    await this.storageService.addSavedCustomText(newCustomText);
-    await this.loadSavedCustomTexts();
-    this.setupCustomText();
-
-    await this.errorHandler.showSuccess(`"${newCustomText.name}" saved successfully!`);
+// Updated saveCustomText() method:
+async saveCustomText() {
+  if (this.customTargetText.trim().length < 10 || this.customTextName.trim().length === 0) {
+    await this.errorHandler.showWarning('Please enter both a name and text (minimum 10 characters)');
+    return;
   }
+
+  const nameExists = this.savedCustomTexts.some(
+    saved => saved.name.toLowerCase() === this.customTextName.trim().toLowerCase()
+  );
+
+  if (nameExists) {
+    await this.errorHandler.showWarning('A custom text with this name already exists. Please use a different name.');
+    return;
+  }
+
+  const contentExists = this.savedCustomTexts.some(
+    saved => saved.text.trim() === this.customTargetText.trim()
+  );
+
+  if (contentExists) {
+    await this.errorHandler.showWarning('This text content has already been saved. Please enter different text.');
+    return;
+  }
+
+  const newCustomText: SavedCustomText = {
+    id: Date.now().toString(),
+    name: this.customTextName.trim(),
+    text: this.customTargetText.trim(),
+    createdAt: new Date().toISOString()
+  };
+
+  // Clear the input fields immediately to prevent spam
+  this.customTextName = '';
+  this.customTargetText = '';
+
+  await this.storageService.addSavedCustomText(newCustomText);
+  await this.loadSavedCustomTexts();
+  this.setupCustomText();
+
+  await this.errorHandler.showSuccess(`"${newCustomText.name}" saved successfully!`);
+}
 
   async loadSavedCustomText(saved: SavedCustomText) {
     this.customTextName = saved.name;
@@ -824,13 +833,13 @@ export class PracticePage implements OnInit, OnDestroy {
       return;
     }
     
-    // ANDROID: Show message that audio playback is not available
-    if (this.isAndroid) {
-      await this.errorHandler.showWarning(
-        'This feature doesn\'t work on Android. Use iOS for full features including audio recording and playback.'
-      );
-      return;
-    }
+    // ANDROID: Show message that audio playback is not available (temporarily disabled for demo)
+    // if (this.isAndroid && !this.isIOS) {
+    //   await this.errorHandler.showWarning(
+    //     'This feature doesn\'t work on Android. Use iOS for full features including audio recording and playback.'
+    //   );
+    //   return;
+    // }
     
     this.isPlaybackStarting = true;
     // Verify we have recording data
@@ -1526,15 +1535,15 @@ export class PracticePage implements OnInit, OnDestroy {
       MediaRecorder: typeof MediaRecorder !== 'undefined'
     });
     
-    // ANDROID FIX: Check HTTPS requirement first
-    if (this.isAndroid && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-      await this.errorHandler.showError(
-        new Error('Recording requires HTTPS on Android. Please use https:// or test on localhost.'),
-        ErrorType.RECORDING_FAILED
-      );
-      this.isStartingRecording = false;
-      return;
-    }
+    // ANDROID FIX: Check HTTPS requirement first (temporarily disabled for demo)
+    // if (this.isAndroid && !this.isIOS && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+    //   await this.errorHandler.showError(
+    //     new Error('Recording requires HTTPS on Android. Please use https:// or test on localhost.'),
+    //     ErrorType.RECORDING_FAILED
+    //   );
+    //   this.isStartingRecording = false;
+    //   return;
+    // }
     
     // Check permissions first on mobile (with better Android handling)
     if (this.isMobile) {
@@ -2476,5 +2485,5 @@ private async handleStructuredRecordingResult(result: SpeechRecognitionResult) {
     });
     
     await alert.present();
-  }
+  } 
 }

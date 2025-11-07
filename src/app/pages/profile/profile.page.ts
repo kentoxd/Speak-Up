@@ -55,20 +55,25 @@ export class ProfilePage implements OnInit {
 
 
   async ngOnInit() {
-    // Load user data from Firebase Auth instead of local storage
+    // Load user data from Firebase Auth and Firestore
     this.authService.getCurrentUser().subscribe(async (user) => {
       if (user) {
         console.log('Profile page - User authenticated:', user);
-        // Create a basic user profile from Firebase Auth data
+        
+        // Load user profile from Firestore
+        const userDoc = await this.afStore.collection('users').doc(user.uid).get().toPromise();
+        const userData = userDoc?.data() as any;
+        
+        // Create user profile from Firestore data or Firebase Auth data
         this.userProfile = {
-          name: user.displayName || 'User',
+          name: userData?.name || user.displayName || 'User',
           email: user.email,
-          bio: '',
-          avatar: user.photoURL || '',
-          joinDate: new Date().toISOString(),
-          totalLessons: 0,
-          streakDays: 0,
-          achievements: []
+          bio: userData?.bio || '',
+          avatar: userData?.avatar || user.photoURL || '',
+          joinDate: userData?.joinDate || new Date().toISOString(),
+          totalLessons: userData?.totalLessons || 0,
+          streakDays: userData?.streakDays || 0,
+          achievements: userData?.achievements || []
         };
         console.log('Profile page - User profile created:', this.userProfile);
         
@@ -90,17 +95,28 @@ export class ProfilePage implements OnInit {
   async ionViewWillEnter() {
     // Refresh user data when entering the page
     this.authService.getCurrentUser().subscribe(async (user) => {
-      if (user && !this.userProfile) {
-        this.userProfile = {
-          name: user.displayName || 'User',
-          email: user.email,
-          bio: '',
-          avatar: user.photoURL || '',
-          joinDate: new Date().toISOString(),
-          totalLessons: 0,
-          streakDays: 0,
-          achievements: []
-        };
+      if (user) {
+        // Load user profile from Firestore
+        const userDoc = await this.afStore.collection('users').doc(user.uid).get().toPromise();
+        const userData = userDoc?.data() as any;
+        
+        if (!this.userProfile) {
+          this.userProfile = {
+            name: userData?.name || user.displayName || 'User',
+            email: user.email,
+            bio: userData?.bio || '',
+            avatar: userData?.avatar || user.photoURL || '',
+            joinDate: userData?.joinDate || new Date().toISOString(),
+            totalLessons: userData?.totalLessons || 0,
+            streakDays: userData?.streakDays || 0,
+            achievements: userData?.achievements || []
+          };
+        } else {
+          // Update existing profile with latest data
+          this.userProfile.bio = userData?.bio || this.userProfile.bio;
+          this.userProfile.name = userData?.name || this.userProfile.name;
+          this.userProfile.avatar = userData?.avatar || this.userProfile.avatar;
+        }
       }
     });
     
